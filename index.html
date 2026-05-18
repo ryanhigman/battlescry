@@ -590,6 +590,8 @@ function loadMap(){let url=$("url-input").value.trim();if(!url)return;
     if(p.opts.dark){S.darkMode=true;document.body.style.background="#0d0c0a";}
     if(p.opts.noGrid)S.showGrid=false;if(p.opts.gridH)S.gridOpacity=p.opts.gridH/100;
     if(p.opts.cellSize>60)S.zoom=Math.max(.25,40/p.opts.cellSize);
+    const vpW2=$("map-vp").clientWidth;const mapW2=S.grid.cols*S.grid.cellSize+PAD*2;
+    if(vpW2&&mapW2)S.zoom=Math.max(.1,Math.min(3,vpW2/mapW2));
     S.loadedUrl=p.bg||url;$("map-img").src=S.loadedUrl;$("map-img").style.display="block";
   }else{S.loadedUrl=url;$("map-img").src=url;$("map-img").style.display="block";}
   clearSel();origState=snap();undoStack=[];$("zoom-lbl").textContent=Math.round(S.zoom*100)+"%";renderAll();}
@@ -612,6 +614,10 @@ function loadFromHashStr(hash){
     if(sv.bg){S.loadedUrl=sv.bg;$("map-img").src=sv.bg;$("map-img").style.display="block";}
   }catch(e){}}
   if(S.grid.cellSize>60)S.zoom=Math.max(.25,40/S.grid.cellSize);
+  // Auto-zoom to fill viewport width
+  const vpW=$("map-vp").clientWidth;
+  const mapW=S.grid.cols*S.grid.cellSize+PAD*2;
+  if(vpW&&mapW)S.zoom=Math.max(.1,Math.min(3,vpW/mapW));
   $("url-input").value=hasMap?"Loaded map + tokens":mergeMode?"Merged heights/overlays into map":"Loaded tokens"+(S.loadedUrl?" (using saved map)":"");
   // If we already have tokens loaded and this is token-only data, MERGE instead of replace
   const mergeMode=!hasMap&&S.tokens.length>1;
