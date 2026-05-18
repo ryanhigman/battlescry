@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.2.1-beta"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.2.2-beta"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>🔮 BattleScry</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -51,7 +51,7 @@ input,select,textarea,button{font-family:inherit}
 #popup .actions{display:flex;gap:4px;margin-top:8px;justify-content:flex-end}
 </style></head><body>
 <div id="toolbar">
-  <span class="logo">🔮 BattleScry</span><span style="font-size:9px;color:var(--fg4);margin-left:4px;align-self:flex-end">v0.2.1-beta</span>
+  <span class="logo">🔮 BattleScry</span><span style="font-size:9px;color:var(--fg4);margin-left:4px;align-self:flex-end">v0.2.2-beta</span>
   <input id="url-input" class="inp" style="flex:1;min-width:120px;max-width:320px" placeholder="OTFBM URL or image URL…">
   <button id="btn-load" class="btn btn-p">Load</button>
   <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px">⟲ Revert</button>
@@ -224,28 +224,29 @@ function rOv(svg,ov){
         wrap.appendChild(sEl("circle",{cx:ahx,cy:ahy,r:hr,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));
         const rt=sEl("text",{x:ahx,y:ahy+hr*.4,"text-anchor":"middle","font-size":hr*1.4,fill:"#fff",style:"pointer-events:none","font-weight":"bold"});rt.textContent="↻";wrap.appendChild(rt);
         const al=sEl("text",{x:ahx+hr+4,y:ahy+5,"font-size":14,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});al.textContent="→"+fmtU(ov.coord2.col,ov.coord2.row);wrap.appendChild(al);}}}
-  else if(ov.type==="arrow"&&ov.coord2){const p1=cc(coord.col,coord.row),p2=cc(ov.coord2.col,ov.coord2.row),a=Math.atan2(p2.y-p1.y,p2.x-p1.x),hl=cs*.4,hw=cs*.2,ax=p2.x-hl*Math.cos(a),ay=p2.y-hl*Math.sin(a);
-    wrap.appendChild(sEl("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:sel?"#fbbf24":ov.color,"stroke-width":sel?4:3,"stroke-opacity":so}));
-    wrap.appendChild(sEl("polygon",{points:`${p2.x},${p2.y} ${ax-hw*Math.cos(a-Math.PI/2)},${ay-hw*Math.sin(a-Math.PI/2)} ${ax-hw*Math.cos(a+Math.PI/2)},${ay-hw*Math.sin(a+Math.PI/2)}`,fill:sel?"#fbbf24":ov.color,"fill-opacity":so}));
+  else if(ov.type==="arrow"&&ov.coord2){const p1=cc(coord.col,coord.row);
+    // End point snaps to nearest corner of end cell
+    const ec=ov.coord2,crn=[{x:ox+ec.col*cs,y:oy+ec.row*cs},{x:ox+(ec.col+1)*cs,y:oy+ec.row*cs},{x:ox+ec.col*cs,y:oy+(ec.row+1)*cs},{x:ox+(ec.col+1)*cs,y:oy+(ec.row+1)*cs}];
+    let p2=crn[0],minD=1e9;for(const c of crn){const d=(c.x-p1.x)**2+(c.y-p1.y)**2;if(d<minD){minD=d;p2=c;}}
+    const a=Math.atan2(p2.y-p1.y,p2.x-p1.x),hl=cs*.4,hw=cs*.2,ax=p2.x-hl*Math.cos(a),ay=p2.y-hl*Math.sin(a);
+    if(sel){wrap.appendChild(sEl("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:"#fbbf24","stroke-width":7,"stroke-dasharray":"6 3","stroke-opacity":.8}));}
+    wrap.appendChild(sEl("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:ov.color,"stroke-width":3,"stroke-opacity":so}));
+    wrap.appendChild(sEl("polygon",{points:`${p2.x},${p2.y} ${ax-hw*Math.cos(a-Math.PI/2)},${ay-hw*Math.sin(a-Math.PI/2)} ${ax-hw*Math.cos(a+Math.PI/2)},${ay-hw*Math.sin(a+Math.PI/2)}`,fill:ov.color,"fill-opacity":so}));
     if(sel){const hr=Math.max(6,cs*.08);
-      // Start handle (green)
       wrap.appendChild(sEl("circle",{cx:p1.x,cy:p1.y,r:hr,fill:"#22c55e",stroke:"#000","stroke-width":1,style:"cursor:grab","data-movecoord":ov.id,"pointer-events":"all"}));
       const sl=sEl("text",{x:p1.x+hr+4,y:p1.y-6,"font-size":14,fill:"#22c55e","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});sl.textContent=fmtU(coord.col,coord.row);wrap.appendChild(sl);
-      // End handle (orange)
       wrap.appendChild(sEl("circle",{cx:p2.x,cy:p2.y,r:hr,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));
       const el=sEl("text",{x:p2.x+hr+4,y:p2.y-6,"font-size":14,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});el.textContent="→"+fmtU(ov.coord2.col,ov.coord2.row);wrap.appendChild(el);}}
-  else if(ov.type==="line"&&ov.coord2){const p1=cc(coord.col,coord.row),p2=cc(ov.coord2.col,ov.coord2.row);
-    wrap.appendChild(sEl("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:sel?"#fbbf24":ov.color,"stroke-width":f(ov.width||5),"stroke-opacity":fo,"stroke-linecap":"round"}));
+  else if(ov.type==="line"&&ov.coord2){const p1=cc(coord.col,coord.row),p2=cc(ov.coord2.col,ov.coord2.row),lw=f(ov.width||5);
+    if(sel){wrap.appendChild(sEl("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:"#fbbf24","stroke-width":lw+6,"stroke-dasharray":"8 4","stroke-opacity":.8,"stroke-linecap":"round"}));}
+    wrap.appendChild(sEl("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:ov.color,"stroke-width":lw,"stroke-opacity":fo,"stroke-linecap":"round"}));
     if(sel){const hr=Math.max(6,cs*.08);
-      // Start handle (green) — drag to move start coord
       wrap.appendChild(sEl("circle",{cx:p1.x,cy:p1.y,r:hr,fill:"#22c55e",stroke:"#000","stroke-width":1,style:"cursor:grab","data-movecoord":ov.id,"pointer-events":"all"}));
       const sl=sEl("text",{x:p1.x+hr+4,y:p1.y-6,"font-size":14,fill:"#22c55e","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});sl.textContent=fmtU(coord.col,coord.row);wrap.appendChild(sl);
-      // End handle (orange) — drag to move end coord
       wrap.appendChild(sEl("circle",{cx:p2.x,cy:p2.y,r:hr,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));
       const el=sEl("text",{x:p2.x+hr+4,y:p2.y-6,"font-size":14,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});el.textContent="→"+fmtU(ov.coord2.col,ov.coord2.row);wrap.appendChild(el);
-      // Width indicator at midpoint
       const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2;
-      const wl=sEl("text",{x:mx,y:my-f(ov.width||5)/2-6,"text-anchor":"middle","font-size":14,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});wl.textContent=(ov.size||0)+"' × "+(ov.width||5)+"'w";wrap.appendChild(wl);}}
+      const wl=sEl("text",{x:mx,y:my-lw/2-6,"text-anchor":"middle","font-size":14,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});wl.textContent=(ov.width||5)+"' wide";wrap.appendChild(wl);}}
   else if(ov.type==="cone"&&ov.coord2){
     // Calculate aim angle and snap origin to 8 cardinal points
     const sc=cc(coord.col,coord.row),ac=cc(ov.coord2.col,ov.coord2.row);
@@ -291,13 +292,18 @@ function rObjTab_props(el){
       ${st.length?`<div style="font-size:10px;color:var(--fg2)">Also here: ${st.map(s=>`<a href="#" class="cyc" data-cyc="${s.id}" style="color:var(--accent)">${s.name}</a>`).join(", ")}</div>`:""}
       <button class="btn btn-s" style="width:100%" id="p-revert">Revert to Original</button></div>`;}}
   else if(sc===1&&S.sel.type==="overlay"){const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);if(ov){
-    const nc2=["arrow","line","cone"].includes(ov.type),ns=!["arrow"].includes(ov.type);
+    const nc2=["arrow","line","cone"].includes(ov.type);
+    const isCirc=ov.type.startsWith("circle");const isLine=ov.type==="line";const isArrow=ov.type==="arrow";
+    const sizeLabel=isCirc?"Radius":isLine?"Width":"Size";
+    const sizeVal=isLine?(ov.width||5):ov.size;
+    const sizeId=isLine?"p-ovwidth":"p-ovsize";
+    const showSize=!isArrow;
     const tokOpts=S.tokens.map(t=>`<option value="${t.name}"${ov.target===t.name?" selected":""}>${t.name}</option>`).join("");
-    h+=`<div class="sec"><div class="sec-title" style="color:var(--accent)">Overlay: ${ov.type} ${ov.size}'</div>
+    h+=`<div class="sec"><div class="sec-title" style="color:var(--accent)">Overlay: ${ov.type}${isLine?" "+(ov.width||5)+"'w":ov.size?" "+ov.size+"'":""}</div>
       <div class="row"><div style="flex:1"><span class="lbl">Type</span><select class="inp" id="p-ovtype">${OV_T.map(t=>`<option value="${t}"${ov.type===t?" selected":""}>${t}</option>`).join("")}</select></div>
-      ${ns?`<div style="flex:1"><span class="lbl">Radius</span><div class="row" style="gap:2px"><input type="number" class="inp" id="p-ovsize" value="${ov.size}" style="width:50px" min="5" step="5"><span style="font-size:10px;color:var(--fg3)">ft</span></div></div>`:""}</div>
+      ${showSize?`<div style="flex:1"><span class="lbl">${sizeLabel}</span><div class="row" style="gap:2px"><input type="number" class="inp" id="${sizeId}" value="${sizeVal}" style="width:50px" min="5" step="5"><span style="font-size:10px;color:var(--fg3)">ft</span></div></div>`:""}</div>
       <div class="row"><div style="flex:1"><span class="lbl">${nc2?"Start":"Center"}</span><input class="inp" id="p-ovc1" value="${ov.coord?fmtC(ov.coord.col,ov.coord.row):""}"></div>
-      ${nc2?`<div style="flex:1"><span class="lbl">End/Aim</span><input class="inp" id="p-ovc2" value="${ov.coord2?fmtC(ov.coord2.col,ov.coord2.row):""}"></div>`:""}</div>
+      ${nc2?`<div style="flex:1"><span class="lbl">End</span><input class="inp" id="p-ovc2" value="${ov.coord2?fmtC(ov.coord2.col,ov.coord2.row):""}"></div>`:""}</div>
       <div class="row"><div style="flex:1"><span class="lbl">Color</span><div class="colors">${cSw(ov.color,"prop")}</div></div>
       <label style="font-size:10px;color:var(--fg2);display:flex;align-items:center;gap:2px"><input type="checkbox" id="p-ovun" ${ov.under?"checked":""} style="accent-color:var(--accent)">Under</label></div>
       <div><span class="lbl">Attach to (-t)</span><select class="inp" id="p-ovtarg"><option value="">None</option>${tokOpts}</select></div>
@@ -344,11 +350,14 @@ function renderCmd(){
     const ht=orig&&t.height!==orig.height?String(t.height):"";
     const f=[t.name,fmtC(t.col,t.row),sz,cl,ti,ht];
     while(f.length>2&&f[f.length-1]==="")f.pop();return`-t ${f.join("|")}`;}).join(" "));}
-  ovChg.forEach(ov=>{const flag=ov.under?"-under":"-over";const coord=getOvCoord(ov);const c1=ov.locked?"{targ}":(coord?fmtC(coord.col,coord.row):"");const c2=ov.coord2?","+fmtC(ov.coord2.col,ov.coord2.row):"";const cl=h2c(ov.color);const tgt=ov.target?` -t ${ov.target}`:"";
-    if(ov.type==="arrow")parts.push(`!map ${flag} arrow,${cl},${c1}${c2}${tgt}`);
-    else if(ov.type==="line")parts.push(`!map ${flag} line,${ov.size},${ov.width||5},${cl},${c1}${c2}${tgt}`);
-    else if(ov.type==="cone")parts.push(`!map ${flag} cone,${ov.size},${cl},${c1}${c2}${tgt}`);
-    else parts.push(`!map ${flag} ${ov.type},${ov.size},${cl},${c1}${tgt}`);});
+  // Number overlays per target to prevent overwrites
+  const tgtCount={};
+  ovChg.forEach(ov=>{const tgt=ov.target||"";tgtCount[tgt]=(tgtCount[tgt]||0)+1;const num=tgtCount[tgt]>1?tgtCount[tgt]:"";
+    const flag=ov.under?"-under"+num:"-over"+num;const coord=getOvCoord(ov);const c1=ov.locked?"{targ}":(coord?fmtC(coord.col,coord.row):"");const c2=ov.coord2?","+fmtC(ov.coord2.col,ov.coord2.row):"";const cl=h2c(ov.color);const tgtStr=ov.target?` -t${num} ${ov.target}`:"";
+    if(ov.type==="arrow")parts.push(`!map ${flag} arrow,${cl},${c1}${c2}${tgtStr}`);
+    else if(ov.type==="line")parts.push(`!map ${flag} line,${ov.size||0},${ov.width||5},${cl},${c1}${c2}${tgtStr}`);
+    else if(ov.type==="cone")parts.push(`!map ${flag} cone,${ov.size},${cl},${c1}${c2}${tgtStr}`);
+    else parts.push(`!map ${flag} ${ov.type},${ov.size},${cl},${c1}${tgtStr}`);});
   if(!parts.length){ct.textContent="No changes";ct.style.color="var(--fg4)";btn.textContent="Copy Command";return;}
   ct.textContent=parts.join("\n");ct.style.color="var(--fg)";
   const total=mv.length+ovChg.length;
@@ -451,6 +460,7 @@ function setup(){
     if(t.id==="p-ovapply"){pushU();const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);if(ov){
       ov.type=$("p-ovtype")?.value||ov.type;
       const sz=$("p-ovsize");if(sz)ov.size=Math.max(5,+sz.value||ov.size);
+      const wf=$("p-ovwidth");if(wf)ov.width=Math.max(5,+wf.value||ov.width||5);
       const c1v=$("p-ovc1")?.value;if(c1v){const c1=parseC(c1v);if(c1)ov.coord=c1;}
       const c2el=$("p-ovc2");if(c2el){const c2=parseC(c2el.value||"");ov.coord2=c2||null;}
       ov.under=$("p-ovun")?.checked||false;
