@@ -190,27 +190,40 @@ function rOv(svg,ov){
     // Lock indicator
     if(ov.locked){const lk=sEl("text",{x:p.x,y:p.y-rad-6,"text-anchor":"middle","font-size":11,fill:"#fbbf24",style:"pointer-events:none"});lk.textContent="🔗 "+ov.target;wrap.appendChild(lk);}}
   else if(ov.type.startsWith("square")){const p=tl(coord.col,coord.row),sz=f(ov.size);
-    // Calculate rotation if aimed
-    let rot=0,pivX=p.x,pivY=p.y;
-    if(ov.coord2){const ac=cc(ov.coord2.col,ov.coord2.row);
-      rot=Math.atan2(ac.y-p.y,ac.x-p.x)*180/Math.PI;
-      if(ov.type==="square"){pivX=p.x+sz/2;pivY=p.y+sz/2;}}// square rotates around center, squaretop around topleft
-    const rectA={x:p.x,y:p.y,width:sz,height:sz,fill:ov.color,"fill-opacity":fo,stroke:sel?"#fbbf24":ov.color,"stroke-opacity":sel?1:so,"stroke-width":sel?3:2};
-    if(rot)rectA.transform=`rotate(${rot},${pivX},${pivY})`;
-    wrap.appendChild(sEl("rect",rectA));
-    if(sel){
-      // Resize handle at bottom-right corner (rotated with square)
-      let brx=p.x+sz,bry=p.y+sz;
-      if(rot){const ra=rot*Math.PI/180,dx=brx-pivX,dy=bry-pivY;brx=pivX+dx*Math.cos(ra)-dy*Math.sin(ra);bry=pivY+dx*Math.sin(ra)+dy*Math.cos(ra);}
-      wrap.appendChild(sEl("circle",{cx:brx,cy:bry,r:Math.max(5,cs*.08),fill:"#fbbf24",stroke:"#000","stroke-width":1,style:"cursor:nwse-resize","data-rsz":ov.id}));
-      // Size label
-      const rl=sEl("text",{x:brx+10,y:bry-8,"font-size":16,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});rl.textContent=ov.size+"'";wrap.appendChild(rl);
-      // Rotate handle if aimed, or always show for adding aim
-      const aimA=ov.coord2?Math.atan2(cc(ov.coord2.col,ov.coord2.row).y-pivY,cc(ov.coord2.col,ov.coord2.row).x-pivX):0;
-      const ahx=pivX+(sz+cs*.6)*Math.cos(aimA),ahy=pivY+(sz+cs*.6)*Math.sin(aimA),hr=Math.max(8,cs*.1);
-      wrap.appendChild(sEl("circle",{cx:ahx,cy:ahy,r:hr,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));
-      const rt=sEl("text",{x:ahx,y:ahy+hr*.4,"text-anchor":"middle","font-size":hr*1.4,fill:"#fff",style:"pointer-events:none","font-weight":"bold"});rt.textContent="↻";wrap.appendChild(rt);
-      if(ov.coord2){const al=sEl("text",{x:ahx+hr+4,y:ahy+5,"font-size":14,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});al.textContent="→"+fmtU(ov.coord2.col,ov.coord2.row);wrap.appendChild(al);}}}
+    if(!ov.coord2){
+      // No aim — plain axis-aligned square from topleft
+      wrap.appendChild(sEl("rect",{x:p.x,y:p.y,width:sz,height:sz,fill:ov.color,"fill-opacity":fo,stroke:sel?"#fbbf24":ov.color,"stroke-opacity":sel?1:so,"stroke-width":sel?3:2}));
+      if(sel){wrap.appendChild(sEl("circle",{cx:p.x+sz,cy:p.y+sz,r:Math.max(5,cs*.08),fill:"#fbbf24",stroke:"#000","stroke-width":1,style:"cursor:nwse-resize","data-rsz":ov.id}));
+        const rl=sEl("text",{x:p.x+sz+10,y:p.y+sz-8,"font-size":16,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});rl.textContent=ov.size+"'";wrap.appendChild(rl);
+        // Show rotate handle at default (east) direction
+        const ahx=p.x+sz+cs*.8,ahy=p.y+sz/2,hr=Math.max(8,cs*.1);
+        wrap.appendChild(sEl("circle",{cx:ahx,cy:ahy,r:hr,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));
+        const rt=sEl("text",{x:ahx,y:ahy+hr*.4,"text-anchor":"middle","font-size":hr*1.4,fill:"#fff",style:"pointer-events:none","font-weight":"bold"});rt.textContent="↻";wrap.appendChild(rt);}
+    } else {
+      // Aimed square — edge midpoint snaps to cell boundary
+      const sc=cc(coord.col,coord.row),ac=cc(ov.coord2.col,ov.coord2.row);
+      const aimA=Math.atan2(ac.y-sc.y,ac.x-sc.x);
+      const snA=Math.round(aimA/(Math.PI/4))*(Math.PI/4);
+      // Snap point on cell boundary
+      const sp={x:sc.x+Math.round(Math.cos(snA))*cs/2,y:sc.y+Math.round(Math.sin(snA))*cs/2};
+      // Aim direction from snap point to aim
+      const a=Math.atan2(ac.y-sp.y,ac.x-sp.x);
+      const dx=Math.cos(a),dy=Math.sin(a),px=Math.cos(a+Math.PI/2),py=Math.sin(a+Math.PI/2);
+      // 4 corners: near edge centered on snap point, extends sz in aim direction
+      const nl={x:sp.x-sz/2*px,y:sp.y-sz/2*py};const nr={x:sp.x+sz/2*px,y:sp.y+sz/2*py};
+      const fl={x:nl.x+sz*dx,y:nl.y+sz*dy};const fr={x:nr.x+sz*dx,y:nr.y+sz*dy};
+      const pts=`${nl.x},${nl.y} ${nr.x},${nr.y} ${fr.x},${fr.y} ${fl.x},${fl.y}`;
+      wrap.appendChild(sEl("polygon",{points:pts,fill:ov.color,"fill-opacity":fo,stroke:sel?"#fbbf24":ov.color,"stroke-opacity":sel?1:so,"stroke-width":sel?3:2}));
+      if(sel){
+        // Resize handle at far edge center
+        const farMid={x:sp.x+sz*dx,y:sp.y+sz*dy};
+        wrap.appendChild(sEl("circle",{cx:farMid.x,cy:farMid.y,r:Math.max(5,cs*.08),fill:"#fbbf24",stroke:"#000","stroke-width":1,style:"cursor:nwse-resize","data-rsz":ov.id}));
+        const rl=sEl("text",{x:farMid.x+10,y:farMid.y-8,"font-size":16,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});rl.textContent=ov.size+"'";wrap.appendChild(rl);
+        // Rotate handle beyond far edge
+        const ahx=farMid.x+cs*.6*dx,ahy=farMid.y+cs*.6*dy,hr=Math.max(8,cs*.1);
+        wrap.appendChild(sEl("circle",{cx:ahx,cy:ahy,r:hr,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));
+        const rt=sEl("text",{x:ahx,y:ahy+hr*.4,"text-anchor":"middle","font-size":hr*1.4,fill:"#fff",style:"pointer-events:none","font-weight":"bold"});rt.textContent="↻";wrap.appendChild(rt);
+        const al=sEl("text",{x:ahx+hr+4,y:ahy+5,"font-size":14,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});al.textContent="→"+fmtU(ov.coord2.col,ov.coord2.row);wrap.appendChild(al);}}}
   else if(ov.type==="arrow"&&ov.coord2){const p1=cc(coord.col,coord.row),p2=cc(ov.coord2.col,ov.coord2.row),a=Math.atan2(p2.y-p1.y,p2.x-p1.x),hl=cs*.4,hw=cs*.2,ax=p2.x-hl*Math.cos(a),ay=p2.y-hl*Math.sin(a);wrap.appendChild(sEl("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:sel?"#fbbf24":ov.color,"stroke-width":sel?4:3,"stroke-opacity":so}));wrap.appendChild(sEl("polygon",{points:`${p2.x},${p2.y} ${ax-hw*Math.cos(a-Math.PI/2)},${ay-hw*Math.sin(a-Math.PI/2)} ${ax-hw*Math.cos(a+Math.PI/2)},${ay-hw*Math.sin(a+Math.PI/2)}`,fill:sel?"#fbbf24":ov.color,"fill-opacity":so}));}
   else if(ov.type==="line"&&ov.coord2){const p1=cc(coord.col,coord.row),p2=cc(ov.coord2.col,ov.coord2.row);wrap.appendChild(sEl("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:sel?"#fbbf24":ov.color,"stroke-width":f(ov.width||5),"stroke-opacity":fo,"stroke-linecap":"round"}));}
   else if(ov.type==="cone"&&ov.coord2){
@@ -477,8 +490,9 @@ function setup(){
       if(ov){pushU();const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY;
         const coord=getOvCoord(ov);if(!coord)return;
         const cp=ov.type==="circle"?{x:ox+coord.col*cs+cs/2,y:oy+coord.row*cs+cs/2}:{x:ox+coord.col*cs,y:oy+coord.row*cs};
-        // For cones, compute origin point for resize
-        if(ov.type==="cone"&&ov.coord2){const sc={x:ox+coord.col*cs+cs/2,y:oy+coord.row*cs+cs/2},ac={x:ox+ov.coord2.col*cs+cs/2,y:oy+ov.coord2.row*cs+cs/2};
+        // For cones and aimed squares, use snap point as resize center
+        if((ov.type==="cone"||ov.type.startsWith("square"))&&ov.coord2){
+          const sc={x:ox+coord.col*cs+cs/2,y:oy+coord.row*cs+cs/2},ac={x:ox+ov.coord2.col*cs+cs/2,y:oy+ov.coord2.row*cs+cs/2};
           const aimA=Math.atan2(ac.y-sc.y,ac.x-sc.x),snA=Math.round(aimA/(Math.PI/4))*(Math.PI/4);
           cp.x=sc.x+Math.round(Math.cos(snA))*cs/2;cp.y=sc.y+Math.round(Math.sin(snA))*cs/2;}
         S.resize={ovId,centerX:cp.x,centerY:cp.y,ft2px:cs/5,isSquare:ov.type.startsWith("square")};renderAll();}return;}
