@@ -224,8 +224,28 @@ function rOv(svg,ov){
         wrap.appendChild(sEl("circle",{cx:ahx,cy:ahy,r:hr,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));
         const rt=sEl("text",{x:ahx,y:ahy+hr*.4,"text-anchor":"middle","font-size":hr*1.4,fill:"#fff",style:"pointer-events:none","font-weight":"bold"});rt.textContent="↻";wrap.appendChild(rt);
         const al=sEl("text",{x:ahx+hr+4,y:ahy+5,"font-size":14,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});al.textContent="→"+fmtU(ov.coord2.col,ov.coord2.row);wrap.appendChild(al);}}}
-  else if(ov.type==="arrow"&&ov.coord2){const p1=cc(coord.col,coord.row),p2=cc(ov.coord2.col,ov.coord2.row),a=Math.atan2(p2.y-p1.y,p2.x-p1.x),hl=cs*.4,hw=cs*.2,ax=p2.x-hl*Math.cos(a),ay=p2.y-hl*Math.sin(a);wrap.appendChild(sEl("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:sel?"#fbbf24":ov.color,"stroke-width":sel?4:3,"stroke-opacity":so}));wrap.appendChild(sEl("polygon",{points:`${p2.x},${p2.y} ${ax-hw*Math.cos(a-Math.PI/2)},${ay-hw*Math.sin(a-Math.PI/2)} ${ax-hw*Math.cos(a+Math.PI/2)},${ay-hw*Math.sin(a+Math.PI/2)}`,fill:sel?"#fbbf24":ov.color,"fill-opacity":so}));}
-  else if(ov.type==="line"&&ov.coord2){const p1=cc(coord.col,coord.row),p2=cc(ov.coord2.col,ov.coord2.row);wrap.appendChild(sEl("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:sel?"#fbbf24":ov.color,"stroke-width":f(ov.width||5),"stroke-opacity":fo,"stroke-linecap":"round"}));}
+  else if(ov.type==="arrow"&&ov.coord2){const p1=cc(coord.col,coord.row),p2=cc(ov.coord2.col,ov.coord2.row),a=Math.atan2(p2.y-p1.y,p2.x-p1.x),hl=cs*.4,hw=cs*.2,ax=p2.x-hl*Math.cos(a),ay=p2.y-hl*Math.sin(a);
+    wrap.appendChild(sEl("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:sel?"#fbbf24":ov.color,"stroke-width":sel?4:3,"stroke-opacity":so}));
+    wrap.appendChild(sEl("polygon",{points:`${p2.x},${p2.y} ${ax-hw*Math.cos(a-Math.PI/2)},${ay-hw*Math.sin(a-Math.PI/2)} ${ax-hw*Math.cos(a+Math.PI/2)},${ay-hw*Math.sin(a+Math.PI/2)}`,fill:sel?"#fbbf24":ov.color,"fill-opacity":so}));
+    if(sel){const hr=Math.max(6,cs*.08);
+      // Start handle (green)
+      wrap.appendChild(sEl("circle",{cx:p1.x,cy:p1.y,r:hr,fill:"#22c55e",stroke:"#000","stroke-width":1,style:"cursor:grab","data-movecoord":ov.id,"pointer-events":"all"}));
+      const sl=sEl("text",{x:p1.x+hr+4,y:p1.y-6,"font-size":14,fill:"#22c55e","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});sl.textContent=fmtU(coord.col,coord.row);wrap.appendChild(sl);
+      // End handle (orange)
+      wrap.appendChild(sEl("circle",{cx:p2.x,cy:p2.y,r:hr,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));
+      const el=sEl("text",{x:p2.x+hr+4,y:p2.y-6,"font-size":14,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});el.textContent="→"+fmtU(ov.coord2.col,ov.coord2.row);wrap.appendChild(el);}}
+  else if(ov.type==="line"&&ov.coord2){const p1=cc(coord.col,coord.row),p2=cc(ov.coord2.col,ov.coord2.row);
+    wrap.appendChild(sEl("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:sel?"#fbbf24":ov.color,"stroke-width":f(ov.width||5),"stroke-opacity":fo,"stroke-linecap":"round"}));
+    if(sel){const hr=Math.max(6,cs*.08);
+      // Start handle (green) — drag to move start coord
+      wrap.appendChild(sEl("circle",{cx:p1.x,cy:p1.y,r:hr,fill:"#22c55e",stroke:"#000","stroke-width":1,style:"cursor:grab","data-movecoord":ov.id,"pointer-events":"all"}));
+      const sl=sEl("text",{x:p1.x+hr+4,y:p1.y-6,"font-size":14,fill:"#22c55e","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});sl.textContent=fmtU(coord.col,coord.row);wrap.appendChild(sl);
+      // End handle (orange) — drag to move end coord
+      wrap.appendChild(sEl("circle",{cx:p2.x,cy:p2.y,r:hr,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));
+      const el=sEl("text",{x:p2.x+hr+4,y:p2.y-6,"font-size":14,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});el.textContent="→"+fmtU(ov.coord2.col,ov.coord2.row);wrap.appendChild(el);
+      // Width indicator at midpoint
+      const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2;
+      const wl=sEl("text",{x:mx,y:my-f(ov.width||5)/2-6,"text-anchor":"middle","font-size":14,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});wl.textContent=(ov.size||0)+"' × "+(ov.width||5)+"'w";wrap.appendChild(wl);}}
   else if(ov.type==="cone"&&ov.coord2){
     // Calculate aim angle and snap origin to 8 cardinal points
     const sc=cc(coord.col,coord.row),ac=cc(ov.coord2.col,ov.coord2.row);
@@ -496,7 +516,11 @@ function setup(){
           const aimA=Math.atan2(ac.y-sc.y,ac.x-sc.x),snA=Math.round(aimA/(Math.PI/4))*(Math.PI/4);
           cp.x=sc.x+Math.round(Math.cos(snA))*cs/2;cp.y=sc.y+Math.round(Math.sin(snA))*cs/2;}
         S.resize={ovId,centerX:cp.x,centerY:cp.y,ft2px:cs/5,isSquare:ov.type.startsWith("square")};renderAll();}return;}
-    // 0b. Aim/rotate handle on cone or square
+    // 0b. Move start coord handle on line/arrow
+    const mcEl=e.target.closest("[data-movecoord]");
+    if(mcEl){const ovId=+mcEl.getAttribute("data-movecoord");const ov=S.overlays.find(o=>o.id===ovId);
+      if(ov){pushU();S.moveCoord={ovId};renderAll();}return;}
+    // 0c. Aim/rotate handle on cone or square
     const aimEl=e.target.closest("[data-aim]");
     if(aimEl){const ovId=+aimEl.getAttribute("data-aim");const ov=S.overlays.find(o=>o.id===ovId);
       if(ov){pushU();const coord=getOvCoord(ov);if(!coord)return;
@@ -548,6 +572,13 @@ function setup(){
     mStart={x:pt.x-PAD,y:pt.y-PAD,sx:e.clientX,sy:e.clientY};clearSel();renderAll();
   });
   vp.addEventListener("mousemove",e=>{
+    // Move start coord - snap to grid cell
+    if(S.moveCoord){const pt=svgPt(e);const mx=pt.x-PAD,my=pt.y-PAD;
+      const g=S.grid,col=Math.max(0,Math.min(Math.floor((mx-g.offsetX)/g.cellSize),g.cols-1));
+      const row=Math.max(0,Math.min(Math.floor((my-g.offsetY)/g.cellSize),g.rows-1));
+      const ov=S.overlays.find(o=>o.id===S.moveCoord.ovId);
+      if(ov)ov.coord={col,row};
+      renderSVG();renderCmd();return;}
     // Aim/rotate drag - aim at grid cell under mouse
     if(S.aimDrag){const pt=svgPt(e);const mx=pt.x-PAD,my=pt.y-PAD;
       const g=S.grid,col=Math.max(0,Math.min(Math.floor((mx-g.offsetX)/g.cellSize),g.cols-1));
@@ -571,6 +602,7 @@ function setup(){
       if(Math.abs(dx)>3||Math.abs(dy)>3){const pt=svgPt(e);S.marquee={x1:mStart.x,y1:mStart.y,x2:pt.x-PAD,y2:pt.y-PAD};renderSVG();}}
   });
   const endDrag=e=>{
+    if(S.moveCoord){S.moveCoord=null;renderAll();return;}
     if(S.aimDrag){S.aimDrag=null;renderAll();return;}
     if(S.resize){S.resize=null;renderAll();return;}
     if(S.drag){S.drag=null;renderSB();return;}
