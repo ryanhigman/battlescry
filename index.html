@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.3.5-beta"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.3.90-beta"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>🔮 BattleScry</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -51,22 +51,34 @@ input,select,textarea,button{font-family:inherit}
 #popup .actions{display:flex;gap:4px;margin-top:8px;justify-content:flex-end}
 body.resizing,body.resizing *{cursor:nwse-resize!important}
 body.grabbing,body.grabbing *{cursor:grabbing!important}
+#sidebar.collapsed{display:none}
+@media(max-width:768px){
+  #main{flex-direction:column}
+  #sidebar{position:fixed;top:0;right:0;width:280px;height:100vh;z-index:100;box-shadow:-4px 0 20px rgba(0,0,0,.5);transition:transform .2s}
+  #sidebar.collapsed{display:block!important;transform:translateX(100%);pointer-events:none}
+  #sidebar:not(.collapsed){transform:translateX(0)}
+  #map-vp{width:100vw!important}
+  #toolbar{flex-wrap:wrap;gap:4px;padding:4px 8px}
+}
 </style></head><body>
 <div id="toolbar">
-  <span class="logo">🔮 BattleScry</span><span style="font-size:9px;color:var(--fg4);margin-left:4px;align-self:flex-end">v0.3.5-beta</span>
+  <span class="logo">🔮 BattleScry</span><span style="font-size:9px;color:var(--fg4);margin-left:4px;align-self:flex-end">v0.3.90-beta</span>
   <input id="url-input" class="inp" style="flex:1;min-width:120px;max-width:320px" placeholder="OTFBM URL or image URL…">
   <button id="btn-load" class="btn btn-p">Load</button>
-  <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px">⟲ Revert</button>
+  <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px">⟲ Revert All</button>
   <button id="btn-undo" class="btn btn-s" style="font-size:10px;padding:3px 6px">↩ Undo</button>
   <div class="sep"></div>
   <button id="btn-zout" class="btn btn-s">−</button>
   <span id="zoom-lbl" style="font-size:10px;min-width:32px;text-align:center;color:var(--fg2)">100%</span>
   <button id="btn-zin" class="btn btn-s">+</button>
+  <button id="btn-fitw" class="btn btn-s" style="font-size:9px;padding:3px 6px;opacity:.4;cursor:default" disabled>Fit to Width</button>
+  <button id="btn-fitall" class="btn btn-s" style="font-size:9px;padding:3px 6px">View Full Map</button>
+  <button id="btn-sidebar" class="btn btn-s" style="font-size:10px;padding:3px 8px"><span id="sb-arrow">▶</span> Panel</button>
 </div>
 <div id="main">
   <div id="map-vp"><div id="map-container"><img id="map-img" style="display:none" alt=""><svg id="map-svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
     <div id="placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--fg4);flex-direction:column;gap:16px;pointer-events:none;padding:20px;text-align:center"><span style="font-size:48px">🗺️</span><span style="font-size:16px">Paste an OTFBM URL <b>or</b> <code>!bscry</code> data string and click Load</span><span style="font-size:12px;color:var(--fg4);max-width:500px">Supports full OTFBM URLs, plain image URLs, or data strings from the !bscry alias</span></div></div>
-  <div id="sidebar"><div id="tabs"><button class="active" data-tab="objects">Objects</button><button data-tab="map">Map</button></div><div id="tab-content"><div id="props-area"></div><div id="list-area"></div></div><div id="cmd-bar"><div class="cmd" id="cmd-text" style="color:var(--fg4)">No changes</div><button class="btn btn-p" style="width:100%;font-size:11px" id="btn-copy">Copy Command</button></div></div>
+  <div id="sidebar"><div id="sb-handle" style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;cursor:pointer;background:var(--bg2);border-bottom:1px solid var(--bg3)"><span style="font-size:11px;font-weight:bold;color:var(--fg2)">Properties & Objects</span><span id="sb-close" style="font-size:14px;color:var(--fg3);padding:0 4px">✕</span></div><div id="tabs"><button class="active" data-tab="objects">Objects</button><button data-tab="map">Map</button></div><div id="tab-content"><div id="props-area"></div><div id="list-area"></div></div><div id="cmd-bar"><div class="cmd" id="cmd-text" style="color:var(--fg4)">No changes</div><button class="btn btn-p" style="width:100%;font-size:11px" id="btn-copy">Copy Command</button></div></div>
 </div>
 <div id="tooltip"></div><div id="popup"></div>
 <script>
@@ -76,6 +88,7 @@ const CC=COLORS.map(c=>c.code).sort((a,b)=>b.length-a.length);const OV_T=["circl
 const col2l=n=>{let s="",v=n;while(v>=0){s=String.fromCharCode((v%26)+97)+s;v=Math.floor(v/26)-1;}return s;};
 const l2col=s=>{let n=0;for(let i=0;i<s.length;i++)n=n*26+(s.charCodeAt(i)-96);return n-1;};
 const fmtC=(c,r)=>`${col2l(c)}${r+1}`;const fmtU=(c,r)=>fmtC(c,r).toUpperCase();
+const qN=name=>'"'+name+'"';
 const parseC=s=>{const m=s.match(/^([a-z]+)(\d+)$/i);return m?{col:l2col(m[1].toLowerCase()),row:parseInt(m[2])-1}:null;};
 const exC=s=>{const m=s.match(/^([a-z]+)(\d+)/i);return m?{coord:{col:l2col(m[1].toLowerCase()),row:parseInt(m[2])-1},rest:s.slice(m[0].length)}:null;};
 function c2h(c){if(!c)return"#3498db";if(c.startsWith("~"))c=c.slice(1);if(/^[0-9a-f]{3}$/i.test(c))return`#${c[0]}${c[0]}${c[1]}${c[1]}${c[2]}${c[2]}`;if(/^[0-9a-f]{6}$/i.test(c))return`#${c}`;if(c.startsWith("#"))return c;return COLORS.find(x=>x.code===c.toLowerCase())?.hex||"#3498db";}
@@ -91,7 +104,18 @@ function parseUrl(url){try{const u=new URL(url);if(!u.hostname.includes("otfbm")
   return{tokens:T,overlays:O,walls:W,opts,bg,cols,rows};}catch(e){return null;}}
 
 // STATE
-const S={grid:{cellSize:40,offsetX:0,offsetY:0,cols:26,rows:26},tokens:[],overlays:[],walls:[],combatants:[],sel:{type:null,ids:new Set()},zoom:1,showGrid:true,showOverlays:true,showWalls:true,coordLabels:true,gridOpacity:.45,darkMode:false,loadedUrl:"",tab:"objects",drag:null,marquee:null,tokCol:false,ovCol:false};
+const IS_TOUCH='ontouchstart'in window||navigator.maxTouchPoints>0;
+const HANDLE_R=IS_TOUCH?16:8;// Bigger touch targets on mobile
+// Convert touch event to mouse-like coordinates
+function touchPt(e){const t=e.touches[0]||e.changedTouches[0];return{clientX:t.clientX,clientY:t.clientY,target:document.elementFromPoint(t.clientX,t.clientY)||e.target,shiftKey:e.shiftKey,preventDefault:()=>e.preventDefault()};}
+const S={grid:{cellSize:40,offsetX:0,offsetY:0,cols:26,rows:26},tokens:[],overlays:[],walls:[],combatants:[],sel:{type:null,ids:new Set()},zoom:1,showGrid:true,showOverlays:true,showWalls:true,coordLabels:true,gridOpacity:.45,darkMode:false,loadedUrl:"",tab:"objects",drag:null,marquee:null,tokCol:false,ovCol:false,npCol:false,tokSort:"color",ovSort:"name",sidebarOpen:true};
+// Natural sort for names with numbers (1v before 10v)
+function natSort(a,b){return a.localeCompare(b,undefined,{numeric:true,sensitivity:"base"});}
+// Scroll viewport to center on a grid position
+function scrollTo(col,row){const vp=$("map-vp"),g=S.grid;
+  const px=(g.offsetX+col*g.cellSize+g.cellSize/2+PAD)*S.zoom;
+  const py=(g.offsetY+row*g.cellSize+g.cellSize/2+PAD)*S.zoom;
+  vp.scrollLeft=px-vp.clientWidth/2;vp.scrollTop=py-vp.clientHeight/2;}
 let origState=null,undoStack=[];
 function snap(){return JSON.parse(JSON.stringify({tokens:S.tokens,overlays:S.overlays,walls:S.walls,grid:S.grid}));}
 function pushU(){undoStack.push(snap());if(undoStack.length>30)undoStack.shift();}
@@ -133,9 +157,20 @@ function drawRotIcon(wrap,cx,cy,hr,ovId){
   const bSR={x:bx+aw*bPx,y:by+aw*bPy},bSL={x:bx-aw*bPx,y:by-aw*bPy};
   wrap.appendChild(sEl("path",{d:`M${bSR.x},${bSR.y} L${bx+a/2*bPx},${by+a/2*bPy} L${bTx},${bTy} L${bx-a/2*bPx},${by-a/2*bPy} L${bSL.x},${bSL.y}`,fill:"none",stroke:"#000","stroke-width":1,"stroke-linecap":"round","stroke-linejoin":"round",style:"pointer-events:none"}));}
 // Resolve overlay coordinate — locked overlays follow their target token
+// Resolve token position with size offset
+function resolveTargPos(name){const tok=S.tokens.find(t=>t.name===name);
+  if(!tok)return null;const cells=SIZES[tok.size]?.c||1;const off=Math.floor(cells/2);
+  return{col:tok.col+off,row:tok.row+off};}
+// Resolve overlay coordinate — locked: "targ"|"aim"|false
 function getOvCoord(ov){
-  if(ov.locked&&ov.target){const tok=S.tokens.find(t=>t.name===ov.target);if(tok)return{col:tok.col,row:tok.row};}
+  if(ov.locked==="targ"&&ov.target)return resolveTargPos(ov.target);
+  if(ov.locked==="aim"&&ov.aimTarget)return resolveTargPos(ov.aimTarget);
+  if(ov.locked&&ov.locked!=="aim"&&ov.target)return resolveTargPos(ov.target);// legacy boolean true
   return ov.coord;}
+function getOvCoord2(ov){
+  if(ov.locked2==="targ"&&ov.target)return resolveTargPos(ov.target);
+  if(ov.locked2==="aim"&&ov.aimTarget)return resolveTargPos(ov.aimTarget);
+  return ov.coord2;}
 // D&D 5-10-5 diagonal distance between two grid cells
 function gridDist(c1,r1,c2,r2){
   const dx=Math.abs(c2-c1),dy=Math.abs(r2-r1);
@@ -144,17 +179,32 @@ function gridDist(c1,r1,c2,r2){
   return diagCost+straight*5;}
 // Get overlay number within its target group
 function getOvNum(ov){
-  const tgt=ov.target||"";
-  const same=S.overlays.filter(o=>(o.target||"")===tgt);
-  if(same.length<=1)return{num:"",label:ov.under?"Under":"Over"};
-  const idx=same.indexOf(ov)+1;
-  return{num:String(idx),label:(ov.under?"Under ":"Over ")+idx};}
+  const num=ov.ovNum||"";
+  return{num:num,label:(ov.under?"Under":"Over")+(num?" "+num:"")};}
+// Get next available overlay number for a target (excludeId = overlay being reassigned)
+function nextOvNum(target,excludeId){
+  const tgt=target||"";
+  const others=S.overlays.filter(o=>(o.target||"")===tgt&&o.id!==excludeId);
+  if(!others.length)return "";// Will be the only overlay — no number (slot 0)
+  // Unnumbered = slot 0 (-over), numbered start at 1 (-over1, -over2, ...)
+  const used=others.map(o=>parseInt(o.ovNum)||0);
+  let n=1;while(used.includes(n))n++;
+  return String(n);}
+// Assign initial overlay numbers per target group during load
+function assignOvNums(){
+  const tgtCount={};
+  S.overlays.forEach(ov=>{const tgt=ov.target||"";tgtCount[tgt]=(tgtCount[tgt]||0)+1;
+    if(tgtCount[tgt]===1)ov.ovNum="";
+    else ov.ovNum=String(tgtCount[tgt]);});
+  // Fix: if a target has >1 overlay, first one needs number 1
+  const tgts={};S.overlays.forEach(ov=>{const tgt=ov.target||"";if(!tgts[tgt])tgts[tgt]=[];tgts[tgt].push(ov);});
+  Object.values(tgts).forEach(ovs=>{if(ovs.length>1)ovs.forEach((ov,i)=>{ov.ovNum=String(i+1);});});}
 // Get overlay display name for properties/list
 function getOvDisplayName(ov){
   const n=getOvNum(ov);const isLine=ov.type==="line";
   const sizeStr=isLine?(ov.width||1)+"'w":ov.size?ov.size+"'":"";
   const tgtStr=ov.target?" → "+ov.target:"";
-  return n.label+": "+ov.type+(sizeStr?" "+sizeStr:"")+tgtStr;}
+  return n.label+": "+ov.type+(sizeStr?" "+sizeStr:"")+tgtStr+((ov.locked||ov.locked2)?" 🔗":"");}
 function tokLbl(t,mx){const c=SIZES[t.size]?.c||1;const m=mx||Math.max(2,Math.floor(c*5));return t.name.slice(0,m);}
 function groupToks(){const g={};S.tokens.filter(t=>!t.hidden).forEach(t=>{const k=`${t.col},${t.row},${t.size}`;(g[k]=g[k]||[]).push(t);});return g;}
 function tokensAt(col,row){return S.tokens.filter(t=>{if(t.hidden)return false;const c=Math.ceil(SIZES[t.size]?.c||1);return col>=t.col&&col<t.col+c&&row>=t.row&&row<t.row+c;});}
@@ -190,7 +240,10 @@ function renderSVG(){
   if(S.showOverlays)S.overlays.filter(o=>!o.under&&!isSel("overlay",o.id)).forEach(o=>rOv(svg,o));
   // SELECTED objects on top of everything
   if(S.showOverlays)S.overlays.filter(o=>o.under&&isSel("overlay",o.id)).forEach(o=>rOv(svg,o));
-  Object.keys(groups).forEach(k=>{groups[k].filter(t=>isSel("token",t.id)).forEach(t=>rTok(svg,t));});
+  // Group selected tokens by position — render as pie if stacked
+  const selToks=[];
+  Object.keys(groups).forEach(k=>{const sel=groups[k].filter(t=>isSel("token",t.id));if(sel.length)selToks.push(sel);});
+  selToks.forEach(grp=>{if(grp.length===1)rTok(svg,grp[0]);else rPie(svg,grp);});
   if(S.showOverlays)S.overlays.filter(o=>!o.under&&isSel("overlay",o.id)).forEach(o=>rOv(svg,o));
   // Marquee rect
   if(S.marquee){const m=S.marquee,x=Math.min(m.x1,m.x2),y=Math.min(m.y1,m.y2),mw=Math.abs(m.x2-m.x1),mh=Math.abs(m.y2-m.y1);
@@ -207,9 +260,29 @@ function rTok(svg,t){
   const g=S.grid,cp=SIZES[t.size]?.c||1,r=(cp*g.cellSize)/2-2,p=tokCenter(t);
   const sel=isSel("token",t.id),fs=Math.max(11,Math.min(r*.55,42));
   const gr=sEl("g",{style:"cursor:pointer","data-tid":String(t.id)});
-  const cA={cx:p.x,cy:p.y,r,fill:t.color,"fill-opacity":.9,stroke:sel?"#fbbf24":"rgba(0,0,0,0.8)","stroke-width":sel?3:2};
-  if(sel)cA["stroke-dasharray"]="6 3";
-  gr.appendChild(sEl("circle",cA));
+  if(t.tokenImage){
+    // Token image with circular clip-path
+    const clipId="tc"+t.id;
+    const defs=sEl("defs",{});
+    const cp2=sEl("clipPath",{id:clipId});
+    cp2.appendChild(sEl("circle",{cx:p.x,cy:p.y,r}));
+    defs.appendChild(cp2);gr.appendChild(defs);
+    // Colored circle as background (shows while image loads or on error)
+    gr.appendChild(sEl("circle",{cx:p.x,cy:p.y,r,fill:t.color,"fill-opacity":.9}));
+    // Image clipped to circle
+    const imgUrl="https://token.otfbm.io/img/"+t.tokenImage;
+    const img=sEl("image",{x:p.x-r,y:p.y-r,width:r*2,height:r*2,"clip-path":"url(#"+clipId+")","preserveAspectRatio":"xMidYMid slice"});
+    img.setAttributeNS("http://www.w3.org/1999/xlink","href",imgUrl);
+    gr.appendChild(img);
+    // Selection/border stroke on top
+    const sA={cx:p.x,cy:p.y,r,fill:"none",stroke:sel?"#fbbf24":"rgba(0,0,0,0.8)","stroke-width":sel?3:2};
+    if(sel)sA["stroke-dasharray"]="6 3";
+    gr.appendChild(sEl("circle",sA));
+  }else{
+    // Default colored circle
+    const cA={cx:p.x,cy:p.y,r,fill:t.color,"fill-opacity":.9,stroke:sel?"#fbbf24":"rgba(0,0,0,0.8)","stroke-width":sel?3:2};
+    if(sel)cA["stroke-dasharray"]="6 3";
+    gr.appendChild(sEl("circle",cA));}
   const lb=tokLbl(t),tx=sEl("text",{x:p.x,y:p.y+fs*.35,"text-anchor":"middle","font-size":fs,"font-weight":"bold",fill:"#fff",style:"pointer-events:none",stroke:"rgba(0,0,0,0.6)","stroke-width":"3","paint-order":"stroke"});tx.textContent=lb;gr.appendChild(tx);
   if(t.height){const ht=sEl("text",{x:p.x,y:p.y-r+Math.max(11,fs*.4),"text-anchor":"middle","font-size":Math.max(10,fs*.45),fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.5)","stroke-width":"2","paint-order":"stroke"});ht.textContent="↕"+t.height;gr.appendChild(ht);}
   svg.appendChild(gr);}
@@ -256,17 +329,17 @@ function rOv(svg,ov){
     if(sel)cA["stroke-dasharray"]="6 3";
     wrap.appendChild(sEl("circle",cA));
     if(sel){[[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy])=>{
-      wrap.appendChild(sEl("circle",{cx:p.x+dx*rad,cy:p.y+dy*rad,r:Math.max(5,cs*.08),fill:"#fbbf24",stroke:"#000","stroke-width":1,style:"cursor:nwse-resize","data-rsz":ov.id}));});
+      wrap.appendChild(sEl("circle",{cx:p.x+dx*rad,cy:p.y+dy*rad,r:Math.max(HANDLE_R,cs*.08),fill:"#fbbf24",stroke:"#000","stroke-width":1,style:"cursor:nwse-resize","data-rsz":ov.id}));});
       const rl=sEl("text",{x:p.x+rad+10,y:p.y-10,"font-size":28,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});rl.textContent=ov.size+"'";wrap.appendChild(rl);}
     // Lock indicator
     if(ov.locked){const lk=sEl("text",{x:p.x,y:p.y-rad-6,"text-anchor":"middle","font-size":20,fill:"#fbbf24",style:"pointer-events:none"});lk.textContent="🔗 "+ov.target;wrap.appendChild(lk);}}
-  else if(ov.type.startsWith("square")){const p=tl(coord.col,coord.row),sz=f(ov.size);
-    if(!ov.coord2){
+  else if(ov.type.startsWith("square")){const p=tl(coord.col,coord.row),sz=f(ov.size);const _c2=getOvCoord2(ov);
+    if(!_c2){
       // No aim — plain axis-aligned square from topleft
       const rA={x:p.x,y:p.y,width:sz,height:sz,fill:ov.color,"fill-opacity":fo,stroke:sel?"#fbbf24":ov.color,"stroke-opacity":sel?1:so,"stroke-width":2};
       if(sel)rA["stroke-dasharray"]="6 3";
       wrap.appendChild(sEl("rect",rA));
-      if(sel){const hrsz=Math.max(5,cs*.08);
+      if(sel){const hrsz=Math.max(HANDLE_R,cs*.08);
         // Resize handles at side midpoints
         [[p.x+sz/2,p.y],[p.x+sz,p.y+sz/2],[p.x+sz/2,p.y+sz],[p.x,p.y+sz/2]].forEach(([hx,hy])=>{
           wrap.appendChild(sEl("circle",{cx:hx,cy:hy,r:hrsz,fill:"#fbbf24",stroke:"#000","stroke-width":1,style:"cursor:nwse-resize","data-rsz":ov.id}));});
@@ -276,7 +349,7 @@ function rOv(svg,ov){
         drawRotIcon(wrap,ahx,ahy,hr,ov.id);}
     } else {
       // Aimed square — edge midpoint snaps to cell boundary
-      const sc=cc(coord.col,coord.row),ac=cc(ov.coord2.col,ov.coord2.row);
+      const sc=cc(coord.col,coord.row),ac=cc(_c2.col,_c2.row);
       const aimA=Math.atan2(ac.y-sc.y,ac.x-sc.x);
       const snA=Math.round(aimA/(Math.PI/4))*(Math.PI/4);
       // Snap point on cell boundary
@@ -291,7 +364,7 @@ function rOv(svg,ov){
       const pgA={points:pts,fill:ov.color,"fill-opacity":fo,stroke:sel?"#fbbf24":ov.color,"stroke-opacity":sel?1:so,"stroke-width":2};
       if(sel)pgA["stroke-dasharray"]="6 3";
       wrap.appendChild(sEl("polygon",pgA));
-      if(sel){const hrsz=Math.max(5,cs*.08);
+      if(sel){const hrsz=Math.max(HANDLE_R,cs*.08);
         // Resize handles at side midpoints
         const mNear={x:(nl.x+nr.x)/2,y:(nl.y+nr.y)/2};
         const mRight={x:(nr.x+fr.x)/2,y:(nr.y+fr.y)/2};
@@ -304,10 +377,10 @@ function rOv(svg,ov){
         // Rotate handle beyond far edge
         const ahx=farMid.x+cs*.6*dx,ahy=farMid.y+cs*.6*dy,hr=Math.max(8,cs*.1);
         drawRotIcon(wrap,ahx,ahy,hr,ov.id);
-        const al=sEl("text",{x:ahx+hr+4,y:ahy+5,"font-size":24,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});al.textContent="→"+fmtU(ov.coord2.col,ov.coord2.row);wrap.appendChild(al);}}}
-  else if(ov.type==="arrow"&&ov.coord2){const p1=cc(coord.col,coord.row);
+        const al=sEl("text",{x:ahx+hr+4,y:ahy+5,"font-size":24,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});al.textContent="→"+fmtU(_c2.col,_c2.row);wrap.appendChild(al);}}}
+  else if(ov.type==="arrow"){const _c2=getOvCoord2(ov);if(!_c2)return;const p1=cc(coord.col,coord.row);
     // End point snaps to nearest corner of end cell
-    const ec=ov.coord2,crn=[{x:ox+ec.col*cs,y:oy+ec.row*cs},{x:ox+(ec.col+1)*cs,y:oy+ec.row*cs},{x:ox+ec.col*cs,y:oy+(ec.row+1)*cs},{x:ox+(ec.col+1)*cs,y:oy+(ec.row+1)*cs}];
+    const ec=_c2,crn=[{x:ox+ec.col*cs,y:oy+ec.row*cs},{x:ox+(ec.col+1)*cs,y:oy+ec.row*cs},{x:ox+ec.col*cs,y:oy+(ec.row+1)*cs},{x:ox+(ec.col+1)*cs,y:oy+(ec.row+1)*cs}];
     let p2=crn[0],minD=1e9;for(const c of crn){const d=(c.x-p1.x)**2+(c.y-p1.y)**2;if(d<minD){minD=d;p2=c;}}
     const a=Math.atan2(p2.y-p1.y,p2.x-p1.x),hl=cs*.4,hw=cs*.2,ax=p2.x-hl*Math.cos(a),ay=p2.y-hl*Math.sin(a);
     const aLineA={x1:p1.x,y1:p1.y,x2:ax,y2:ay,stroke:ov.color,"stroke-width":3,"stroke-opacity":so};
@@ -316,12 +389,12 @@ function rOv(svg,ov){
     const ahPts=`${p2.x},${p2.y} ${ax-hw*Math.cos(a-Math.PI/2)},${ay-hw*Math.sin(a-Math.PI/2)} ${ax-hw*Math.cos(a+Math.PI/2)},${ay-hw*Math.sin(a+Math.PI/2)}`;
     wrap.appendChild(sEl("polygon",{points:ahPts,fill:ov.color,"fill-opacity":so,stroke:ov.color,"stroke-width":1,"stroke-opacity":so}));
     if(sel)wrap.appendChild(sEl("polygon",{points:ahPts,fill:"none",stroke:"#fbbf24","stroke-width":1,"stroke-dasharray":"6 6","pointer-events":"none"}));
-    if(sel){const hr=Math.max(6,cs*.08);const arrowLen=gridDist(coord.col,coord.row,ov.coord2.col,ov.coord2.row);
+    if(sel){const hr=Math.max(HANDLE_R,cs*.08);const arrowLen=gridDist(coord.col,coord.row,_c2.col,_c2.row);
       wrap.appendChild(sEl("circle",{cx:p1.x,cy:p1.y,r:hr,fill:"#22c55e",stroke:"#000","stroke-width":1,style:"cursor:grab","data-movecoord":ov.id,"pointer-events":"all"}));
       const sl=sEl("text",{x:p1.x+hr+4,y:p1.y-6,"font-size":24,fill:"#22c55e","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});sl.textContent=fmtU(coord.col,coord.row);wrap.appendChild(sl);
       wrap.appendChild(sEl("circle",{cx:p2.x,cy:p2.y,r:hr,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));
-      const el=sEl("text",{x:p2.x+hr+4,y:p2.y-6,"font-size":24,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});el.textContent="→"+fmtU(ov.coord2.col,ov.coord2.row)+" ("+arrowLen+"')";wrap.appendChild(el);}}
-  else if(ov.type==="line"&&ov.coord2){const p1=cc(coord.col,coord.row),p2=cc(ov.coord2.col,ov.coord2.row),lw=f(ov.width||1);
+      const el=sEl("text",{x:p2.x+hr+4,y:p2.y-6,"font-size":24,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});el.textContent="→"+fmtU(_c2.col,_c2.row)+" ("+arrowLen+"')";wrap.appendChild(el);}}
+  else if(ov.type==="line"){const _c2=getOvCoord2(ov);if(!_c2)return;const p1=cc(coord.col,coord.row),p2=cc(_c2.col,_c2.row),lw=f(ov.width||1);
     const a=Math.atan2(p2.y-p1.y,p2.x-p1.x),ppx=Math.cos(a+Math.PI/2),ppy=Math.sin(a+Math.PI/2);
     // Draw line as rectangle polygon so it has fill + stroke like other shapes
     const hw2=lw/2;
@@ -331,12 +404,12 @@ function rOv(svg,ov){
     const lA={points:lPts,fill:ov.color,"fill-opacity":fo,stroke:sel?"#fbbf24":ov.color,"stroke-opacity":sel?1:so,"stroke-width":sel?2:1};
     if(sel)lA["stroke-dasharray"]="6 3";
     wrap.appendChild(sEl("polygon",lA));
-    if(sel){const hr=Math.max(6,cs*.08);
-      const lenFt=gridDist(coord.col,coord.row,ov.coord2.col,ov.coord2.row);
+    if(sel){const hr=Math.max(HANDLE_R,cs*.08);
+      const lenFt=gridDist(coord.col,coord.row,_c2.col,_c2.row);
       wrap.appendChild(sEl("circle",{cx:p1.x,cy:p1.y,r:hr,fill:"#22c55e",stroke:"#000","stroke-width":1,style:"cursor:grab","data-movecoord":ov.id,"pointer-events":"all"}));
       const sl=sEl("text",{x:p1.x+hr+4,y:p1.y-6,"font-size":24,fill:"#22c55e","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});sl.textContent=fmtU(coord.col,coord.row);wrap.appendChild(sl);
       wrap.appendChild(sEl("circle",{cx:p2.x,cy:p2.y,r:hr,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));
-      const el=sEl("text",{x:p2.x+hr+4,y:p2.y-6,"font-size":24,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});el.textContent="→"+fmtU(ov.coord2.col,ov.coord2.row)+" ("+lenFt+"')";wrap.appendChild(el);
+      const el=sEl("text",{x:p2.x+hr+4,y:p2.y-6,"font-size":24,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});el.textContent="→"+fmtU(_c2.col,_c2.row)+" ("+lenFt+"')";wrap.appendChild(el);
       // Width resize handles — both edges of line at midpoint
       const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2;
       const w1x=mx-ppx*lw/2,w1y=my-ppy*lw/2;
@@ -344,9 +417,9 @@ function rOv(svg,ov){
       wrap.appendChild(sEl("circle",{cx:w1x,cy:w1y,r:hr,fill:"#fbbf24",stroke:"#000","stroke-width":1,style:"cursor:nwse-resize","data-widthrsz":ov.id,"pointer-events":"all"}));
       wrap.appendChild(sEl("circle",{cx:w2x,cy:w2y,r:hr,fill:"#fbbf24",stroke:"#000","stroke-width":1,style:"cursor:nwse-resize","data-widthrsz":ov.id,"pointer-events":"all"}));
       const wl=sEl("text",{x:w1x+hr+4,y:w1y+4,"font-size":24,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});wl.textContent=(ov.width||1)+"'";wrap.appendChild(wl);}}
-  else if(ov.type==="cone"&&ov.coord2){
+  else if(ov.type==="cone"){const c2=getOvCoord2(ov);if(!c2)return;
     // Calculate aim angle and snap origin to 8 cardinal points
-    const sc=cc(coord.col,coord.row),ac=cc(ov.coord2.col,ov.coord2.row);
+    const sc=cc(coord.col,coord.row),ac=cc(c2.col,c2.row);
     const aimA=Math.atan2(ac.y-sc.y,ac.x-sc.x);
     const snA=Math.round(aimA/(Math.PI/4))*(Math.PI/4);
     // Origin = same side of cell as aim direction
@@ -361,14 +434,14 @@ function rOv(svg,ov){
     wrap.appendChild(sEl("polygon",cnA));
     if(sel){
       // Resize handle at cone tip (end of center line)
-      wrap.appendChild(sEl("circle",{cx:bx,cy:by,r:Math.max(5,cs*.08),fill:"#fbbf24",stroke:"#000","stroke-width":1,style:"cursor:nwse-resize","data-rsz":ov.id}));
+      wrap.appendChild(sEl("circle",{cx:bx,cy:by,r:Math.max(HANDLE_R,cs*.08),fill:"#fbbf24",stroke:"#000","stroke-width":1,style:"cursor:nwse-resize","data-rsz":ov.id}));
       // Aim/rotate handle with rotation icon
       const aimX=bx+cs*.6*Math.cos(a),aimY=by+cs*.6*Math.sin(a),hr=Math.max(8,cs*.1);
       drawRotIcon(wrap,aimX,aimY,hr,ov.id);
       // Size label
       const rl=sEl("text",{x:bx+10,y:by-8,"font-size":28,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});rl.textContent=ov.size+"'";wrap.appendChild(rl);
       // Aim coordinate label
-      const dl=sEl("text",{x:aimX+hr+4,y:aimY+5,"font-size":24,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});dl.textContent="→"+fmtU(ov.coord2.col,ov.coord2.row);wrap.appendChild(dl);}}
+      const dl=sEl("text",{x:aimX+hr+4,y:aimY+5,"font-size":24,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});dl.textContent="→"+fmtU(c2.col,c2.row);wrap.appendChild(dl);}}
   svg.appendChild(wrap);}
 function rWall(svg,w){const g=S.grid,cs=g.cellSize,x1=g.offsetX+w.start.col*cs,y1=g.offsetY+w.start.row*cs,x2=g.offsetX+w.end.col*cs,y2=g.offsetY+w.end.row*cs;svg.appendChild(sEl("line",{x1,y1,x2,y2,stroke:w.color||"#8B4513","stroke-width":w.door?2:4,"stroke-opacity":.9,"stroke-linecap":"round","stroke-dasharray":w.door==="secret"?"6 3":null}));}
 
@@ -379,16 +452,27 @@ function renderSB(){
   if(S.tab==="objects"){rObjTab_props(pa);rObjTab_list(la);}else{pa.innerHTML="";rMapTab(la);}
   requestAnimationFrame(()=>{const el=document.querySelector('.obj-item.sel');if(el)el.scrollIntoView({block:"nearest",behavior:"smooth"});});}
 // Check if any token property changed from original
-function tokChanged(t){if(!origState)return false;const o=origState.tokens.find(x=>x.id===t.id);if(!o)return true;return t.col!==o.col||t.row!==o.row||t.size!==o.size||t.color!==o.color||t.height!==o.height||t.name!==o.name;}
+function tokChanged(t){if(!origState)return false;const o=origState.tokens.find(x=>x.id===t.id);if(!o)return true;return t.col!==o.col||t.row!==o.row||t.size!==o.size||t.color!==o.color||t.height!==o.height||t.name!==o.name||t.tokenImage!==o.tokenImage;}
+function hasAnyChanges(){if(!origState)return false;
+  if(S.tokens.some(t=>!t.hidden&&tokChanged(t)))return true;
+  if(S.overlays.some(o=>ovChanged(o)))return true;
+  if(origState.tokens.some(ot=>!ot.hidden&&!S.tokens.find(t=>t.id===ot.id)))return true;
+  return false;}
 function rObjTab_props(el){
   let h="";const sc=S.sel.ids.size;
-  if(sc===1&&(S.sel.type==="token"||S.sel.type==="mixed")){const t=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(t){const mv=t.originalCol!==t.col||t.originalRow!==t.row;const st=tokensAt(t.col,t.row).filter(x=>x.id!==t.id);
-    h+=`<div class="sec"><div class="sec-title" style="color:var(--accent)">Token: ${t.name}</div>
-      <div class="row"><div style="flex:1"><span class="lbl">Position</span><div class="inp" style="font-family:monospace">${fmtU(t.col,t.row)}</div></div><div style="flex:1"><span class="lbl">Height</span><input type="number" class="inp" id="p-ht" value="${t.height}"></div></div>
+  if(sc===1&&(S.sel.type==="token"||S.sel.type==="mixed")){const t=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(t){const mv=t.originalCol!==t.col||t.originalRow!==t.row;const st=tokensAt(t.col,t.row).filter(x=>x.id!==t.id);const canRev=tokChanged(t);
+    h+=`<div class="sec"><div class="sec-title" style="color:var(--accent)">Token: ${t.name} (${t.size})</div>
+      ${mv?`<div style="font-size:10px;color:var(--accent);font-family:monospace;margin-bottom:4px">Moved: ${fmtU(t.originalCol,t.originalRow)} → ${fmtU(t.col,t.row)}</div>`:""}
+      <div class="row"><div style="flex:1"><span class="lbl">Position</span><input class="inp" id="p-pos" value="${fmtC(t.col,t.row)}" style="font-family:monospace"></div>
+      <div style="flex:1"><span class="lbl">Height</span><div class="row" style="gap:2px"><input type="number" class="inp" id="p-ht" value="${t.height}" style="width:50px"><span style="font-size:10px;color:var(--fg3)">ft</span></div></div></div>
       <div class="row"><div style="flex:1"><span class="lbl">Size</span><select class="inp" id="p-size">${Object.entries(SIZES).map(([k,v])=>`<option value="${k}"${t.size===k?" selected":""}>${k} — ${v.l}</option>`).join("")}</select></div><div style="flex:1"><span class="lbl">Color</span><div class="colors">${cSw(t.color,"prop")}</div></div></div>
-      ${mv?`<div style="font-size:10px;color:var(--accent);font-family:monospace">Moved: ${fmtU(t.originalCol,t.originalRow)} → ${fmtU(t.col,t.row)}</div>`:""}
-      ${st.length?`<div style="font-size:10px;color:var(--fg2)">Also here: ${st.map(s=>`<a href="#" class="cyc" data-cyc="${s.id}" style="color:var(--accent)">${s.name}</a>`).join(", ")}</div>`:""}
-      <div class="row" style="gap:4px"><button class="btn btn-s" style="flex:1" id="p-revert">Revert to Original</button><button class="btn btn-s" style="flex:1;color:#e74c3c" id="p-unplace">Remove from Map</button></div></div>`;}}
+      <div class="row" style="align-items:center"><div style="flex:1"><span class="lbl">Token Shortcode</span><input class="inp" id="p-tokcode" value="${t.tokenImage||""}" style="font-family:monospace" readonly placeholder="none"></div>
+      <a href="#" id="p-tokdialog" style="font-size:10px;color:var(--accent);white-space:nowrap;margin-top:14px">${t.tokenImage?"✏️ Update":"➕ Add Image"}</a></div>`;
+    // Attached overlays
+    const attached=S.overlays.filter(o=>o.target===t.name);
+    if(attached.length){h+=`<div style="font-size:10px;color:var(--fg2);margin-top:4px">Attached Overlays: ${attached.map(o=>{const n=getOvNum(o);return`<a href="#" class="ovlink" data-ovid="${o.id}" style="color:var(--accent)">${n.label}: ${o.type}${o.locked?" 🔗":""}</a>`;}).join(", ")}</div>`;}
+    h+=`${st.length?`<div style="font-size:10px;color:var(--fg2);margin-top:4px">Also here: ${st.map(s=>`<a href="#" class="cyc" data-cyc="${s.id}" style="color:var(--accent)">${s.name}</a>`).join(", ")}</div>`:""}
+      <div class="row" style="gap:4px;margin-top:4px"><button class="btn btn-s" style="flex:1${canRev?"":";opacity:.4;cursor:default"}" id="p-revert" ${canRev?"":"disabled"}>Revert to Original</button><button class="btn btn-s" style="flex:1;color:#e74c3c" id="p-unplace">Remove from Map</button></div></div>`;}}
   else if(sc===1&&S.sel.type==="overlay"){const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);if(ov){
     const nc2=["arrow","line","cone"].includes(ov.type);
     const isCirc=ov.type.startsWith("circle");const isLine=ov.type==="line";const isArrow=ov.type==="arrow";
@@ -396,47 +480,81 @@ function rObjTab_props(el){
     const sizeVal=isLine?(ov.width||5):ov.size;
     const sizeId=isLine?"p-ovwidth":"p-ovsize";
     const showSize=!isArrow;
-    const cmbOpts=S.combatants.filter(c=>c.name!=="DM").map(c=>`<option value="${c.name}"${ov.target===c.name?" selected":""}>${c.name}${c.placed?"":" (not on map)"}</option>`).join("");
+    const colorName=hex=>{const n=h2c(hex);const names={r:"red",b:"blue",g:"green",y:"yellow",pk:"pink",p:"purple",c:"cyan",bn:"brown",o:"orange",w:"white",bk:"black"};return names[n]||n||"unknown";};
+    const sortByColor=(a,b)=>{const ta=S.tokens.find(t=>t.name===a.name),tb=S.tokens.find(t=>t.name===b.name);
+      const ca=ta?colorName(ta.color):"zzz",cb=tb?colorName(tb.color):"zzz";
+      if(ca!==cb)return natSort(ca,cb);return natSort(a.name,b.name);};
+    const placedOpts=S.combatants.filter(c=>c.name!=="DM"&&(c.placed||S.tokens.find(t=>t.name===c.name&&!t.hidden))).sort(sortByColor).map(c=>`<option value="${c.name}"${ov.target===c.name?" selected":""}>${c.name}</option>`).join("");
+    const placedAimOpts=S.combatants.filter(c=>c.name!=="DM"&&(c.placed||S.tokens.find(t=>t.name===c.name&&!t.hidden))).sort(sortByColor).map(c=>`<option value="${c.name}"${ov.aimTarget===c.name?" selected":""}>${c.name}</option>`).join("");
     const ovDisp=getOvDisplayName(ov);
     const noTarget=!ov.target;
     const originLabel=nc2?"Start":"Origin";
-    const originVal=ov.locked?"{targ}":(ov.coord?fmtC(ov.coord.col,ov.coord.row):"");
-    h+=`<div class="sec"><div class="sec-title" style="color:var(--accent)">${ovDisp}</div>
-      ${noTarget?`<div style="font-size:10px;color:#e74c3c;margin-bottom:4px">⚠ Not assigned to DM or token — will not persist after next !map update</div>`:""}
-      <div class="row"><div style="flex:1"><span class="lbl">Type</span><select class="inp" id="p-ovtype">${OV_T.map(t=>`<option value="${t}"${ov.type===t?" selected":""}>${t}</option>`).join("")}</select></div>
+    h+=`<div class="sec"><div class="row" style="align-items:center"><div class="sec-title" style="color:var(--accent);flex:1">${ovDisp}</div>
+      <label style="font-size:10px;color:${ov.under?"var(--accent)":"var(--fg3)"};display:flex;align-items:center;gap:2px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="p-ovunder" ${ov.under?"checked":""} style="accent-color:var(--accent)">Underlay</label></div>
+      <div class="row"><div style="flex:1"><span class="lbl">Type</span>${
+        isCirc?`<select class="inp" id="p-ovtype"><option value="circle"${ov.type==="circle"?" selected":""}>circle</option><option value="circletop"${ov.type==="circletop"?" selected":""}>circletop</option><option value="circlecorner"${ov.type==="circlecorner"?" selected":""}>circlecorner</option></select>`:
+        ov.type.startsWith("square")?`<select class="inp" id="p-ovtype"><option value="square"${ov.type==="square"?" selected":""}>square</option><option value="squaretop"${ov.type==="squaretop"?" selected":""}>squaretop</option></select>`:
+        `<div class="inp" style="color:var(--fg2)">${ov.type}</div>`}</div>
       ${showSize?`<div style="flex:1"><span class="lbl">${sizeLabel}</span><div class="row" style="gap:2px"><input type="number" class="inp" id="${sizeId}" value="${sizeVal}" style="width:50px" min="1" step="1"><span style="font-size:10px;color:var(--fg3)">ft</span></div></div>`:""}</div>
-      <div class="row"><div style="flex:1"><span class="lbl">${originLabel}</span><input class="inp" id="p-ovc1" value="${originVal}" ${ov.locked?"disabled style=\"color:var(--accent);font-weight:bold\"":""}></div>
-      <label style="font-size:10px;color:${ov.locked?"var(--accent)":"var(--fg3)"};display:flex;align-items:center;gap:2px;white-space:nowrap"><input type="checkbox" id="p-ovlocked" ${ov.locked?"checked":""} style="accent-color:var(--accent)">🔗 {targ}</label>
-      ${nc2?`<div style="flex:1"><span class="lbl">End</span><input class="inp" id="p-ovc2" value="${ov.coord2?fmtC(ov.coord2.col,ov.coord2.row):""}"></div>`:""}</div>
+      <div class="row"><div style="flex:1"><span class="lbl">${originLabel}</span><input class="inp" id="p-ovc1" value="${ov.locked?"{targ}":(ov.coord?fmtC(ov.coord.col,ov.coord.row):"")}" style="${ov.locked?"color:var(--accent);font-weight:bold":""}" ${ov.locked?"disabled":""}></div>
+      ${nc2?`<div style="flex:1"><span class="lbl">End</span><input class="inp" id="p-ovc2" value="${ov.locked2?"{aim}":(ov.coord2?fmtC(ov.coord2.col,ov.coord2.row):"")}" style="${ov.locked2?"color:var(--accent);font-weight:bold":""}" ${ov.locked2?"disabled":""}></div>`:""}</div>
       <div class="row"><div style="flex:1"><span class="lbl">Color</span><div class="colors">${cSw(ov.color,"prop")}</div></div></div>
-      <div class="row"><div style="flex:1"><span class="lbl">Assign to (-t)</span><select class="inp" id="p-ovtarg"><option value="">None</option><option value="DM"${ov.target==="DM"?" selected":""}>DM</option>${cmbOpts}</select></div>
-      <label style="font-size:11px;color:${ov.under?"var(--accent)":"var(--fg3)"};display:flex;align-items:center;gap:4px;white-space:nowrap"><input type="checkbox" id="p-ovun" ${ov.under?"checked":""} style="accent-color:var(--accent)">${ov.under?"⬇ Under":"Over"}</label></div>
-      ${ov.locked&&!ov.target?`<div style="font-size:10px;color:#e74c3c">⚠ Locked to {targ} but no target assigned — select a target above</div>`:""}
-      ${ov.locked&&ov.target?`<div style="font-size:10px;color:var(--accent)">🔗 Follows ${ov.target} — moves when token moves</div>`:""}
-      <button class="btn btn-p" style="width:100%" id="p-ovapply">Apply Changes</button></div>`;}}
+      <div class="row" style="align-items:center"><div style="flex:1"><span class="lbl">Attach to (-t)</span><select class="inp" id="p-ovtarg"><option value="">None</option><option value="DM"${ov.target==="DM"?" selected":""}>DM</option>${placedOpts}</select></div>
+      <label style="font-size:10px;color:${ov.locked?"var(--accent)":"var(--fg3)"};display:flex;align-items:center;gap:2px;cursor:pointer;white-space:nowrap;margin-top:12px" title="Start follows target dynamically"><input type="checkbox" id="p-ovlocked" ${ov.locked?"checked":""} style="accent-color:var(--accent)">🔗 {targ}</label></div>
+      ${nc2&&ov.target?`<div class="row" style="align-items:center"><div style="flex:1"><span class="lbl">Aim at (-aim)</span><select class="inp" id="p-ovaim"><option value="">None</option>${placedAimOpts}</select></div></div>`:""} 
+      ${(()=>{// Build compact info line
+        const layer=ov.under?"Underlay":"Overlay";
+        const persist=ov.target?"Persistent "+layer:"Temporary "+layer;
+        const parts=[persist+(ov.target?" (attached to "+ov.target+")":"")];
+        const targPlaced=ov.target&&S.tokens.find(t=>t.name===ov.target&&!t.hidden);
+        const c1desc=(ov.locked&&targPlaced)?"follows "+ov.target:(ov.coord?fmtU(ov.coord.col,ov.coord.row):"?");
+        if(nc2){const c2desc=ov.aimTarget?"tracks "+ov.aimTarget:((()=>{const r=getOvCoord2(ov);return r?fmtU(r.col,r.row):"?";})());
+          parts.push("Start "+c1desc+", end "+c2desc);}
+        else{parts.push("Origin "+c1desc);}
+        return`<div style="font-size:10px;color:var(--accent);margin-top:4px">🛈 ${parts.join(". ")}.</div>`;})()}
+      <button class="btn btn-s" style="width:100%;margin-top:4px;color:#e74c3c" id="p-ovremove">Remove Overlay</button></div>`;}}
   else if(sc>1){h+=`<div class="sec" style="color:var(--accent);font-size:12px">${sc} objects selected — drag to move</div>`;}
+  // Unplaced combatant properties
+  if(S.sel.type==="unplaced"){const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb){
+    const sv=cmb.savedTok||{};
+    h+=`<div class="sec"><div class="sec-title" style="color:var(--fg3)">Unplaced: ${cmb.name}</div>
+      <div class="row"><div style="flex:1"><span class="lbl">Size</span><select class="inp" id="p-npsize">${Object.entries(SIZES).map(([k,v])=>`<option value="${k}"${(sv.size||"M")===k?" selected":""}>${k} — ${v.l}</option>`).join("")}</select></div><div style="flex:1"><span class="lbl">Color</span><div class="colors">${cSw(sv.color||"#3498db","prop")}</div></div></div>
+      <div class="row" style="align-items:center"><div style="flex:1"><span class="lbl">Token Shortcode</span><input class="inp" id="p-nptokcode" value="${sv.tokenImage||""}" style="font-family:monospace" readonly placeholder="none"></div>
+      <a href="#" id="p-nptokdialog" style="font-size:10px;color:var(--accent);white-space:nowrap;margin-top:14px">${sv.tokenImage?"✏️ Update":"➕ Add Image"}</a></div>`;
+    const npAttached=S.overlays.filter(o=>o.target===cmb.name);
+    if(npAttached.length){h+=`<div style="font-size:10px;color:var(--fg2);margin-top:4px">Attached Overlays: ${npAttached.map(o=>{const n=getOvNum(o);return`<a href="#" class="ovlink" data-ovid="${o.id}" style="color:var(--accent)">${n.label}: ${o.type}${o.locked?" 🔗":""}</a>`;}).join(", ")}</div>`;}
+    h+=`<button class="btn btn-p" style="width:100%;margin-top:6px" id="p-npplace">Place on Map</button></div>`;}}
   el.innerHTML=h;}
 function rObjTab_list(el){let h="";
-  // Unplaced Combatants group (collapsed by default, at top)
-  const unplaced=S.combatants.filter(c=>!c.placed&&!S.tokens.find(t=>t.name===c.name&&!t.hidden));
-  if(unplaced.length){
-    h+=`<div class="grp-hdr" data-grp="np"><span class="arrow${S.npCol===undefined||S.npCol?" closed":""}">▼</span><span class="sec-title" style="color:var(--fg3)">Unplaced (${unplaced.length})</span></div>`;
-    if(!S.npCol&&S.npCol!==undefined){unplaced.forEach(c=>{
-      h+=`<div class="obj-item"><span style="color:var(--fg3);font-size:14px;width:16px;text-align:center;flex-shrink:0">👤</span><div class="info"><div class="name" style="color:var(--fg3)">${c.name}</div></div><button class="btn btn-s" data-placebtn="${c.name}" style="font-size:9px;padding:2px 6px">Place</button></div>`;});}}
+  // Sort helper
+  const colorName=hex=>{const n=h2c(hex);const names={r:"red",b:"blue",g:"green",y:"yellow",pk:"pink",p:"purple",c:"cyan",bn:"brown",o:"orange",w:"white",bk:"black"};return names[n]||n||"unknown";};
   // Tokens group
   const visToks=S.tokens.filter(t=>!t.hidden);
-  const sorted=[...visToks].sort((a,b)=>a.name.localeCompare(b.name));
-  h+=`<div class="grp-hdr" data-grp="tok"><span class="arrow${S.tokCol?" closed":""}">▼</span><span class="sec-title">Tokens (${visToks.length})</span></div>`;
-  if(!S.tokCol){sorted.forEach(t=>{const sel=isSel("token",t.id),ch=tokChanged(t);
+  const sortedToks=[...visToks].sort((a,b)=>{if(S.tokSort==="color"){const ca=colorName(a.color),cb=colorName(b.color);if(ca!==cb)return natSort(ca,cb);return natSort(a.name,b.name);}return natSort(a.name,b.name);});
+  h+=`<div class="grp-hdr" data-grp="tok"><span class="arrow${S.tokCol?" closed":""}">▼</span><span class="sec-title">Tokens (${visToks.length})</span><select class="inp" data-sort="tok" style="font-size:9px;padding:1px 2px;margin-left:auto;min-width:60px;width:60px;box-sizing:border-box"><option value="name"${S.tokSort==="name"?" selected":""}>A-Z</option><option value="color"${S.tokSort==="color"?" selected":""}>Color</option></select></div>`;
+  if(!S.tokCol){sortedToks.forEach(t=>{const sel=isSel("token",t.id),ch=tokChanged(t);
     h+=`<div class="obj-item${sel?" sel":""}" data-tid="${t.id}"><div class="dot" style="background:${t.color};width:10px;height:10px"></div><div class="info"><div class="name" style="${ch?"color:var(--accent)":""}">${t.name} (${t.size})</div></div></div>`;});}
-  // Overlay group
-  h+=`<div class="grp-hdr" data-grp="ov"><span class="arrow${S.ovCol?" closed":""}">▼</span><span class="sec-title">Overlays (${S.overlays.length})</span></div>`;
+  // Overlay group with sort
+  const sortedOvs=[...S.overlays].sort((a,b)=>{
+    if(S.ovSort==="shape")return natSort(a.type,b.type);
+    // Default: group by target (unassigned last), then by ovNum within group
+    const at=a.target||"\uffff",bt=b.target||"\uffff";// push empty to end
+    if(at!==bt)return natSort(at,bt);
+    return(parseInt(a.ovNum)||0)-(parseInt(b.ovNum)||0);});
+  h+=`<div class="grp-hdr" data-grp="ov"><span class="arrow${S.ovCol?" closed":""}">▼</span><span class="sec-title">Overlays (${S.overlays.length})</span><select class="inp" data-sort="ov" style="font-size:9px;padding:1px 2px;margin-left:auto;min-width:60px;width:60px;box-sizing:border-box"><option value="name"${S.ovSort==="name"?" selected":""}>Target</option><option value="shape"${S.ovSort==="shape"?" selected":""}>Shape</option></select></div>`;
   if(!S.ovCol){const shp={circle:"●",circletop:"●",circlecorner:"●",square:"■",squaretop:"■",cone:"◄",arrow:"→",line:"━"};
-    S.overlays.forEach(o=>{const sel=isSel("overlay",o.id);const ic=shp[o.type]||"◆";
-    const coord=getOvCoord(o);const len=(o.type==="line"||o.type==="arrow")&&o.coord2&&coord?gridDist(coord.col,coord.row,o.coord2.col,o.coord2.row):0;
+    sortedOvs.forEach(o=>{const sel=isSel("overlay",o.id);const ic=shp[o.type]||"◆";
+    const coord=getOvCoord(o);const _c2d=getOvCoord2(o);const len=(o.type==="line"||o.type==="arrow")&&_c2d&&coord?gridDist(coord.col,coord.row,_c2d.col,_c2d.row):0;
     const lenStr=len?" "+len+"'":"";const sizeStr=o.size&&o.type!=="line"&&o.type!=="arrow"?" "+o.size+"'":"";
     const ovN=getOvNum(o);const tgtStr=o.target?" → "+o.target:"";const noTgt=!o.target;
-    h+=`<div class="obj-item${sel?" sel":""}" data-oid="${o.id}"><span style="color:${o.color};font-size:20px;line-height:14px;width:16px;text-align:center;flex-shrink:0">${ic}</span><div class="info"><div class="name"${noTgt?' style="color:#e74c3c"':""}>${o.locked?"🔗 ":""}${o.under?"⬇ ":""}${ovN.label}: ${o.type}${sizeStr}${lenStr}${tgtStr}</div></div></div>`;});}
+    h+=`<div class="obj-item${sel?" sel":""}" data-oid="${o.id}"><span style="color:${o.color};font-size:20px;line-height:14px;width:16px;text-align:center;flex-shrink:0">${ic}</span><div class="info"><div class="name">${ovN.label}: ${o.type}${sizeStr}${lenStr}${tgtStr}${o.locked?" 🔗":""}</div></div></div>`;});}
+  // Unplaced group (selectable)
+  const unplaced=S.combatants.filter(c=>!c.placed&&!S.tokens.find(t=>t.name===c.name&&!t.hidden));
+  if(unplaced.length){
+    h+=`<div class="grp-hdr" data-grp="np"><span class="arrow${S.npCol?" closed":""}">▼</span><span class="sec-title" style="color:var(--fg3)">Unplaced (${unplaced.length})</span></div>`;
+    if(!S.npCol){unplaced.forEach(c=>{const sel=S.sel.type==="unplaced"&&S.sel.name===c.name;const sv=c.savedTok;
+      const dotColor=sv?.color||"var(--fg3)";
+      h+=`<div class="obj-item${sel?" sel":""}" data-npname="${c.name}"><div class="dot" style="background:${dotColor};width:10px;height:10px;opacity:.6"></div><div class="info"><div class="name" style="color:var(--fg3)">${c.name}${sv?.size&&sv.size!=="M"?" ("+sv.size+")":""}</div></div></div>`;});}}
   el.innerHTML=h;}
 function rMapTab(el){el.innerHTML=`<div class="sec"><div class="sec-title">Grid</div>
   <div class="row"><span class="lbl" style="width:50px">Cell px</span><input type="number" class="inp" id="m-cell" value="${S.grid.cellSize}"></div>
@@ -450,45 +568,142 @@ function rMapTab(el){el.innerHTML=`<div class="sec"><div class="sec-title">Grid<
     <div class="row"><input class="inp" id="ao-c1" placeholder="Center/Start"><input class="inp" id="ao-c2" placeholder="End (opt)"></div>
     <div class="row"><div class="colors">${cSw("#e74c3c","aov")}</div><label style="font-size:10px;color:var(--fg2);display:flex;align-items:center;gap:2px;margin-left:4px"><input type="checkbox" id="ao-un" style="accent-color:var(--accent)">Under</label></div>
     <button class="btn btn-p" id="btn-add-ov">+ Add Overlay</button></div>`;}
-function ovChanged(ov){if(!origState)return false;const o=origState.overlays.find(x=>x.id===ov.id);if(!o)return true;return ov.size!==o.size||ov.color!==o.color||ov.type!==o.type||ov.under!==o.under||(ov.coord?.col!==o.coord?.col)||(ov.coord?.row!==o.coord?.row)||(ov.coord2?.col!==o.coord2?.col)||(ov.coord2?.row!==o.coord2?.row);}
+function ovChanged(ov){if(!origState)return false;const o=origState.overlays.find(x=>x.id===ov.id);if(!o)return true;return ov.size!==o.size||ov.color!==o.color||ov.type!==o.type||ov.under!==o.under||ov.target!==o.target||ov.aimTarget!==o.aimTarget||ov.locked!==o.locked||ov.locked2!==o.locked2||(ov.coord?.col!==o.coord?.col)||(ov.coord?.row!==o.coord?.row)||(ov.coord2?.col!==o.coord2?.col)||(ov.coord2?.row!==o.coord2?.row);}
+// Rebuild a combatant's full note with updated overlay fields
+function rebuildNote(name){
+  const orig=S.fullNotes[name]||"";
+  // Parse existing fields
+  const fields={};const fieldOrder=[];
+  orig.split(" | ").forEach(f=>{
+    f=f.trim();const ci=f.indexOf(": ");
+    if(ci>-1){const k=f.slice(0,ci).trim();const v=f.slice(ci+2).trim();
+      if(!fields[k])fieldOrder.push(k);fields[k]=v;}});
+  // Remove all overlay/aim fields — we'll rebuild from current state
+  const ovKeys=fieldOrder.filter(k=>/^(Overlay|Aim)\d*$/.test(k));
+  ovKeys.forEach(k=>{delete fields[k];fieldOrder.splice(fieldOrder.indexOf(k),1);});
+  // Get overlays attached to this combatant
+  const myOvs=S.overlays.filter(o=>o.target===name);
+  myOvs.forEach(ov=>{
+    const num=ov.ovNum||"";
+    const ovKey="Overlay"+num;
+    // Build overlay string
+    const coord=getOvCoord(ov);const coord2=getOvCoord2(ov);
+    const under=ov.under?"u":"";
+    const typeCode=ov.type==="circletop"?"ct":ov.type==="circlecorner"?"co":ov.type==="squaretop"?"st":ov.type[0];
+    const cl=h2c(ov.color);
+    let ovStr=under+typeCode+ov.size+cl;
+    const c1=ov.locked?"{targ}":(coord?fmtU(coord.col,coord.row):"");
+    ovStr+=c1;
+    if(coord2||ov.locked2){
+      const c2=ov.locked2==="aim"?"{aim}":(coord2?fmtU(coord2.col,coord2.row):"");
+      ovStr+=c2;}
+    fields[ovKey]=ovStr;fieldOrder.push(ovKey);
+    // Add Aim field if aim target set
+    if(ov.aimTarget){const aimKey="Aim"+num;fields[aimKey]=ov.aimTarget;fieldOrder.push(aimKey);}});
+  // Reconstruct note
+  return fieldOrder.map(k=>k+": "+fields[k]).join(" | ");}
+
 function renderCmd(){
   const mv=S.tokens.filter(t=>!t.hidden&&tokChanged(t));
   const ovChg=S.overlays.filter(o=>ovChanged(o));
-  // Detect tokens that were removed from map (unplaced)
   const removed=origState?origState.tokens.filter(ot=>!ot.hidden&&!S.tokens.find(t=>t.id===ot.id)):[];
   const ct=$("cmd-text"),btn=$("btn-copy");
-  const parts=[];
-  if(mv.length){parts.push("!map "+mv.map(t=>{
-    const orig=origState?.tokens.find(o=>o.id===t.id);
-    const sz=orig&&t.size!==orig.size?t.size.toLowerCase():"";
-    const cl=orig&&t.color!==orig.color?h2c(t.color):"";
-    const ti=orig&&t.tokenImage!==orig.tokenImage?t.tokenImage:"";
-    const ht=orig&&t.height!==orig.height?String(t.height):"";
-    const f=[t.name,fmtC(t.col,t.row),sz,cl,ti,ht];
-    while(f.length>2&&f[f.length-1]==="")f.pop();return`-t ${f.join("|")}`;}).join(" "));}
-  // Number overlays per target to prevent overwrites
-  const tgtCount={};
-  ovChg.forEach(ov=>{const tgt=ov.target||"";tgtCount[tgt]=(tgtCount[tgt]||0)+1;const num=tgtCount[tgt]>1?tgtCount[tgt]:"";
-    const flag=ov.under?"-under"+num:"-over"+num;const coord=getOvCoord(ov);const c1=ov.locked?"{targ}":(coord?fmtC(coord.col,coord.row):"");const c2=ov.coord2?","+fmtC(ov.coord2.col,ov.coord2.row):"";const cl=h2c(ov.color);const tgtStr=ov.target?` -t${num} ${ov.target}`:"";
-    if(ov.type==="arrow")parts.push(`!map ${flag} arrow,${cl},${c1}${c2}${tgtStr}`);
-    else if(ov.type==="line")parts.push(`!map ${flag} line,${ov.size||0},${ov.width||5},${cl},${c1}${c2}${tgtStr}`);
-    else if(ov.type==="cone")parts.push(`!map ${flag} cone,${ov.size},${cl},${c1}${c2}${tgtStr}`);
-    else parts.push(`!map ${flag} ${ov.type},${ov.size},${cl},${c1}${tgtStr}`);});
-  if(!parts.length){ct.textContent="No changes";ct.style.color="var(--fg4)";btn.textContent="Copy Command";return;}
-  // Commands for unplaced/removed tokens — keep size/color, drop Location and Height
+  const lines=[];
+  // Token move parts
+  const moveParts=[];
+  mv.forEach(t=>{
+    const orig=origState?.tokens.find(o=>o.id===t.id);const isNew=!orig;
+    const sz=isNew?(t.size!=="M"?t.size.toLowerCase():""):(t.size!==orig.size?t.size.toLowerCase():"");
+    const cl=isNew?h2c(t.color):(t.color!==orig.color?h2c(t.color):"");
+    const ht=isNew?(t.height?String(t.height):""):(t.height!==orig.height?String(t.height):"");
+    const ti=isNew?(t.tokenImage||""):(t.tokenImage!==orig.tokenImage?t.tokenImage:"");
+    const f=[t.name,fmtU(t.col,t.row),sz,cl,ht,ti];
+    while(f.length>2&&f[f.length-1]==="")f.pop();moveParts.push(`-t "${f.join("|")}"`);}); 
+  // Group overlay changes by target
+  const ovByTarget={};
+  function addToGroup(tgt,cmd){if(!ovByTarget[tgt])ovByTarget[tgt]=[];ovByTarget[tgt].push(cmd);}
+  // Cleanup: reassigned/layer-changed overlays — delete from OLD target
+  if(origState){ovChg.forEach(ov=>{
+    const orig=origState.overlays.find(x=>x.id===ov.id);if(!orig)return;
+    const targetChanged=orig.target&&orig.target!==ov.target;
+    const layerChanged=orig.target&&orig.under!==ov.under&&orig.target===ov.target;
+    if(targetChanged||layerChanged){
+      const oldNum=orig.ovNum||"";const oldFlag=orig.under?"-under"+oldNum:"-over"+oldNum;
+      addToGroup(orig.target,`${oldFlag} none -t ${qN(orig.target)}`);}});}
+  // Removed overlays — delete
+  const removedOvs=origState?origState.overlays.filter(oo=>!S.overlays.find(o=>o.id===oo.id)):[];
+  removedOvs.forEach(oo=>{
+    const sameTarget=origState.overlays.filter(o=>(o.target||"")===(oo.target||""));
+    const idx=sameTarget.indexOf(oo)+1;const num=sameTarget.length>1?idx:"";
+    const flag=oo.under?"-under"+num:"-over"+num;
+    addToGroup(oo.target||"",`${flag} none${oo.target?" -t "+qN(oo.target):""}`);});
+  // Create/update overlays
+  ovChg.forEach(ov=>{const ovN=getOvNum(ov);const num=ovN.num;
+    const flag=ov.under?"-under"+num:"-over"+num;const coord=getOvCoord(ov);
+    const c1=ov.locked==="targ"?"{targ}":(ov.locked==="aim"?"{aim}":(coord?fmtU(coord.col,coord.row):""));
+    const c2r=getOvCoord2(ov);
+    const c2=ov.locked2==="targ"?",{targ}":(ov.locked2==="aim"?",{aim}":(c2r?","+fmtU(c2r.col,c2r.row):""));
+    const cl=h2c(ov.color);const tgtStr=ov.target?" -t "+qN(ov.target):"";
+    const aimStr=ov.aimTarget?` -aim${num} "${ov.aimTarget}|stick"`:"";
+    let ovCmd;
+    if(ov.type==="arrow")ovCmd=`${flag} arrow,${cl},${c1}${c2}${tgtStr}${aimStr}`;
+    else if(ov.type==="line")ovCmd=`${flag} line,${ov.size||0},${ov.width||5},${cl},${c1}${c2}${tgtStr}${aimStr}`;
+    else if(ov.type==="cone")ovCmd=`${flag} cone,${ov.size},${cl},${c1}${c2}${tgtStr}${aimStr}`;
+    else ovCmd=`${flag} ${ov.type},${ov.size},${cl},${c1}${tgtStr}${aimStr}`;
+    addToGroup(ov.target||"",ovCmd);});
+  // Encode data for !bscry apply command
+  function encApply(s){return s.replace(/ /g,"_").replace(/\|/g,"%7C").replace(/\{/g,"%7B").replace(/\}/g,"%7D");}
+  // Build apply data: moves::notes
+  const mvData=moveParts.length?moveParts.map(p=>p.replace(/-t "/g,"").replace(/"/g,"")).join(";"):"";
+  // Determine which combatants need note updates (overlay changes on attached targets)
+  const noteTargets=new Set();
+  attachedTargets.forEach(t=>noteTargets.add(t));
+  // Also add targets of removed overlays
+  removedOvs.forEach(oo=>{if(oo.target)noteTargets.add(oo.target);});
+  // Also add targets of reassigned overlays (old target needs update too)
+  if(origState){ovChg.forEach(ov=>{
+    const orig=origState.overlays.find(x=>x.id===ov.id);
+    if(orig&&orig.target&&orig.target!==ov.target)noteTargets.add(orig.target);});}
+  const ntParts=[];
+  noteTargets.forEach(name=>{
+    const newNote=rebuildNote(name);
+    ntParts.push(name.replace(/ /g,"_")+"~"+newNote);});
+  const ntData=ntParts.join(";;");
+  // Build output
+  if(ntData){
+    // Use !bscry apply for full round-trip
+    const applyData=encApply(mvData+"::"+ntData);
+    lines.push("!bscry apply "+applyData);
+    // Add raw !map for unattached overlays only
+    if(unattachedParts.length)lines.push("!map "+unattachedParts.join(" "));
+  }else{
+    // No attached overlay changes — simple !map
+    const allParts=[...moveParts,...unattachedParts];
+    if(allParts.length)lines.push("!map "+allParts.join(" "));
+  }
+  // !i note commands for removed tokens
   removed.forEach(rt=>{
     const props=[];
     if(rt.size&&rt.size!=="M")props.push("Size: "+rt.size);
-    const cc=h2c(rt.color);if(cc&&cc!=="b")props.push("Color: "+cc);
-    parts.push("!i note "+rt.name+(props.length?" "+props.join(" | "):""));});
-  // Check for unassigned overlays
+    const cc=h2c(rt.color);if(cc&&cc!=="b"&&cc!=="r")props.push("Color: "+cc);
+    if(rt.tokenImage)props.push("Token: "+rt.tokenImage);
+    lines.push("!i note "+qN(rt.name)+(props.length?" "+props.join(" | "):""));});
+  if(!lines.length){ct.textContent="No changes";ct.style.color="var(--fg4)";btn.textContent="Copy Command";}
+  else{
+  const warns=[];
+  // 10 overlay total limit
+  if(S.overlays.length>10)warns.push("⚠ Map has "+S.overlays.length+" overlays — OTFBM limit is 10 total");
   const unassigned=ovChg.filter(o=>!o.target);
   if(unassigned.length){
     const names=unassigned.map(o=>{const n=getOvNum(o);return n.label+": "+o.type;}).join(", ");
-    parts.push("⚠ WARNING: "+names+" not assigned to DM or token — will not persist after next !map update. Use -t DM or -t <name> to assign.");}
-  ct.textContent=parts.join("\n");ct.style.color="var(--fg)";
+    warns.push("⚠ "+names+" not assigned — will not persist");}
+  ct.innerHTML=`<div style="color:var(--fg)">${lines.join("\n")}</div>${warns.length?`<div style="color:#e74c3c;font-size:10px;margin-top:4px">${warns.join("<br>")}</div>`:""}`;
   const total=mv.length+ovChg.length+removed.length;
   btn.textContent=mv.length>MAX_MV?`⚠ ${mv.length}/${MAX_MV}! Copy`:`Copy (${total} change${total>1?"s":""})`;}
+  // Update Revert All button state
+  const rb=$("btn-revert");if(rb){const hc=hasAnyChanges();rb.disabled=!hc;rb.style.opacity=hc?1:.4;rb.style.cursor=hc?"pointer":"default";}
+  // Update Undo button state
+  const ub=$("btn-undo");if(ub){const hu=undoStack.length>0;ub.disabled=!hu;ub.style.opacity=hu?1:.4;ub.style.cursor=hu?"pointer":"default";}}
 
 // Check if cell is within overlay area
 // Point-in-triangle test using cross products
@@ -507,11 +722,10 @@ function ovCoversCell(ov,col,row){
     else if(ov.type==="circletop")p={x:ox+coord.col*cs+r,y:oy+coord.row*cs+r};
     else p={x:ox+coord.col*cs,y:oy+coord.row*cs};// circlecorner
     const dx=cellCx-p.x,dy=cellCy-p.y;return Math.sqrt(dx*dx+dy*dy)<=r+cs/2;}
-  if(ov.type.startsWith("square")){
-    if(ov.coord2){
-      // Aimed square: compute polygon vertices and test point-in-quad
+  if(ov.type.startsWith("square")){const _c2=getOvCoord2(ov);
+    if(_c2){
       const sc={x:ox+coord.col*cs+cs/2,y:oy+coord.row*cs+cs/2};
-      const ac={x:ox+ov.coord2.col*cs+cs/2,y:oy+ov.coord2.row*cs+cs/2};
+      const ac={x:ox+_c2.col*cs+cs/2,y:oy+_c2.row*cs+cs/2};
       const aimA=Math.atan2(ac.y-sc.y,ac.x-sc.x),snA=Math.round(aimA/(Math.PI/4))*(Math.PI/4);
       const sp={x:sc.x+Math.round(Math.cos(snA))*cs/2,y:sc.y+Math.round(Math.sin(snA))*cs/2};
       const a=Math.atan2(ac.y-sp.y,ac.x-sp.x),sz=(ov.size/5)*cs;
@@ -522,10 +736,9 @@ function ovCoversCell(ov,col,row){
     }
     const spx=ox+coord.col*cs,spy=oy+coord.row*cs,sz=(ov.size/5)*cs;
     return cellCx>=spx-cs/2&&cellCx<=spx+sz+cs/2&&cellCy>=spy-cs/2&&cellCy<=spy+sz+cs/2;}
-  if(ov.type==="cone"&&ov.coord2){
-    // Compute cone triangle vertices (same geometry as rendering)
+  if(ov.type==="cone"){const _c2=getOvCoord2(ov);if(!_c2)return false;
     const sc={x:ox+coord.col*cs+cs/2,y:oy+coord.row*cs+cs/2};
-    const ac={x:ox+ov.coord2.col*cs+cs/2,y:oy+ov.coord2.row*cs+cs/2};
+    const ac={x:ox+_c2.col*cs+cs/2,y:oy+_c2.row*cs+cs/2};
     const aimA=Math.atan2(ac.y-sc.y,ac.x-sc.x);
     const snA=Math.round(aimA/(Math.PI/4))*(Math.PI/4);
     const p1x=sc.x+Math.round(Math.cos(snA))*cs/2,p1y=sc.y+Math.round(Math.sin(snA))*cs/2;
@@ -533,10 +746,9 @@ function ovCoversCell(ov,col,row){
     const bx=p1x+l*Math.cos(a),by=p1y+l*Math.sin(a),hw=l/2;
     const px=Math.cos(a+Math.PI/2),py=Math.sin(a+Math.PI/2);
     return ptInTri(cellCx,cellCy,p1x,p1y,bx+hw*px,by+hw*py,bx-hw*px,by-hw*py);}
-  // Line/arrow: check perpendicular distance from cell center to segment
-  if((ov.type==="line"||ov.type==="arrow")&&ov.coord2){
+  if((ov.type==="line"||ov.type==="arrow")){const _c2=getOvCoord2(ov);if(!_c2)return false;
     const x1=ox+coord.col*cs+cs/2,y1=oy+coord.row*cs+cs/2;
-    const x2=ox+ov.coord2.col*cs+cs/2,y2=oy+ov.coord2.row*cs+cs/2;
+    const x2=ox+_c2.col*cs+cs/2,y2=oy+_c2.row*cs+cs/2;
     const dx=x2-x1,dy=y2-y1,len2=dx*dx+dy*dy;
     if(len2===0)return Math.sqrt((cellCx-x1)**2+(cellCy-y1)**2)<=cs/2;
     let t=((cellCx-x1)*dx+(cellCy-y1)*dy)/len2;t=Math.max(0,Math.min(1,t));
@@ -544,7 +756,7 @@ function ovCoversCell(ov,col,row){
     const halfW=ov.type==="line"?(ov.width||1)/5*cs/2:cs*.2;
     return dist<=halfW+cs/2;}
   if(coord.col===col&&coord.row===row)return true;
-  if(ov.coord2&&ov.coord2.col===col&&ov.coord2.row===row)return true;
+  const _c2f=getOvCoord2(ov);if(_c2f&&_c2f.col===col&&_c2f.row===row)return true;
   return false;}
 function overlaysAtArea(col,row){return S.overlays.filter(ov=>ovCoversCell(ov,col,row));}
 
@@ -571,7 +783,7 @@ function showTT(e){const tt=$("tooltip"),svg=$("map-svg"),rect=svg.getBoundingCl
   // Pixel-accurate hit detection
   const hits=objectsAtPoint(e.clientX,e.clientY);
   if(hits.toks.length) text+=": "+hits.toks.map(t=>{let s=t.name+" ("+t.size+")";if(t.height)s+=` ↕${t.height}'`;return s;}).join(", ");
-  if(hits.ovs.length){if(hits.toks.length)text+=", ";else text+=": ";text+=hits.ovs.map(o=>{const n=getOvNum(o);return`[${n.label}: ${o.type}${o.size?" "+o.size+"'":""}]`;}).join(", ");}
+  if(hits.ovs.length){if(hits.toks.length)text+=", ";else text+=": ";text+=hits.ovs.map(o=>{const n=getOvNum(o);return`[${n.label}: ${o.type}${o.size?" "+o.size+"'":""}${o.target?" → "+o.target:""}${o.locked?" 🔗":""}]`;}).join(", ");}
   tt.textContent=text;tt.style.display="block";tt.style.left=(e.clientX+14)+"px";tt.style.top=(e.clientY-10)+"px";}
 
 // POPUP for multi-object selection — mergeMode adds to existing selection
@@ -606,44 +818,71 @@ function showPopup(e,items,mergeMode){ppOpenedAt=Date.now();const pp=$("popup");
 // EVENTS
 function setup(){
   $("url-input").onkeydown=e=>{if(e.key==="Enter")loadMap();};$("btn-load").onclick=loadMap;
-  $("btn-revert").onclick=()=>{if(!origState)return;pushU();const o=JSON.parse(JSON.stringify(origState));S.tokens=o.tokens;S.overlays=o.overlays;S.walls=o.walls;S.grid=o.grid;clearSel();renderAll();};
+  $("url-input").onfocus=function(){this.select();};
+  $("btn-revert").onclick=()=>{if(!origState||!hasAnyChanges())return;
+    const d=document.createElement("div");d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:2px solid #e74c3c;border-radius:8px;padding:20px 24px;z-index:9999;max-width:340px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)";
+    d.innerHTML=`<div style="color:#e74c3c;font-weight:700;font-size:14px;margin-bottom:8px">⟲ Revert All Changes</div><div style="color:var(--fg);font-size:12px;margin-bottom:14px">This will undo all changes and revert the map back to its original state. This cannot be undone.</div><div style="display:flex;gap:6px"><button class="btn btn-s" id="ra-cancel" style="flex:1">Cancel</button><button class="btn btn-s" id="ra-ok" style="flex:1;color:#e74c3c;font-weight:700">Revert All</button></div>`;
+    document.body.appendChild(d);
+    d.querySelector("#ra-cancel").onclick=()=>d.remove();
+    d.querySelector("#ra-ok").onclick=()=>{d.remove();const o=JSON.parse(JSON.stringify(origState));S.tokens=o.tokens;S.overlays=o.overlays;S.walls=o.walls;S.grid=o.grid;undoStack=[];clearSel();renderAll();};};
   $("btn-undo").onclick=popU;
   // Zoom helper: keeps viewport center stable
+  function fitZoom(){const vpW=$("map-vp").clientWidth;const mapW=S.grid.cols*S.grid.cellSize+PAD*2;return vpW&&mapW?Math.max(.1,Math.min(3,vpW/mapW)):1;}
+  function fitAllZoom(){const vp2=$("map-vp"),mapW=S.grid.cols*S.grid.cellSize+PAD*2,mapH=S.grid.rows*S.grid.cellSize+PAD*2;
+    const zw=vp2.clientWidth/mapW,zh=vp2.clientHeight/mapH;return Math.max(.1,Math.min(3,Math.min(zw,zh)));}
   function zoomAt(newZ){const oldZ=S.zoom;newZ=Math.max(.1,Math.min(3,newZ));if(newZ===oldZ)return;
     const r=vp.getBoundingClientRect(),cx=r.width/2,cy=r.height/2;
     const mapX=(vp.scrollLeft+cx)/oldZ,mapY=(vp.scrollTop+cy)/oldZ;
     S.zoom=newZ;renderSVG();
     vp.scrollLeft=mapX*newZ-cx;vp.scrollTop=mapY*newZ-cy;
-    $("zoom-lbl").textContent=Math.round(S.zoom*100)+"%";}
-  $("btn-zin").onclick=()=>zoomAt(S.zoom+.25);
-  $("btn-zout").onclick=()=>zoomAt(S.zoom-.25);
-  $("btn-copy").onclick=()=>{const t=$("cmd-text").textContent;if(t&&t!=="No changes"){navigator.clipboard.writeText(t);$("btn-copy").textContent="✓ Copied!";setTimeout(renderCmd,1500);}};
+    $("zoom-lbl").textContent=Math.round(S.zoom*100)+"%";
+    // Update button states
+    const fz=fitZoom(),isFitW=Math.abs(S.zoom-fz)<.01;
+    const fw=$("btn-fitw");fw.disabled=isFitW;fw.style.opacity=isFitW?.4:1;fw.style.cursor=isFitW?"default":"pointer";
+    const faz=fitAllZoom(),isFitAll=Math.abs(S.zoom-faz)<.01;
+    const fa=$("btn-fitall");fa.disabled=isFitAll;fa.style.opacity=isFitAll?.4:1;fa.style.cursor=isFitAll?"default":"pointer";}
+  $("btn-zin").onclick=()=>{const cur=Math.round(S.zoom*100),next=Math.ceil((cur+1)/25)*25;zoomAt(next/100);};
+  $("btn-zout").onclick=()=>{const cur=Math.round(S.zoom*100),next=Math.floor((cur-1)/25)*25;zoomAt(Math.max(10,next)/100);};
+  $("btn-fitw").onclick=()=>zoomAt(fitZoom());
+  $("btn-fitall").onclick=()=>zoomAt(fitAllZoom());
+  $("btn-copy").onclick=()=>{const el=$("cmd-text");const cmdDiv=el.querySelector("div")||el;const t=cmdDiv.textContent;if(t&&t!=="No changes"){navigator.clipboard.writeText(t);$("btn-copy").textContent="✓ Copied!";setTimeout(renderCmd,1500);}};
   document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");S.tab=b.dataset.tab;renderSB();});
   const tc=$("tab-content");
   tc.addEventListener("click",e=>{const t=e.target;
-    if(t.classList.contains("cyc")){e.preventDefault();S.sel={type:"token",ids:new Set([+t.dataset.cyc])};renderAll();return;}
-    if(t.closest("[data-grp]")){const g=t.closest("[data-grp]").dataset.grp;if(g==="tok")S.tokCol=!S.tokCol;if(g==="ov")S.ovCol=!S.ovCol;if(g==="np")S.npCol=S.npCol===undefined?false:!S.npCol;renderSB();return;}
-    const ti=t.closest("[data-tid]");if(ti){const id=+ti.dataset.tid;if(e.shiftKey){shiftToggle(id);}else S.sel={type:"token",ids:new Set([id])};renderAll();return;}
-    const oi=t.closest("[data-oid]");if(oi){S.sel={type:"overlay",ids:new Set([+oi.dataset.oid])};renderAll();return;}
-    // Place unassigned combatant — button only
-    const placeBtn=t.closest("[data-placebtn]");
-    if(placeBtn){const name=placeBtn.dataset.placebtn;
+    if(t.classList.contains("cyc")){e.preventDefault();S.sel={type:"token",ids:new Set([+t.dataset.cyc])};const tk=S.tokens.find(x=>x.id===+t.dataset.cyc);if(tk)scrollTo(tk.col,tk.row);renderAll();return;}
+    if(t.classList.contains("ovlink")){e.preventDefault();const oid=+t.dataset.ovid;S.sel={type:"overlay",ids:new Set([oid])};const ov=S.overlays.find(x=>x.id===oid);if(ov){const coord=getOvCoord(ov);if(coord)scrollTo(coord.col,coord.row);}renderAll();return;}
+    if(t.classList.contains("toklink")){e.preventDefault();const tid=+t.dataset.tokid;S.sel={type:"token",ids:new Set([tid])};const tk=S.tokens.find(x=>x.id===tid);if(tk)scrollTo(tk.col,tk.row);renderAll();return;}
+    if(t.closest("[data-grp]")&&!t.closest("[data-sort]")&&!t.matches("[data-sort]")){const g=t.closest("[data-grp]").dataset.grp;if(g==="tok")S.tokCol=!S.tokCol;if(g==="ov")S.ovCol=!S.ovCol;if(g==="np")S.npCol=!S.npCol;renderSB();return;}
+    const ti=t.closest("[data-tid]");if(ti){const id=+ti.dataset.tid;if(e.shiftKey){shiftToggle(id);}else{S.sel={type:"token",ids:new Set([id])};const tk=S.tokens.find(x=>x.id===id);if(tk)scrollTo(tk.col,tk.row);}renderAll();return;}
+    const oi=t.closest("[data-oid]");if(oi){const id=+oi.dataset.oid;S.sel={type:"overlay",ids:new Set([id])};const ov=S.overlays.find(x=>x.id===id);if(ov){const coord=getOvCoord(ov);if(coord)scrollTo(coord.col,coord.row);}renderAll();return;}
+    // Select unplaced combatant
+    const npi=t.closest("[data-npname]");if(npi){S.sel={type:"unplaced",ids:new Set(),name:npi.dataset.npname};renderAll();return;}
+    // Place unassigned combatant — button only (from properties or list)
+    const placeBtn=t.closest("[data-placebtn]")||t.id==="p-npplace"?t:null;
+    if(placeBtn||t.id==="p-npplace"){const name=placeBtn?.dataset?.placebtn||(S.sel.type==="unplaced"?S.sel.name:"");
       pushU();
-      // Calculate viewport center cell
-      const vp=$("map-vp"),g=S.grid;
-      const cx=Math.floor((vp.scrollLeft+vp.clientWidth/2)/S.zoom/g.cellSize);
-      const cy=Math.floor((vp.scrollTop+vp.clientHeight/2)/S.zoom/g.cellSize);
-      const col=Math.max(0,Math.min(cx,g.cols-1)),row=Math.max(0,Math.min(cy,g.rows-1));
-      // Create token at viewport center
-      const newTok={id:uid(),name,col,row,size:"M",color:"#9b59b6",height:0,tokenImage:"",originalCol:col,originalRow:row};
+      const cmb=S.combatants.find(c=>c.name===name);
+      const saved=cmb?.savedTok;
+      // Use saved position if valid, otherwise viewport center
+      let col,row;
+      if(saved&&saved.col!==undefined){col=saved.col;row=saved.row;}
+      else{const vp=$("map-vp"),g=S.grid;
+        col=Math.max(0,Math.min(Math.floor((vp.scrollLeft+vp.clientWidth/2)/S.zoom/g.cellSize),g.cols-1));
+        row=Math.max(0,Math.min(Math.floor((vp.scrollTop+vp.clientHeight/2)/S.zoom/g.cellSize),g.rows-1));}
+      // Restore token with original ID if available
+      const newTok=saved?.id?{...saved,col,row}:{id:uid(),name,col,row,
+        size:saved?.size||"M",
+        color:saved?.color||"#3498db",
+        height:saved?.height||0,
+        tokenImage:saved?.tokenImage||"",
+        originalCol:col,originalRow:row};
       S.tokens.push(newTok);
-      // Update combatant status
-      const cmb=S.combatants.find(c=>c.name===name);if(cmb)cmb.placed=true;
-      // Select the new token
+      if(cmb)cmb.placed=true;
       S.sel={type:"token",ids:new Set([newTok.id])};
       renderAll();return;}
     if(t.classList.contains("cswatch")){const hex=t.dataset.color,pfx=t.dataset.prefix;
       if(pfx==="prop"&&S.sel.ids.size===1){pushU();if(S.sel.type==="token"||S.sel.type==="mixed"){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk)tk.color=hex;}if(S.sel.type==="overlay"){const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);if(ov)ov.color=hex;}renderAll();}
+      if(pfx==="prop"&&S.sel.type==="unplaced"){const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb){if(!cmb.savedTok)cmb.savedTok={};cmb.savedTok.color=hex;renderAll();}}
       if(pfx==="aov"){t.closest(".colors").querySelectorAll(".cswatch").forEach(s=>s.classList.remove("on"));t.classList.add("on");}return;}
     if(t.id==="p-revert"){if(!origState)return;pushU();
       if(S.sel.type==="token"||S.sel.type==="mixed"){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);const orig=origState.tokens.find(x=>x.id===tk?.id);if(tk&&orig){tk.col=orig.col;tk.row=orig.row;tk.size=orig.size;tk.color=orig.color;tk.height=orig.height;}}
@@ -652,30 +891,17 @@ function setup(){
     if(t.id==="p-unplace"){pushU();
       const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);
       if(tk){
-        // Move to unplaced combatants
+        // Store full token on combatant for restore with same ID
         const cmb=S.combatants.find(c=>c.name===tk.name);
-        if(cmb)cmb.placed=false;
-        else S.combatants.push({name:tk.name,placed:false});
-        // Remove token from map
+        const saved={...tk};
+        if(cmb){cmb.placed=false;cmb.savedTok=saved;}
+        else S.combatants.push({name:tk.name,placed:false,savedTok:saved});
         S.tokens=S.tokens.filter(x=>x.id!==tk.id);
         clearSel();renderAll();}return;}
-    if(t.id==="p-ovapply"){pushU();const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);if(ov){
-      ov.type=$("p-ovtype")?.value||ov.type;
-      const sz=$("p-ovsize");if(sz)ov.size=Math.max(5,+sz.value||ov.size);
-      const wf=$("p-ovwidth");if(wf)ov.width=Math.max(1,+wf.value||ov.width||1);
-      const wasLocked=ov.locked;
-      ov.locked=$("p-ovlocked")?.checked||false;
-      ov.target=$("p-ovtarg")?.value||"";
-      ov.under=$("p-ovun")?.checked||false;
-      if(ov.locked&&!wasLocked){// Just locked: clear coord (will resolve from target)
-        ov.coord=null;}
-      if(!ov.locked&&wasLocked){// Just unlocked: populate coord from last resolved position
-        const resolved=getOvCoord(ov);if(resolved)ov.coord={...resolved};}
-      if(!ov.locked){// Not locked: read coord from input
-        const c1v=$("p-ovc1")?.value;if(c1v){const c1=parseC(c1v);if(c1)ov.coord=c1;}}
-      const c2el=$("p-ovc2");if(c2el){const c2=parseC(c2el.value||"");ov.coord2=c2||null;}}
-      renderAll();return;}
-    if(t.id==="btn-add-ov"){const c1=parseC($("ao-c1")?.value||"");if(!c1)return;pushU();const c2=$("ao-c2")?.value?parseC($("ao-c2").value):null;const sc=document.querySelector('.sec:last-child .cswatch.on');S.overlays.push({id:uid(),type:$("ao-type").value,size:+$("ao-size").value||20,width:5,color:sc?.dataset.color||"#e74c3c",coord:c1,coord2:c2,under:$("ao-un")?.checked||false,target:""});renderAll();return;}
+    if(t.id==="btn-add-ov"){const c1=parseC($("ao-c1")?.value||"");if(!c1)return;pushU();const c2=$("ao-c2")?.value?parseC($("ao-c2").value):null;const sc=document.querySelector('.sec:last-child .cswatch.on');S.overlays.push({id:uid(),type:$("ao-type").value,size:+$("ao-size").value||20,width:5,color:sc?.dataset.color||"#e74c3c",coord:c1,coord2:c2,under:$("ao-un")?.checked||false,target:"",aimTarget:"",locked:false,locked2:false});renderAll();return;}
+    if(t.id==="p-ovremove"){pushU();
+      const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);
+      if(ov){S.overlays=S.overlays.filter(x=>x.id!==ov.id);clearSel();renderAll();}return;}
   });
   tc.addEventListener("change",e=>{
     if(["m-cell","m-cols","m-rows"].includes(e.target.id))pushU();
@@ -689,9 +915,101 @@ function setup(){
     if(e.target.id==="m-ov")S.showOverlays=e.target.checked;
     if(e.target.id==="m-wall")S.showWalls=e.target.checked;
     if(e.target.id==="m-dark"){S.darkMode=e.target.checked;document.body.style.background=S.darkMode?"#0d0c0a":"";}
-    if(S.sel.type==="token"&&S.sel.ids.size===1){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){if(e.target.id==="p-ht"){pushU();tk.height=+e.target.value||0;}if(e.target.id==="p-size"){pushU();tk.size=e.target.value;}}}
-    if(S.sel.type==="mixed"&&S.sel.ids.size===1){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){if(e.target.id==="p-ht"){pushU();tk.height=+e.target.value||0;}if(e.target.id==="p-size"){pushU();tk.size=e.target.value;}}}
+    if(S.sel.type==="token"&&S.sel.ids.size===1){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){if(e.target.id==="p-ht"){pushU();tk.height=+e.target.value||0;}if(e.target.id==="p-size"){pushU();tk.size=e.target.value;}
+      if(e.target.id==="p-pos"){const c=parseC(e.target.value);if(c){pushU();tk.col=c.col;tk.row=c.row;}else{e.target.style.borderColor="#e74c3c";setTimeout(()=>e.target.style.borderColor="",1500);return;}}}}
+    if(S.sel.type==="mixed"&&S.sel.ids.size===1){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){if(e.target.id==="p-ht"){pushU();tk.height=+e.target.value||0;}if(e.target.id==="p-size"){pushU();tk.size=e.target.value;}
+      if(e.target.id==="p-pos"){const c=parseC(e.target.value);if(c){pushU();tk.col=c.col;tk.row=c.row;}else{e.target.style.borderColor="#e74c3c";setTimeout(()=>e.target.style.borderColor="",1500);return;}}}}
+    // Sort dropdowns
+    if(e.target.dataset.sort){const g=e.target.dataset.sort;if(g==="tok")S.tokSort=e.target.value;if(g==="ov")S.ovSort=e.target.value;renderSB();return;}
+    // Unplaced size change
+    if(S.sel.type==="unplaced"&&e.target.id==="p-npsize"){const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb){if(!cmb.savedTok)cmb.savedTok={};cmb.savedTok.size=e.target.value;renderAll();return;}}
+    // Live overlay property changes
+    if(S.sel.type==="overlay"&&S.sel.ids.size===1){const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);if(ov){
+      if(e.target.id==="p-ovtype"){pushU();ov.type=e.target.value;renderAll();return;}
+      if(e.target.id==="p-ovsize"){pushU();ov.size=Math.max(5,+e.target.value||ov.size);renderAll();return;}
+      if(e.target.id==="p-ovwidth"){pushU();ov.width=Math.max(1,+e.target.value||ov.width||1);renderAll();return;}
+      if(e.target.id==="p-ovtarg"){
+        const newTgt=e.target.value;
+        // Block unplaced targets when {targ} is checked
+        if(newTgt&&ov.locked){
+          const isPlaced=S.tokens.find(t=>t.name===newTgt&&!t.hidden);
+          if(!isPlaced){e.target.value=ov.target;showError("Cannot attach to '"+newTgt+"' while {targ} is checked — target must be on the map. Uncheck {targ} first, or pick a placed token.");return;}}
+        pushU();
+        if(!newTgt){// Removing target: resolve any targ-locked coords
+          if(ov.locked==="targ"){const resolved=getOvCoord(ov);if(resolved)ov.coord={...resolved};ov.locked=false;}
+          if(ov.locked2==="targ"){const resolved=getOvCoord2(ov);if(resolved)ov.coord2={...resolved};ov.locked2=false;}
+          // Clear aim too since aim requires -t
+          if(ov.aimTarget){if(ov.locked2){const resolved=getOvCoord2(ov);if(resolved)ov.coord2={...resolved};ov.locked2=false;}ov.aimTarget="";}}
+        ov.target=newTgt;
+        // Assign next available number for new target
+        ov.ovNum=nextOvNum(newTgt,ov.id);
+        renderAll();return;}
+      if(e.target.id==="p-ovaim"){pushU();
+        const newAim=e.target.value;
+        if(!newAim){// Clearing aim: resolve position
+          if(ov.locked2){const resolved=getOvCoord2(ov);if(resolved)ov.coord2={...resolved};ov.locked2=false;}}
+        else{// Always dynamic aim (sticky)
+          ov.locked2="aim";ov.coord2=null;}
+        ov.aimTarget=newAim;renderAll();return;}
+      if(e.target.id==="p-ovlocked"){
+        if(e.target.checked&&!ov.target){e.target.checked=false;showError("Select a target in 'Attach to (-t)' first to use {targ}");
+          setTimeout(()=>{const el=$("p-ovtarg");if(el)el.focus();},300);return;}
+        if(e.target.checked){// Verify target is placed
+          const tok=S.tokens.find(t=>t.name===ov.target&&!t.hidden);
+          if(!tok){e.target.checked=false;showError("'"+ov.target+"' is not on the map. Dynamic targeting ({targ}) requires a visible token with a map position. Unplaced targets like DM can be used for persistence but not for position tracking.");return;}}
+        pushU();const wasLocked=ov.locked;const newLocked=e.target.checked?"targ":false;
+        if(!newLocked&&wasLocked){const resolved=getOvCoord(ov);if(resolved)ov.coord={...resolved};}
+        ov.locked=newLocked;if(newLocked)ov.coord=null;
+        renderAll();return;}
+      if(e.target.id==="p-ovlocked2"){// Legacy handler - shouldn't fire with new UI but keep for safety
+        pushU();ov.locked2=e.target.checked?"aim":false;
+        if(!ov.locked2){const resolved=getOvCoord2(ov);if(resolved)ov.coord2={...resolved};}else ov.coord2=null;
+        renderAll();return;}
+      if(e.target.id==="p-ovaim"){pushU();ov.aimTarget=e.target.value;renderAll();return;}
+      if(e.target.name==="p-ovlayer"||e.target.id==="p-ovunder"){pushU();ov.under=e.target.checked;renderAll();return;}
+      if(e.target.id==="p-ovc1"&&!ov.locked){const v=e.target.value.trim().toLowerCase();
+        if(v==="{targ}"){if(!ov.target){showError("Select a target in 'Attach to (-t)' first");return;}
+          pushU();ov.locked="targ";ov.coord=null;renderAll();return;}
+        const c=parseC(v);if(c){pushU();ov.coord=c;renderAll();}
+        else{e.target.style.borderColor="#e74c3c";setTimeout(()=>e.target.style.borderColor="",1500);}return;}
+      if(e.target.id==="p-ovc2"&&!ov.locked2){const v=e.target.value.trim().toLowerCase();
+        if(v==="{aim}"){if(!ov.aimTarget){showError("Select a target in 'Aim at (-aim)' first");return;}
+          pushU();ov.locked2="aim";ov.coord2=null;renderAll();return;}
+        if(v==="{targ}"){showError("Use {aim} for the End field, or set it in the Start field");return;}
+        const c=parseC(v);if(c){pushU();ov.coord2=c;renderAll();}
+        else{e.target.style.borderColor="#e74c3c";setTimeout(()=>e.target.style.borderColor="",1500);}return;}
+    }}
     renderAll();});
+  // Token shortcode dialog handler (works for both tokens and unplaced)
+  tc.addEventListener("click",function tokImgHandler(e){
+    const t=e.target;
+    if(t.id==="p-tokdialog"||t.id==="p-nptokdialog"){e.preventDefault();
+      // Get target object (token or unplaced combatant savedTok)
+      let obj=null,isUnplaced=false;
+      if(t.id==="p-tokdialog"){obj=S.tokens.find(x=>x.id===[...S.sel.ids][0]);}
+      else{const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb){if(!cmb.savedTok)cmb.savedTok={};obj=cmb.savedTok;isUnplaced=true;}}
+      if(!obj)return;
+      const d=document.createElement("div");d.id="tok-dialog";
+      d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:2px solid var(--accent);border-radius:8px;padding:20px 24px;z-index:9999;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)";
+      const hasCode=!!obj.tokenImage;
+      d.innerHTML=`<div style="color:var(--accent);font-weight:700;font-size:14px;margin-bottom:8px">${hasCode?"Update":"Add"} Token Image</div>
+        <div style="color:var(--fg3);font-size:11px;margin-bottom:10px">1. Paste an image URL below<br>2. Click <b>Get Shortcode</b> — a new tab opens<br>3. Copy the shortcode from that page<br>4. Paste it here and click <b>OK</b></div>
+        <div style="margin-bottom:6px"><span style="font-size:10px;color:var(--fg2)">Image URL</span><input class="inp" id="td-url" placeholder="https://example.com/image.jpg" style="width:100%;font-size:11px;box-sizing:border-box"></div>
+        <button class="btn btn-p" id="td-getcode" style="width:100%;margin-bottom:8px">Get Shortcode →</button>
+        <div style="margin-bottom:6px"><span style="font-size:10px;color:var(--fg2)">Shortcode</span><input class="inp" id="td-code" placeholder="Paste shortcode here" value="${obj.tokenImage||""}" style="width:100%;font-family:monospace;font-size:12px;box-sizing:border-box"></div>
+        <div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-s" id="td-cancel" style="flex:1">Cancel</button>${hasCode?`<button class="btn btn-s" id="td-remove" style="flex:1;color:#e74c3c">Remove</button>`:""}<button class="btn btn-p" id="td-ok" style="flex:1">OK</button></div>`;
+      document.body.appendChild(d);
+      $("td-getcode").onclick=()=>{
+        const url=$("td-url")?.value.trim();if(!url){$("td-url").style.borderColor="#e74c3c";setTimeout(()=>{if($("td-url"))$("td-url").style.borderColor="";},1500);return;}
+        const b64=btoa(url);window.open("https://token.otfbm.io/meta/"+b64,"_blank");};
+      $("td-cancel").onclick=()=>d.remove();
+      if($("td-remove"))$("td-remove").onclick=()=>{if(!isUnplaced)pushU();obj.tokenImage="";d.remove();renderAll();};
+      $("td-ok").onclick=()=>{
+        const code=$("td-code")?.value.trim();
+        if(code){if(!isUnplaced)pushU();obj.tokenImage=code;}
+        d.remove();renderAll();};
+      return;}
+  },{capture:false});
   tc.addEventListener("input",e=>{if(e.target.id==="m-opacity"){S.gridOpacity=e.target.value/100;renderSVG();}});
 
   // SVG MOUSE EVENTS
@@ -837,11 +1155,11 @@ function setup(){
         if(S.resize.isCir){// Circle: distance from center = radius
           const dist=Math.sqrt(dx*dx+dy*dy);newFt=Math.max(5,Math.round(dist/S.resize.ft2px));
         }else{// Square: max axis distance * 2 = side length
-          const dist=Math.max(Math.abs(dx),Math.abs(dy))*2;newFt=Math.max(5,Math.round(dist/S.resize.ft2px/5)*5);}
+          const dist=Math.max(Math.abs(dx),Math.abs(dy))*2;newFt=Math.max(5,Math.round(dist/S.resize.ft2px));}
       }else{// Cone: delta from click
         const dx=mx-S.resize.startX,dy=my-S.resize.startY;
         const delta=(dx>=0||dy>=0)?Math.max(dx,dy):Math.min(dx,dy);
-        newFt=Math.max(5,S.resize.startSize+Math.round(delta/S.resize.ft2px/5)*5);}
+        newFt=Math.max(5,S.resize.startSize+Math.round(delta/S.resize.ft2px));}
       const ov=S.overlays.find(o=>o.id===S.resize.ovId);if(ov)ov.size=newFt;
       renderSVG();renderCmd();return;}
     if(S.drag){const pt=svgPt(e),gp=pt2g(pt.x,pt.y);
@@ -870,6 +1188,41 @@ function setup(){
     }
     mStart=null;};
   vp.addEventListener("mouseup",endDrag);vp.addEventListener("mouseleave",()=>{if(S.marquee){S.marquee=null;renderSVG();}mStart=null;endDrag();});
+
+  // Sidebar toggle
+  function toggleSB(){S.sidebarOpen=!S.sidebarOpen;$("sidebar").classList.toggle("collapsed",!S.sidebarOpen);$("sb-arrow").textContent=S.sidebarOpen?"▶":"◀";}
+  $("btn-sidebar").onclick=toggleSB;
+  $("sb-handle").onclick=toggleSB;
+  if(!S.sidebarOpen)$("sidebar").classList.add("collapsed");
+
+  // TOUCH EVENTS — bridge touch to mouse handlers
+  let touchDragActive=false;
+  $("map-svg").addEventListener("touchstart",e=>{
+    if(e.touches.length===1){const te=touchPt(e);
+      // Simulate mousedown
+      const me=new MouseEvent("mousedown",{clientX:te.clientX,clientY:te.clientY,bubbles:true});
+      te.target.dispatchEvent(me);touchDragActive=true;e.preventDefault();}
+  },{passive:false});
+  vp.addEventListener("touchmove",e=>{
+    if(touchDragActive&&e.touches.length===1){const te=touchPt(e);
+      const me=new MouseEvent("mousemove",{clientX:te.clientX,clientY:te.clientY,bubbles:true});
+      vp.dispatchEvent(me);e.preventDefault();}
+  },{passive:false});
+  vp.addEventListener("touchend",e=>{
+    if(touchDragActive){const te=touchPt(e);
+      const me=new MouseEvent("mouseup",{clientX:te.clientX,clientY:te.clientY,bubbles:true});
+      vp.dispatchEvent(me);touchDragActive=false;e.preventDefault();}
+  },{passive:false});
+  // Pinch zoom
+  let pinchDist=0;
+  vp.addEventListener("touchstart",e=>{if(e.touches.length===2){
+    const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;
+    pinchDist=Math.sqrt(dx*dx+dy*dy);e.preventDefault();}},{passive:false});
+  vp.addEventListener("touchmove",e=>{if(e.touches.length===2&&pinchDist>0){
+    const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;
+    const newDist=Math.sqrt(dx*dx+dy*dy);const scale=newDist/pinchDist;
+    zoomAt(S.zoom*scale);pinchDist=newDist;e.preventDefault();}},{passive:false});
+  vp.addEventListener("touchend",e=>{if(e.touches.length<2)pinchDist=0;});
   document.addEventListener("keydown",e=>{if((e.key==="Delete"||e.key==="Backspace")&&S.sel.ids.size&&!["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName)){pushU();
     if(S.sel.type==="token"||S.sel.type==="mixed")S.tokens=S.tokens.filter(t=>!S.sel.ids.has(t.id));
     if(S.sel.type==="overlay"||S.sel.type==="mixed")S.overlays=S.overlays.filter(o=>!S.sel.ids.has(o.id));
@@ -880,8 +1233,10 @@ function svgPt(e){const r=$("map-svg").getBoundingClientRect();return{x:(e.clien
 function pt2g(x,y){const g=S.grid,px=x-PAD,py=y-PAD;return{col:Math.max(0,Math.min(Math.floor((px-g.offsetX)/g.cellSize),g.cols-1)),row:Math.max(0,Math.min(Math.floor((py-g.offsetY)/g.cellSize),g.rows-1))};}
 function showError(msg){
   const d=document.createElement("div");d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:2px solid #e74c3c;border-radius:8px;padding:20px 28px;z-index:9999;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.5)";
-  d.innerHTML=`<div style="color:#e74c3c;font-weight:700;font-size:14px;margin-bottom:8px">⚠ Invalid Input</div><div style="color:var(--fg);font-size:12px;margin-bottom:12px">${msg}</div><div style="color:var(--fg3);font-size:11px;margin-bottom:12px">Accepted formats:<br>• <b>OTFBM URL</b> — https://otfbm.io/...<br>• <b>Image URL</b> — https://example.com/map.jpg<br>• <b>Data string</b> — g=22x33&t=Name|K18|M|b|0&...</div><button style="background:var(--accent);color:#000;border:none;padding:6px 16px;border-radius:4px;cursor:pointer;font-weight:600" onclick="this.parentElement.remove()">OK</button>`;
+  d.innerHTML=`<div style="color:#e74c3c;font-weight:700;font-size:14px;margin-bottom:8px">⚠ Error</div><div style="color:var(--fg);font-size:12px;margin-bottom:12px">${msg}</div><button style="background:var(--accent);color:#000;border:none;padding:6px 16px;border-radius:4px;cursor:pointer;font-weight:600" onclick="this.parentElement.remove()">OK</button>`;
   document.body.appendChild(d);}
+function showFormatError(){
+  showError(`Input doesn't look like a URL or data string.<br><br><span style="color:var(--fg3);font-size:11px">Accepted formats:<br>• <b>OTFBM URL</b> — https://otfbm.io/...<br>• <b>Image URL</b> — https://example.com/map.jpg<br>• <b>Data string</b> — g=22x33&t=Name|K18|M|b|0&...</span>`);}
 function loadMap(){let url=$("url-input").value.trim();if(!url)return;
   // Detect hash data string (from !bscry alias)
   if(url.startsWith("#"))url=url.slice(1);
@@ -889,7 +1244,7 @@ function loadMap(){let url=$("url-input").value.trim();if(!url)return;
     loadFromHashStr(url);return;}
   // Must be a URL
   if(!url.startsWith("http://")&&!url.startsWith("https://")){
-    showError("Input doesn't look like a URL or data string. Paste an OTFBM URL, image URL, or a data string from the <code>!bscry</code> alias.");return;}
+    showFormatError();return;}
   // Normal OTFBM URL or image URL
   const p=parseUrl(url);
   if(p){S.grid={cellSize:p.opts.cellSize||40,offsetX:p.opts.offsetX||0,offsetY:p.opts.offsetY||0,cols:p.cols,rows:p.rows};S.tokens=p.tokens;S.overlays=p.overlays;S.walls=p.walls;
@@ -935,8 +1290,8 @@ function loadFromHashStr(hash){
     if(params.t){params.t.split(";").forEach(ts=>{
       if(!ts.trim())return;const parts=ts.split("|");if(parts.length<2)return;
       const name=parts[0].replace(/_/g," "),coord=parseC((parts[1]||"").trim());if(!coord)return;
-      const size=(parts[2]||"M").trim(),colorCode=(parts[3]||"").trim(),height=+(parts[4]||0);
-      S.tokens.push({id:uid(),name,col:coord.col,row:coord.row,size:SIZES[size]?size:"M",color:colorCode?c2h(colorCode):"#3498db",height,tokenImage:"",originalCol:coord.col,originalRow:coord.row});
+      const size=(parts[2]||"M").trim(),colorCode=(parts[3]||"").trim(),height=+(parts[4]||0),tokCode=(parts[5]||"").trim();
+      S.tokens.push({id:uid(),name,col:coord.col,row:coord.row,size:SIZES[size]?size:"M",color:colorCode?c2h(colorCode):"#3498db",height,tokenImage:tokCode,originalCol:coord.col,originalRow:coord.row});
     });}
   } else {
     // Merge mode: match by name, only update explicitly-set properties
@@ -947,6 +1302,7 @@ function loadFromHashStr(hash){
       const size=(parts[2]||"").trim();
       const colorCode=(parts[3]||"").trim();
       const height=+(parts[4]||0);
+      const tokCode=(parts[5]||"").trim();
       const existing=S.tokens.find(t=>t.name===name);
       if(existing){
         // Update position
@@ -956,9 +1312,10 @@ function loadFromHashStr(hash){
         if(colorCode&&colorCode!=="b")existing.color=c2h(colorCode);
         // Always update height since it's never in the URL
         if(height)existing.height=height;
+        if(tokCode)existing.tokenImage=tokCode;
       } else if(coord){
         // New token not in URL — add it
-        S.tokens.push({id:uid(),name,col:coord.col,row:coord.row,size:SIZES[size]?size:"M",color:colorCode?c2h(colorCode):"#e74c3c",height,tokenImage:"",originalCol:coord.col,originalRow:coord.row});
+        S.tokens.push({id:uid(),name,col:coord.col,row:coord.row,size:SIZES[size]?size:"M",color:colorCode?c2h(colorCode):"#e74c3c",height,tokenImage:tokCode,originalCol:coord.col,originalRow:coord.row});
       }
     });}
   }
@@ -966,25 +1323,56 @@ function loadFromHashStr(hash){
   if(params.ov){params.ov.split(";").forEach(os=>{
     if(!os.trim())return;const ti=os.indexOf("~");if(ti===-1)return;
     const target=os.slice(0,ti).replace(/_/g," ");let ovStr=os.slice(ti+1);
-    const locked=ovStr.includes("{targ}");
-    // Replace {targ} with dummy coord so parser succeeds, then null it out
-    ovStr=ovStr.replace(/\{targ\}/g,"a1");
+    // Detect {targ} and {aim} positions
+    const targIdx=ovStr.indexOf("{targ}");const aimIdx=ovStr.indexOf("{aim}");
+    const hasTarg=targIdx>-1;const hasAim=aimIdx>-1;
+    // Determine which coord each placeholder is in
+    let locked1=false,locked2=false;
+    if(hasTarg&&hasAim){// Both present: first occurrence is coord1, second is coord2
+      if(targIdx<aimIdx){locked1="targ";locked2="aim";}
+      else{locked1="aim";locked2="targ";}
+    }else if(hasTarg){// Only {targ}: check if it's at end (coord2) or before another coord (coord1)
+      const afterTarg=ovStr.slice(targIdx+6).trim();
+      locked1=/[a-zA-Z]\d/.test(afterTarg)?"targ":false;
+      locked2=locked1?false:"targ";
+    }else if(hasAim){const afterAim=ovStr.slice(aimIdx+5).trim();
+      locked1=/[a-zA-Z]\d/.test(afterAim)?"aim":false;
+      locked2=locked1?false:"aim";}
+    ovStr=ovStr.replace(/\{targ\}/g,"a1").replace(/\{aim\}/g,"a1");
     const ov=parseOvSeg(ovStr);
-    if(ov){ov.target=target;ov.locked=locked;
-      if(locked)ov.coord=null;// will resolve from target token position
+    if(ov){ov.target=target;ov.locked=locked1;ov.locked2=locked2;ov.aimTarget="";
+      if(locked1)ov.coord=null;
+      if(locked2)ov.coord2=null;
       S.overlays.push(ov);}
   });}
+  assignOvNums();// Assign stable overlay numbers per target group
   // Build combatants list: all tokens (excluding hidden DM) + unplaced from np=
   S.combatants=S.tokens.filter(t=>!t.hidden).map(t=>({name:t.name,placed:true}));
   if(params.np){params.np.split(";").forEach(n=>{
     const name=n.trim().replace(/_/g," ");if(!name)return;
     if(!S.combatants.find(c=>c.name===name))S.combatants.push({name,placed:false});});}
+  // Parse full notes for round-trip (fn=Name~note;;Name2~note2)
+  S.fullNotes={};
+  if(params.fn){params.fn.split(";;").forEach(entry=>{
+    const ti=entry.indexOf("~");if(ti===-1)return;
+    const name=entry.slice(0,ti).replace(/_/g," ");
+    const note=entry.slice(ti+1);
+    S.fullNotes[name]=note;});}
   // Always ensure DM is in combatants
   if(!S.combatants.find(c=>c.name==="DM"))S.combatants.push({name:"DM",placed:false});
-  clearSel();origState=snap();undoStack=[];$("zoom-lbl").textContent=Math.round(S.zoom*100)+"%";
+  origState=snap();undoStack=[];$("zoom-lbl").textContent=Math.round(S.zoom*100)+"%";
+  // Auto-select first visible token (sorted by color then name)
+  const _cn=hex=>{const n=h2c(hex);const names={r:"red",b:"blue",g:"green",y:"yellow",pk:"pink",p:"purple",c:"cyan",bn:"brown",o:"orange",w:"white",bk:"black"};return names[n]||n||"zzz";};
+  const sortedFirst=[...S.tokens.filter(t=>!t.hidden)].sort((a,b)=>{const ca=_cn(a.color),cb=_cn(b.color);if(ca!==cb)return natSort(ca,cb);return natSort(a.name,b.name);});
+  const firstTok=sortedFirst[0];
+  if(firstTok)S.sel={type:"token",ids:new Set([firstTok.id])};
+  else if(S.overlays.length)S.sel={type:"overlay",ids:new Set([S.overlays[0].id])};
   $("placeholder").style.display=S.loadedUrl?"none":"flex";
   renderAll();console.log("Loaded:",S.tokens.length-1,"tokens,",S.overlays.length,"overlays,",S.combatants.filter(c=>!c.placed).length,"unplaced combatants");}
 // Auto-load from URL hash on page load
 function loadFromHash(){const hash=location.hash.slice(1);if(hash)loadFromHashStr(hash);}
-setup();loadFromHash();renderAll();
+setup();loadFromHash();
+// Auto-load test string if no hash provided
+if(!location.hash||location.hash==="#"){const testStr="g=22x33&o=dec100&bg=https://iili.io/Ki6hKva.jpg&t=Tariq|N15|H|b|0|;Shizuka|Q9|G|o|0|;Toshio|G21|M|b|0|;Stompy|K8|G|r|0|w2a99;1v|F5|M|r|0|;2v|F5|M|r|0|;3v|F5|M|r|0|;4v|F5|M|r|0|;5v|F5|M|r|0|;6v|F5|M|r|0|;7v|F5|M|r|0|;8v|F5|M|r|0|;Davious|I6|M|b|0|;9v|P6|M|r|0|;10v|N6|M|r|0|;11v|N6|M|r|0|;12v|P3|M|r|0|;13v|P3|M|r|0|;14v|P3|M|r|0|;15v|F5|M|r|0|;16v|F5|M|r|0|&ov=DM~arf19k24;Tariq~uco15y{targ};Shizuka~uct30b{targ};Stompy~t15gM10M12&np=DM;Beacon_1;Lair_Action_1;Codename:_Cast;Lair_Action_2";$("url-input").value=testStr;loadMap();}
+renderAll();
 </script></body></html>
