@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.3.91-beta"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.3.92-beta"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>🔮 BattleScry</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -62,7 +62,7 @@ body.grabbing,body.grabbing *{cursor:grabbing!important}
 }
 </style></head><body>
 <div id="toolbar">
-  <span class="logo">🔮 BattleScry</span><span style="font-size:9px;color:var(--fg4);margin-left:4px;align-self:flex-end">v0.3.91-beta</span>
+  <span class="logo">🔮 BattleScry</span><span style="font-size:9px;color:var(--fg4);margin-left:4px;align-self:flex-end">v0.3.92-beta</span>
   <input id="url-input" class="inp" style="flex:1;min-width:120px;max-width:320px" placeholder="OTFBM URL or image URL…">
   <button id="btn-load" class="btn btn-p">Load</button>
   <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px">⟲ Revert All</button>
@@ -589,7 +589,8 @@ function rebuildNote(name){
     // Build overlay string
     const coord=getOvCoord(ov);const coord2=getOvCoord2(ov);
     const under=ov.under?"u":"";
-    const typeCode=ov.type==="circletop"?"ct":ov.type==="circlecorner"?"co":ov.type==="squaretop"?"st":ov.type[0];
+    const typeCodes={circle:"c",circletop:"ct",circlecorner:"co",square:"s",squaretop:"st",cone:"t",arrow:"a",line:"l"};
+    const typeCode=typeCodes[ov.type]||ov.type[0];
     const cl=h2c(ov.color);
     let ovStr=under+typeCode+ov.size+cl;
     const c1=ov.locked?"{targ}":(coord?fmtU(coord.col,coord.row):"");
