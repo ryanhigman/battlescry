@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.3.90-beta"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.3.91-beta"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>🔮 BattleScry</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -62,7 +62,7 @@ body.grabbing,body.grabbing *{cursor:grabbing!important}
 }
 </style></head><body>
 <div id="toolbar">
-  <span class="logo">🔮 BattleScry</span><span style="font-size:9px;color:var(--fg4);margin-left:4px;align-self:flex-end">v0.3.90-beta</span>
+  <span class="logo">🔮 BattleScry</span><span style="font-size:9px;color:var(--fg4);margin-left:4px;align-self:flex-end">v0.3.91-beta</span>
   <input id="url-input" class="inp" style="flex:1;min-width:120px;max-width:320px" placeholder="OTFBM URL or image URL…">
   <button id="btn-load" class="btn btn-p">Load</button>
   <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px">⟲ Revert All</button>
@@ -653,6 +653,9 @@ function renderCmd(){
     addToGroup(ov.target||"",ovCmd);});
   // Encode data for !bscry apply command
   function encApply(s){return s.replace(/ /g,"_").replace(/\|/g,"%7C").replace(/\{/g,"%7B").replace(/\}/g,"%7D");}
+  // Split overlay groups into unattached (safe with moves) and attached (need notes)
+  const unattachedParts=ovByTarget[""]||[];delete ovByTarget[""];
+  const attachedTargets=Object.keys(ovByTarget);
   // Build apply data: moves::notes
   const mvData=moveParts.length?moveParts.map(p=>p.replace(/-t "/g,"").replace(/"/g,"")).join(";"):"";
   // Determine which combatants need note updates (overlay changes on attached targets)
