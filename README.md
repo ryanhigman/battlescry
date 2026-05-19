@@ -1,113 +1,121 @@
 # 🔮 BattleScry
 
-**Interactive visual battlemap tool for Avrae + OTFBM.** Move tokens, edit overlays, and generate `!map` commands — powered by a single Discord alias.
+**Interactive D&D Battlemap Editor for Avrae & OTFBM**
 
-BattleScry reads your active Avrae combat state and opens an interactive map in your browser. Drag tokens, resize and rotate overlays, then copy the `!map` command back to Discord. No more guessing coordinates.
+BattleScry is a web-based GUI tool that lets Dungeon Masters visually edit battlemaps from [Avrae](https://avrae.io/) combat encounters. Move tokens, edit overlays, and paste the changes back into Discord — no manual coordinate math required.
+
+## ✨ Features
+
+### Token Management
+- **Drag & drop** tokens with grid snapping
+- **Resize, recolor, rename** via properties panel
+- **Token images** via OTFBM shortcodes
+- **Pie chart stacking** for tokens sharing a cell
+- **Remove/Place** tokens (unplaced combatant tracking)
+- Supports all D&D sizes: Tiny through Gargantuan
+
+### Overlay System
+- **All 6 OTFBM overlay types**: circle, circletop, circlecorner, square, squaretop, cone, line, arrow
+- **Visual editing** with resize handles, rotate handles, drag endpoints
+- **Overlay/Underlay** toggle
+- **Full targeting system**:
+  - `{targ}` — dynamic start point following attached token
+  - `{aim}` with `|stick` — dynamic end point tracking aim target
+  - Attach to any combatant (placed or unplaced like DM)
+  - Smart validation and error handling
+- **Stable overlay numbering** that doesn't shift when overlays are reassigned
+- Per-target grouping with automatic cleanup commands
+
+### Smart Command Generation
+- **`!bscry apply` round-trip** — one paste applies all changes:
+  - Token moves via `set_note()` (bypasses `-t` conflicts)
+  - Overlay changes via note reconstruction
+  - Auto map refresh via embedded OTFBM image
+  - Change summary in Discord embed
+- **Diff-only payloads** — only changed fields are sent, alias merges with live notes
+- **Quoted names** for multi-word combatant safety
+- 10 overlay limit tracking with warnings
+
+### Map Display
+- Background image with auto-zoom (Fit to Width / View Full Map)
+- Grid overlay with configurable opacity
+- Coordinate labels (A1, B2, etc.)
+- Dark mode
+- Zoom controls (25% increments, 10%–300%)
+- Pixel-accurate tooltips showing objects under cursor
+
+### UI
+- **Sidebar** with collapsible token/overlay/unplaced groups
+- **Sort** tokens by color or A-Z, overlays by target or shape
+- **Properties panel** with live editing (no Apply button)
+- **Compact info line** (🛈) describing overlay state in plain English
+- **Clickable links** between tokens and their attached overlays
+- **Undo** (Ctrl+Z, 30 levels) and Revert All
+- **Mobile support** — touch drag, pinch zoom, larger touch targets, sidebar toggle
+
+## 🚀 Getting Started
+
+### For DMs (Discord Setup)
+
+1. **Install the `!bscry` alias** on the [Avrae Dashboard](https://avrae.io/dashboard/aliases)
+   - Copy the alias code from `bscry_alias.py`
+   - Create a new alias named `bscry`
+
+2. **Run `!bscry` in Discord** during active combat
+   - Click the link in the embed to open BattleScry
+   - Or copy the data string for local testing
+
+3. **Make your changes** in BattleScry
+   - Drag tokens, edit overlays, adjust properties
+
+4. **Copy the `!bscry apply` command** and paste in Discord
+   - Notes update automatically via `set_note()`
+   - Map refreshes in the embed response
+   - Change summary shows what was modified
+
+### For Local Testing
+
+Open `index.html` in Chrome. A pre-populated test combat loads automatically. Paste any data string from `!bscry` into the input field to load a real combat.
+
+## 📋 Data Flow
+
+```
+Discord                    Browser                    Discord
+┌──────────┐              ┌──────────┐              ┌──────────┐
+│ !bscry   │──── link ───→│BattleScry│──── apply ──→│ !bscry   │
+│          │              │          │              │  apply   │
+│ Reads:   │              │ Visual   │              │          │
+│ • Combat │              │ editing  │              │ Writes:  │
+│ • Notes  │              │ • Drag   │              │ • Notes  │
+│ • Map    │              │ • Resize │              │ • Map    │
+│ • Tokens │              │ • Props  │              │ • Embed  │
+└──────────┘              └──────────┘              └──────────┘
+```
+
+## ⚠️ Known Limitations
+
+- **One `!map` command per paste** — OTFBM confuses `-t` targets when multiple overlay targets are in the same command. BattleScry bypasses this via `set_note()`.
+- **`-aim` resolves before moves** — if an overlay aims at a token that's also moving, the aim resolves to the old position. Self-corrects on next `!map` call. The `set_note()` approach mitigates this.
+- **10 overlay maximum** — OTFBM hard limit across the entire map.
+- **Custom tokens require grid ≥ 40px** — grid sizes below c40 won't display token images.
+- **Discord 2000 character limit** — `!bscry apply` sends only changed fields to stay under the limit.
+
+## 🛠️ Technical Details
+
+- **Single HTML file** — no dependencies, no build step
+- **SVG rendering** with custom element creation
+- **Touch events** bridged to mouse handlers for mobile support
+- **Avrae Aliasing API** — uses `SimpleCombatant.set_note()` for note manipulation
+- **Map library** (`43a980ab-fcae-4baa-9d66-260b2b0d8672`) for OTFBM URL generation
+
+## 📄 License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+## 💜 Support
+
+If BattleScry saves you time at the table, consider buying me a coffee!
 
 ---
 
-## Features
-
-- **One-command setup** — Run `!bscry` in Discord, click the link, map loads with everything
-- **Full token support** — Positions, sizes (Tiny–Gargantuan), colors, heights, pie-chart stacking for overlapping tokens
-- **All 6 overlay types** — Circle, circletop, circlecorner, square, squaretop, cone, line, arrow — with drag-to-resize and rotate handles
-- **Locked overlays** — `{targ}` overlays follow their attached token when moved
-- **Pixel-accurate hit detection** — Tooltip and selection based on what's under your cursor, not grid cells
-- **Z-order management** — Selected objects render on top of everything for easy interaction
-- **Combatant management** — Place/remove combatants from the map, including DM, Lair, and custom objects
-- **Smart color detection** — PCs default blue, monsters default red, explicit colors preserved
-- **Multi-select** — Shift-click, marquee selection, popup picker for stacked objects
-- **Command generation** — Only outputs changed attributes, includes `!i note` commands for unplaced tokens
-- **Error handling** — Invalid input format popup, broken image detection
-
----
-
-## Setup
-
-### 1. Host BattleScry
-
-The easiest option is GitHub Pages:
-
-1. Fork or clone this repo
-2. Go to **Settings** → **Pages**
-3. Source: **Deploy from a branch** → **main** / **root**
-4. Your URL will be: `https://YOURUSERNAME.github.io/battlescry/`
-
-### 2. Create the Avrae Alias
-
-Go to [avrae.io/dashboard/aliases](https://avrae.io/dashboard/aliases) and create an alias named `bscry`.
-
-See the alias code in the [Wiki](../../wiki) or copy it from below. Replace `YOURUSERNAME` with your GitHub username.
-
-### 3. Done!
-
-During any active combat, run `!bscry` in Discord. Click the link in the embed to open the interactive map.
-
----
-
-## Usage
-
-### Basic Workflow
-
-1. **`!bscry`** in Discord during combat
-2. Click the **🗺️ Open Current Map in BattleScry** link
-3. Map opens with all tokens, overlays, heights, and colors
-4. **Drag tokens** to new positions
-5. **Click overlays** to select, resize, or rotate them
-6. **Copy the `!map` command** from the bottom bar
-7. **Paste** back into Discord
-
-### Controls
-
-| Action | How |
-|--------|-----|
-| Move token | Click and drag |
-| Select from stack | Click overlapping objects → pick from popup |
-| Multi-select | Shift-click, or drag on empty space (marquee) |
-| Resize circle/square | Select → drag gold handles on edges |
-| Resize cone | Select → drag gold handle at tip |
-| Rotate cone/square | Select → drag orange ↻ handle |
-| Move line/arrow endpoints | Select → drag green/orange handles |
-| Edit properties | Select → edit in sidebar → Apply Changes |
-| Place combatant | Expand Unplaced → click Place button |
-| Remove from map | Select token → Remove from Map button |
-| Undo | Ctrl+Z (30 levels) |
-| Revert | Select → Revert to Original |
-| Zoom | − / + buttons in toolbar |
-
----
-
-## Overlay Types
-
-| Type | Description | Handles |
-|------|-------------|---------|
-| `circle` | Centered on cell center | 4-point cardinal resize |
-| `circletop` | From top-left of cell | 4-point cardinal resize |
-| `circlecorner` | Centered on grid corner | 4-point cardinal resize |
-| `square` / `squaretop` | Axis-aligned or aimed | 4-point side resize + ↻ rotate |
-| `cone` | Origin + aim direction | Tip resize + ↻ rotate |
-| `line` | Start to end, variable width | Start/end handles + width handles |
-| `arrow` | Start to end with arrowhead | Start/end handles |
-
----
-
-## Requirements
-
-- [Avrae](https://avrae.io/) bot in your Discord server
-- [OTFBM](https://otfbm.io/) `!map` alias set up
-- Active combat via `!init begin`
-- A browser (Chrome recommended)
-
----
-
-## License
-
-MIT License — see [LICENSE](LICENSE).
-
----
-
-## Credits
-
-Built for the [Avalor](https://discord.gg/avalor) West Marches D&D community.
-
-If you find this useful, star the repo ⭐ and share it with your server!
+*Built for the Avalor West Marches D&D community and the broader Avrae ecosystem.*
