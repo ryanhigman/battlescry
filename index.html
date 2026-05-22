@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="2.0.0"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="2.6.0"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>🔮 BattleScry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
 <style>
@@ -42,6 +42,7 @@ input,select,textarea,button{font-family:inherit}
 .obj-item .sub{font-size:9px;font-family:monospace;color:var(--fg3)}.obj-item .sub.moved{color:var(--accent)}
 .obj-item .del{background:none;border:none;color:var(--fg3);cursor:pointer;font-size:13px;padding:2px}
 .grp-hdr{display:flex;align-items:center;gap:4px;cursor:pointer;padding:4px 0;user-select:none}
+.vis-eye.off{position:relative}.vis-eye.off::after{content:"";position:absolute;left:1px;right:1px;top:45%;border-top:2px solid var(--fg);transform:rotate(-45deg)}
 .grp-hdr .arrow{font-size:10px;color:var(--fg3);transition:transform .2s}.grp-hdr .arrow.closed{transform:rotate(-90deg)}
 #cmd-bar{border-top:1px solid var(--border);padding:6px 8px;background:var(--bg5);flex-shrink:0}
 #cmd-bar .cmd{font-family:monospace;font-size:9px;color:var(--fg2);max-height:48px;overflow:auto;word-break:break-all;margin-bottom:4px;line-height:1.4}
@@ -67,7 +68,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 }
 </style></head><body>
 <div id="toolbar">
-  <span class="logo">🔮 BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v2.0.0</span>
+  <span class="logo">🔮 BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v2.6.0</span>
   <input id="url-input" class="inp" style="flex:1;min-width:120px;max-width:320px" placeholder="OTFBM URL or !bscry data string…">
   <button id="btn-load" class="btn btn-p">Load</button>
   <div id="status-msg" style="font-size:10px;color:var(--fg3);padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:40px"></div>
@@ -75,6 +76,15 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   <button id="btn-undo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Undo last change (Ctrl+Z)">↩ Undo</button>
   <button id="btn-redo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
   <div class="sep"></div>
+  <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--fg2)" title="Map viewport — visible area of the grid">
+    <span style="font-size:9px;color:var(--fg3)">View:</span>
+    <input id="vw-start" class="inp" style="width:32px;font-size:10px;padding:1px 3px;font-family:monospace;text-transform:uppercase" placeholder="A1" title="Top-left coordinate">
+    <span style="color:var(--fg3)">→</span>
+    <input id="vw-end" class="inp" style="width:32px;font-size:10px;padding:1px 3px;font-family:monospace;text-transform:uppercase" placeholder="J10" title="Bottom-right coordinate">
+    <button id="btn-vw-update" class="btn btn-s" style="font-size:9px;padding:2px 5px" title="Apply view coordinates">Set</button>
+    <button id="btn-vw-reset" class="btn btn-s" style="font-size:9px;padding:2px 5px;display:none" title="Reset to full map view">Reset</button>
+    <button id="btn-vw-drag" class="btn btn-s" style="font-size:9px;padding:2px 5px" title="Click and drag on the map to define a view area">✂ Crop</button>
+  </div>
   <div style="flex:1"></div>
   <span id="partial-view" style="display:none;font-size:9px;color:var(--fg3);margin-right:4px"></span>
   <button id="btn-help" class="btn btn-s" style="font-size:10px;padding:3px 8px" title="Quick start guide">? Help</button>
@@ -91,7 +101,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
     <button id="btn-fitw" class="btn btn-s" style="font-size:8px;padding:2px 4px;opacity:.4;cursor:default" disabled onmousedown="event.preventDefault()" title="Fit map width to viewport">Fit</button>
     <button id="btn-fitall" class="btn btn-s" style="font-size:8px;padding:2px 4px" onmousedown="event.preventDefault()" title="View entire map in viewport">Full</button>
   </div></div>
-  <div id="sidebar"><div id="sb-handle" style="display:flex;align-items:center;padding:4px 8px;background:var(--bg2);border-bottom:1px solid var(--bg3)"><span style="font-size:11px;font-weight:bold;color:var(--fg2)">Properties & Objects</span></div><div id="tabs"><button class="active" data-tab="tokens">Tokens</button><button data-tab="overlays">Overlays</button><button data-tab="map">Map</button></div><div id="tab-content"><div id="props-area"></div><div id="list-area"></div></div><div id="cmd-bar"><div class="cmd" id="cmd-text" style="color:var(--fg4)">No changes</div><button class="btn btn-p" style="width:100%;font-size:11px" id="btn-copy" title="Copy the generated command to clipboard — paste in Discord to apply changes">Copy Command</button></div></div>
+  <div id="sidebar"><div id="sb-handle" style="display:flex;align-items:center;padding:4px 8px;background:var(--bg2);border-bottom:1px solid var(--bg3)"><span style="font-size:11px;font-weight:bold;color:var(--fg2)">Properties & Objects</span></div><div id="tabs"><button data-tab="map">Map</button><button class="active" data-tab="tokens">Tokens</button><button data-tab="overlays">Overlays</button><button data-tab="objects">Objects</button></div><div id="tab-content"><div id="props-area"></div><div id="list-area"></div></div><div id="cmd-bar"><div class="cmd" id="cmd-text" style="color:var(--fg4)">No changes</div><label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--fg3);margin-bottom:4px;cursor:pointer" title="Hide change details from players in Discord"><input type="checkbox" id="cmd-hidden" style="accent-color:var(--accent);cursor:pointer"><span>🤫 Hidden output</span></label><button class="btn btn-p" style="width:100%;font-size:11px" id="btn-copy" title="Copy the generated command to clipboard — paste in Discord to apply changes">Copy Command</button></div></div>
 </div>
 <div id="tooltip"></div><div id="popup"></div>
 <div id="help-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.7);justify-content:center;align-items:center">
@@ -108,7 +118,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   <div>• <b>Scroll wheel</b> to zoom in/out</div>
   <div>• <b>Hold Space + drag</b> to pan around the map</div>
   <div>• <b>Ctrl+Z</b> to undo, <b>Ctrl+Shift+Z</b> to redo</div>
-  <div>• <b>Click + Shift</b> to multi-select tokens</div>
+  <div>• <b>Ctrl+Click</b> (Cmd on Mac) to multi-select any objects — tokens, overlays, walls, FOW regions</div>
   <div>• <b>Delete</b> key to remove selected walls, overlays, or FOW regions</div>
   <div style="font-weight:bold;color:var(--accent);margin-top:12px">Tokens Tab</div>
   <div>• Click a token on the map or in the list to select and edit properties</div>
@@ -201,7 +211,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 <script>
 const SIZES={T:{l:"Tiny",c:.5},S:{l:"Small",c:1},M:{l:"Medium",c:1},L:{l:"Large",c:2},H:{l:"Huge",c:3},G:{l:"Gargantuan",c:4}};
 const COLORS=[{code:"r",hex:"#e74c3c",n:"Red"},{code:"b",hex:"#3498db",n:"Blue"},{code:"g",hex:"#2ecc71",n:"Green"},{code:"y",hex:"#f1c40f",n:"Yellow"},{code:"p",hex:"#9b59b6",n:"Purple"},{code:"c",hex:"#1abc9c",n:"Cyan"},{code:"w",hex:"#ecf0f1",n:"White"},{code:"bk",hex:"#000000",n:"Black"},{code:"gy",hex:"#95a5a6",n:"Grey"},{code:"o",hex:"#e67e22",n:"Orange"},{code:"pk",hex:"#e91e8a",n:"Pink"},{code:"bn",hex:"#8B4513",n:"Brown"}];
-const CC=COLORS.map(c=>c.code).sort((a,b)=>b.length-a.length);const OV_T=["circle","circletop","circlecorner","cone","line","arrow","square","squaretop"];const MAX_MV=16;const PAD=28;
+const CC=COLORS.map(c=>c.code).sort((a,b)=>b.length-a.length);const OV_T=["circle","circletop","circlecorner","cone","line","arrow","square","squaretop"];const MAX_MV=16;let PAD=40;
 const PROXY_URL="https://bscry-proxy.rhigman.workers.dev/?url=";
 const UPLOAD_URL="https://bscry-proxy.rhigman.workers.dev/?upload";
 function uploadImage(file,statusEl,onSuccess){
@@ -249,7 +259,7 @@ const IS_TOUCH='ontouchstart'in window||navigator.maxTouchPoints>0;
 const HANDLE_R=IS_TOUCH?16:8;// Bigger touch targets on mobile
 // Convert touch event to mouse-like coordinates
 function touchPt(e){const t=e.touches[0]||e.changedTouches[0];return{clientX:t.clientX,clientY:t.clientY,target:document.elementFromPoint(t.clientX,t.clientY)||e.target,shiftKey:e.shiftKey,preventDefault:()=>e.preventDefault()};}
-const S={grid:{cellSize:40,offsetX:0,offsetY:0,cols:26,rows:26,startCol:0,startRow:0,fullCols:26,fullRows:26},tokens:[],overlays:[],walls:[],combatants:[],sel:{type:null,ids:new Set()},zoom:1,showGrid:true,showOverlays:true,showWalls:true,coordLabels:true,gridOpacity:1,darkMode:false,noBorder:false,altFont:false,gridColor:"",fowOpacity:0,labelFont:"Figtree",loadedUrl:"",tab:"tokens",addingOverlay:null,mapSubTab:"info",drag:null,marquee:null,tokCol:false,ovCol:false,npCol:true,tokSort:"color",ovSort:"name",sidebarOpen:true,coordPick:null,diagRule:"5105",fowRegions:[],wallDraw:null,fowDraw:null,spaceHeld:false,panDrag:null,savedTokens:[],tokenSaves:[],tokenDeletes:[],savedMaps:[],mapSaves:[],mapDeletes:[],mapLoads:[],savedBattles:[],battleSaves:[],battleDeletes:[],battleLoads:[]};
+const S={grid:{cellSize:40,offsetX:0,offsetY:0,cols:26,rows:26,startCol:0,startRow:0,fullCols:26,fullRows:26},tokens:[],overlays:[],walls:[],combatants:[],sel:{type:null,ids:new Set()},zoom:1,showGrid:true,showOverlays:true,showWalls:true,showTokens:true,showFow:true,showBg:true,coordLabels:true,gridOpacity:1,darkMode:false,noBorder:false,altFont:false,gridColor:"",fowOpacity:0,labelFont:"Figtree",loadedUrl:"",tab:"tokens",addingOverlay:null,mapSubTab:"info",objSubTab:"walls",drag:null,marquee:null,tokCol:false,ovCol:false,npCol:true,tokSort:"init",ovSort:"name",sidebarOpen:true,coordPick:null,diagRule:"5105",fowRegions:[],wallDraw:null,fowDraw:null,spaceHeld:false,panDrag:null,savedTokens:[],tokenSaves:[],tokenDeletes:[],savedMaps:[],mapSaves:[],mapDeletes:[],mapLoads:[],savedBattles:[],battleSaves:[],battleDeletes:[],battleLoads:[]};
 // Natural sort for names with numbers (1v before 10v)
 function natSort(a,b){return a.localeCompare(b,undefined,{numeric:true,sensitivity:"base"});}
 // Scroll viewport to center on a grid position
@@ -269,7 +279,7 @@ const $=id=>document.getElementById(id);
 function safeHash(){try{return location.hash||"";}catch(e){return "";}}
 function setSafeHash(v){try{if(location.protocol!=="file:")location.hash=v;}catch(e){}}const NS="http://www.w3.org/2000/svg";
 const sEl=(t,a)=>{const e=document.createElementNS(NS,t);for(const[k,v]of Object.entries(a||{}))if(v!=null)e.setAttribute(k,v);return e;};
-function renderAll(){renderSVG();renderSB();renderCmd();}
+function renderAll(){renderSVG();renderSB();renderCmd();try{syncViewInputs();}catch(e){}}
 // Draw curved double-arrow rotate icon at position
 function drawRotIcon(wrap,cx,cy,hr,ovId){
   const r=hr*.8,sw=Math.max(3,hr*.25),a=r*1.1,h=a*Math.sqrt(3)/2;
@@ -364,17 +374,24 @@ function ovCenter(ov){const g=S.grid;if(!ov.coord)return null;return{x:g.offsetX
 // SVG
 function renderSVG(){
   const svg=$("map-svg"),g=S.grid,w=g.cols*g.cellSize,h=g.rows*g.cellSize;
+  PAD=g.cellSize;// Border = one cell width on all sides
   svg.setAttribute("width",w+PAD*2);svg.setAttribute("height",h+PAD*2);
   svg.setAttribute("viewBox",`${-PAD} ${-PAD} ${w+PAD*2} ${h+PAD*2}`);
   svg.innerHTML="";
-  // Background — axis/padding areas match light/dark, grid area transparent when bg image loaded
-  const canvasBg=S.darkMode?"#000000":"#ffffff";
-  // Padding rects (axis label areas) — always opaque
-  svg.appendChild(sEl("rect",{x:-PAD,y:-PAD,width:w+PAD*2,height:PAD,fill:canvasBg}));
-  svg.appendChild(sEl("rect",{x:-PAD,y:h,width:w+PAD*2,height:PAD,fill:canvasBg}));
-  svg.appendChild(sEl("rect",{x:-PAD,y:0,width:PAD,height:h,fill:canvasBg}));
-  svg.appendChild(sEl("rect",{x:w,y:0,width:PAD,height:h,fill:canvasBg}));
+  // Border fill — white in light mode, black in dark mode
+  const borderFill=S.darkMode?"#000":"#fff";
+  const borderOpacity=S.gridOpacity;
+  const isPartialView=g.startCol>0||g.startRow>0||g.cols<(g.fullCols||g.cols)||g.rows<(g.fullRows||g.rows);
+  // 4 border rectangles (one cell wide on each side)
+  svg.appendChild(sEl("rect",{x:-PAD,y:-PAD,width:w+PAD*2,height:PAD,fill:borderFill,"fill-opacity":borderOpacity}));// Top
+  svg.appendChild(sEl("rect",{x:-PAD,y:h,width:w+PAD*2,height:PAD,fill:borderFill,"fill-opacity":borderOpacity}));// Bottom
+  svg.appendChild(sEl("rect",{x:-PAD,y:0,width:PAD,height:h,fill:borderFill,"fill-opacity":borderOpacity}));// Left
+  svg.appendChild(sEl("rect",{x:w,y:0,width:PAD,height:h,fill:borderFill,"fill-opacity":borderOpacity}));// Right
+  // Border outline — dashed when partial view, solid when full
+  if(isPartialView){
+    svg.appendChild(sEl("rect",{x:0,y:0,width:w,height:h,fill:"none",stroke:"var(--accent)","stroke-width":2,"stroke-dasharray":"8 4","stroke-opacity":.6}));}
   // Grid area — transparent if bg image so <img> shows through, otherwise canvas color
+  const canvasBg=S.darkMode?"#000000":"#ffffff";
   svg.appendChild(sEl("rect",{x:0,y:0,width:w,height:h,fill:S.loadedUrl?"transparent":canvasBg,"data-bg":"1"}));
   // Compute grid/label color — default grey, custom overrides
   let gridCol="#888888";if(S.gridColor){gridCol=S.gridColor.startsWith("~")?("#"+S.gridColor.slice(1)):c2h(S.gridColor);}
@@ -384,21 +401,24 @@ function renderSVG(){
     for(let c=0;c<=g.cols;c++){const x=g.offsetX+c*g.cellSize;gg.appendChild(sEl("line",{x1:x,y1:g.offsetY,x2:x,y2:g.offsetY+g.rows*g.cellSize,stroke:gridCol,"stroke-width":1}));}
     for(let r=0;r<=g.rows;r++){const y=g.offsetY+r*g.cellSize;gg.appendChild(sEl("line",{x1:g.offsetX,y1:y,x2:g.offsetX+g.cols*g.cellSize,y2:y,stroke:gridCol,"stroke-width":1}));}svg.appendChild(gg);}
   if(S.coordLabels){const fs=Math.max(12,Math.min(18,g.cellSize*.4));const fc=gridCol;const lf=S.labelFont||"Figtree";
-    for(let c=0;c<g.cols;c++){const t=sEl("text",{x:g.offsetX+c*g.cellSize+g.cellSize/2,y:-7,"text-anchor":"middle","font-size":fs,fill:fc,"font-family":lf+",sans-serif","font-weight":"bold"});t.textContent=col2l(c+g.startCol).toUpperCase();svg.appendChild(t);}
-    for(let r=0;r<g.rows;r++){const t=sEl("text",{x:-6,y:g.offsetY+r*g.cellSize+g.cellSize/2+fs/3,"text-anchor":"end","font-size":fs,fill:fc,"font-family":lf+",sans-serif","font-weight":"bold"});t.textContent=r+g.startRow+1;svg.appendChild(t);}
-    // 5ft scale marker — bottom-right
-    const sx=g.offsetX+g.cols*g.cellSize-g.cellSize,sy=g.offsetY+g.rows*g.cellSize+12;
-    const sfs=Math.max(9,Math.min(12,g.cellSize*.3));
-    svg.appendChild(sEl("line",{x1:sx,y1:sy,x2:sx,y2:sy-4,stroke:fc,"stroke-width":1}));
-    svg.appendChild(sEl("line",{x1:sx,y1:sy-2,x2:sx+g.cellSize,y2:sy-2,stroke:fc,"stroke-width":1}));
-    svg.appendChild(sEl("line",{x1:sx+g.cellSize,y1:sy,x2:sx+g.cellSize,y2:sy-4,stroke:fc,"stroke-width":1}));
-    const sl=sEl("text",{x:sx+g.cellSize/2,y:sy+sfs+2,"text-anchor":"middle","font-size":sfs,fill:fc,"font-family":lf+",sans-serif"});sl.textContent="5ft";svg.appendChild(sl);}
+    // Column labels — centered in top border
+    for(let c=0;c<g.cols;c++){const t=sEl("text",{x:g.offsetX+c*g.cellSize+g.cellSize/2,y:-PAD/2+fs/3,"text-anchor":"middle","font-size":fs,fill:fc,"font-family":lf+",sans-serif","font-weight":"bold"});t.textContent=col2l(c+g.startCol).toUpperCase();svg.appendChild(t);}
+    // Row labels — centered in left border
+    for(let r=0;r<g.rows;r++){const t=sEl("text",{x:-PAD/2,y:g.offsetY+r*g.cellSize+g.cellSize/2+fs/3,"text-anchor":"middle","font-size":fs,fill:fc,"font-family":lf+",sans-serif","font-weight":"bold"});t.textContent=r+g.startRow+1;svg.appendChild(t);}
+    // 5ft scale marker — under bottom-right grid cell, in bottom border
+    const sfs=Math.max(9,Math.min(14,g.cellSize*.3));
+    const smx=g.offsetX+(g.cols-1)*g.cellSize+g.cellSize/2,smy=h+PAD/2;// Under last column
+    const smw=g.cellSize;// One cell width
+    svg.appendChild(sEl("line",{x1:smx-smw/2,y1:smy-4,x2:smx-smw/2,y2:smy+2,stroke:fc,"stroke-width":1}));// Left tick
+    svg.appendChild(sEl("line",{x1:smx-smw/2,y1:smy-1,x2:smx+smw/2,y2:smy-1,stroke:fc,"stroke-width":1}));// Bar
+    svg.appendChild(sEl("line",{x1:smx+smw/2,y1:smy-4,x2:smx+smw/2,y2:smy+2,stroke:fc,"stroke-width":1}));// Right tick
+    const sl=sEl("text",{x:smx,y:smy+sfs+4,"text-anchor":"middle","font-size":sfs,fill:fc,"font-family":lf+",sans-serif"});sl.textContent="5ft";svg.appendChild(sl);}
   // Map border — 2px, black in light / white in dark, hidden by 'e' option
   if(!S.noBorder){const bc=S.darkMode?"#ffffff":"#000000";
     svg.appendChild(sEl("rect",{x:g.offsetX,y:g.offsetY,width:g.cols*g.cellSize,height:g.rows*g.cellSize,fill:"none",stroke:bc,"stroke-width":2}));}
   if(S.showWalls)S.walls.forEach(wl=>rWall(svg,wl));
   // FOW rendering — dark overlay with holes for revealed regions
-  if(S.fowRegions.length){const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY,fw=g.cols*cs,fh=g.rows*cs;
+  if(S.showFow&&S.fowRegions.length){const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY,fw=g.cols*cs,fh=g.rows*cs;
     const fogG=sEl("g",{opacity:1-S.fowOpacity/100});
     // Full dark rect
     fogG.appendChild(sEl("rect",{x:ox,y:oy,width:fw,height:fh,fill:"#000",opacity:.7}));
@@ -439,20 +459,24 @@ function renderSVG(){
     const sx=g.offsetX+S.fowDraw.start.col*cs,sy=g.offsetY+S.fowDraw.start.row*cs;
     svg.appendChild(sEl("rect",{x:sx,y:sy,width:cs,height:cs,fill:"rgba(251,191,36,0.3)",stroke:"#fbbf24","stroke-width":1,"stroke-dasharray":"4 2"}));}
   // Tokens (non-selected)
+  if(S.showTokens){
   const groups=groupToks();
   Object.keys(groups).sort((a,b)=>(SIZES[groups[b][0].size]?.c||1)-(SIZES[groups[a][0].size]?.c||1)).forEach(k=>{const tks=groups[k];
     const nonSel=tks.filter(t=>!isSel("token",t.id));
     if(nonSel.length===tks.length){if(tks.length===1)rTok(svg,tks[0]);else rPie(svg,tks);}
     else if(nonSel.length>1)rPie(svg,nonSel);
     else if(nonSel.length===1)rTok(svg,nonSel[0]);});
+  }
   // Overlays (non-selected)
   if(S.showOverlays)S.overlays.filter(o=>!o.under&&!isSel("overlay",o.id)).forEach(o=>rOv(svg,o));
   // SELECTED objects on top of everything
   if(S.showOverlays)S.overlays.filter(o=>o.under&&isSel("overlay",o.id)).forEach(o=>rOv(svg,o));
   // Group selected tokens by position — render as pie if stacked
-  const selToks=[];
-  Object.keys(groups).forEach(k=>{const sel=groups[k].filter(t=>isSel("token",t.id));if(sel.length)selToks.push(sel);});
+  if(S.showTokens){
+  const selToks=[];const groups2=groupToks();
+  Object.keys(groups2).forEach(k=>{const sel=groups2[k].filter(t=>isSel("token",t.id));if(sel.length)selToks.push(sel);});
   selToks.forEach(grp=>{if(grp.length===1)rTok(svg,grp[0]);else rPie(svg,grp);});
+  }
   if(S.showOverlays)S.overlays.filter(o=>!o.under&&isSel("overlay",o.id)).forEach(o=>rOv(svg,o));
   // Marquee rect
   if(S.marquee){const m=S.marquee,x=Math.min(m.x1,m.x2),y=Math.min(m.y1,m.y2),mw=Math.abs(m.x2-m.x1),mh=Math.abs(m.y2-m.y1);
@@ -462,10 +486,11 @@ function renderSVG(){
   ct.style.width=(w+PAD*2)*S.zoom+"px";ct.style.height=(h+PAD*2)*S.zoom+"px";
   ct.style.transform=`scale(${S.zoom})`;ct.style.transformOrigin="0 0";
   img.style.left=(PAD-g.startCol*g.cellSize)+"px";img.style.top=(PAD-g.startRow*g.cellSize)+"px";
-  if(S.loadedUrl){img.style.display="block";
+  if(S.loadedUrl&&S.showBg){img.style.display="block";
     const fw=(g.fullCols||g.cols)*g.cellSize,fh=(g.fullRows||g.rows)*g.cellSize;
     img.style.width=fw+"px";img.style.height=fh+"px";img.style.objectFit="fill";}
-  $("placeholder").style.display=S.loadedUrl?"none":"flex";
+  else if(S.loadedUrl&&!S.showBg){img.style.display="none";}
+  $("placeholder").style.display="none";
   // Partial view indicator
   const pvEl=$("partial-view");
   if(pvEl){if(S.grid.startCol||S.grid.startRow){
@@ -476,7 +501,7 @@ function rTok(svg,t){
   const g=S.grid,cp=SIZES[t.size]?.c||1,r=(cp*g.cellSize)/2-2,p=tokCenter(t);
   const sel=isSel("token",t.id),fs=Math.max(11,Math.min(r*.55,42));
   const gr=sEl("g",{style:"cursor:pointer","data-tid":String(t.id)});
-  if(t.tokenImage){
+  if(t.tokenImage&&S.grid.cellSize>=40){
     // Token image with circular clip-path
     const clipId="tc"+t.id;
     const defs=sEl("defs",{});
@@ -718,6 +743,7 @@ function renderSB(){
     case"tokens":rTokenProps(pa);rTokenList(la);break;
     case"overlays":rOverlayProps(pa);rOverlayList(la);break;
     case"map":pa.innerHTML="";rMapTab(la);break;
+    case"objects":pa.innerHTML="";rObjectsTab(la);break;
     default:pa.innerHTML="";la.innerHTML="";}
   document.querySelectorAll("#tabs button").forEach(b=>{b.classList.toggle("active",b.dataset.tab===S.tab);});
   requestAnimationFrame(()=>{const el=document.querySelector('.obj-item.sel');if(el)el.scrollIntoView({block:"nearest",behavior:"smooth"});});}
@@ -841,18 +867,41 @@ function rTokenList(el){let h="";
     h+=`<div class="grp-hdr" data-grp="np"><span class="arrow${S.npCol?" closed":""}">▼</span><span class="sec-title" style="color:var(--fg3)">Unplaced Objects (${unplaced.length})</span></div>`;
     if(!S.npCol){unplaced.forEach(c=>{const sel=S.sel.type==="unplaced"&&S.sel.name===c.name;const sv=c.savedTok;
       const dotColor=sv?.color||"var(--fg3)";
-      h+=`<div class="obj-item${sel?" sel":""}" data-npname="${c.name}"><div class="dot" style="background:${dotColor};width:10px;height:10px;opacity:.6"></div><div class="info"><div class="name" style="color:var(--fg3)">${c.name}${sv?.size&&sv.size!=="M"?" ("+sv.size+")":""}</div></div></div>`;});}}
+      const initLbl=c.init!==undefined?`<span style="font-family:monospace;font-size:9px;color:var(--fg3);margin-left:auto;padding-left:4px">⚔${c.init}</span>`:"";
+      h+=`<div class="obj-item${sel?" sel":""}" data-npname="${c.name}" style="display:flex;align-items:center"><div class="dot" style="background:${dotColor};width:10px;height:10px;opacity:.6"></div><div class="info" style="flex:1;min-width:0"><div class="name" style="color:var(--fg3);display:flex;align-items:center">${c.name}${sv?.size&&sv.size!=="M"?" ("+sv.size+")":""}${initLbl}</div></div></div>`;});}}
   // Visible Tokens group
   const visToks=S.tokens.filter(t=>!t.hidden);
-  const sortedToks=[...visToks].sort((a,b)=>{if(S.tokSort==="color"){const ca=colorName(a.color),cb=colorName(b.color);if(ca!==cb)return natSort(ca,cb);return natSort(a.name,b.name);}return natSort(a.name,b.name);});
-  h+=`<div class="grp-hdr" data-grp="tok"><span class="arrow${S.tokCol?" closed":""}">▼</span><span class="sec-title">Visible Tokens (${visToks.length})</span><select class="inp" data-sort="tok" style="font-size:9px;padding:1px 2px;margin-left:auto;min-width:60px;width:60px;box-sizing:border-box"><option value="name"${S.tokSort==="name"?" selected":""}>A-Z</option><option value="color"${S.tokSort==="color"?" selected":""}>Color</option></select></div>`;
-  if(!S.tokCol){sortedToks.forEach(t=>{const sel=isSel("token",t.id),ch=tokChanged(t);
-    h+=`<div class="obj-item${sel?" sel":""}" data-tid="${t.id}"><div class="dot" style="background:${t.color};width:10px;height:10px"></div><div class="info"><div class="name" style="${ch?"color:var(--accent)":""}">${tokInfo(t)}</div></div></div>`;});}
+  const sortedToks=[...visToks].sort((a,b)=>{
+    if(S.tokSort==="color"){const ca=colorName(a.color),cb=colorName(b.color);if(ca!==cb)return natSort(ca,cb);return natSort(a.name,b.name);}
+    if(S.tokSort==="init"){return(b.init||0)-(a.init||0)||natSort(a.name,b.name);}
+    if(S.tokSort==="group"){const ga=a.group||"\uffff",gb=b.group||"\uffff";if(ga!==gb)return natSort(ga,gb);return natSort(a.name,b.name);}
+    return natSort(a.name,b.name);});
+  h+=`<div class="grp-hdr" data-grp="tok"><span class="vis-eye${S.showTokens?'':' off'}" data-vis="tokens" style="cursor:pointer;font-size:11px;margin-right:2px;position:relative" title="${S.showTokens?'Hide tokens':'Show tokens'}">👁</span><span class="arrow${S.tokCol?" closed":""}">▼</span><span class="sec-title">Visible Tokens (${visToks.length})</span><button class="btn btn-s" data-selall="tok" style="font-size:8px;padding:1px 5px;margin-left:4px" title="Select all tokens">Select All</button><select class="inp" data-sort="tok" style="font-size:9px;padding:1px 2px;margin-left:auto;min-width:60px;width:60px;box-sizing:border-box"><option value="init"${S.tokSort==="init"?" selected":""}>Init ⚔</option><option value="name"${S.tokSort==="name"?" selected":""}>A-Z</option><option value="color"${S.tokSort==="color"?" selected":""}>Color</option><option value="group"${S.tokSort==="group"?" selected":""}>Group</option></select></div>`;
+  if(!S.tokCol){
+    const useGrpHdrs=S.tokSort==="init"||S.tokSort==="group";
+    let lastGrp=null;
+    sortedToks.forEach(t=>{const sel=isSel("token",t.id),ch=tokChanged(t);
+      // Group headers for init/group sort
+      if(useGrpHdrs){
+        const g=t.group||null;
+        if(g!==lastGrp){
+          if(g){
+            const members=sortedToks.filter(x=>x.group===g);
+            const grpInit=members.length?Math.max(...members.map(x=>x.init||0)):"";
+            h+=`<div class="grp-subhdr" data-grpsel="${g}" style="display:flex;align-items:center;gap:4px;padding:2px 4px;margin-top:4px;background:var(--bg3);border-radius:3px;cursor:pointer;font-size:10px;color:var(--fg2)" title="Click to select all in group"><span style="font-weight:bold">🎲 ${g}</span><span style="color:var(--fg3)">(${members.length})</span>${grpInit!==""?`<span style="margin-left:auto;font-family:monospace;font-size:9px;color:var(--fg3)">⚔${grpInit}</span>`:""}</div>`;
+          }else if(lastGrp!==null){
+            h+=`<div style="padding:2px 4px;margin-top:4px;font-size:9px;color:var(--fg3);border-top:1px solid var(--bg3)">Ungrouped</div>`;}
+          lastGrp=g;}}
+      const initLbl=(S.tokSort==="init"&&t.init!==undefined)?`<span style="font-family:monospace;font-size:9px;color:var(--fg3);margin-left:auto;padding-left:4px">⚔${t.init}</span>`:"";
+      const grpLbl=(S.tokSort!=="init"&&S.tokSort!=="group"&&t.group)?`<span style="font-size:8px;color:var(--fg3);background:var(--bg3);padding:0 3px;border-radius:2px;margin-left:4px">${t.group}</span>`:"";
+      h+=`<div class="obj-item${sel?" sel":""}" data-tid="${t.id}" style="display:flex;align-items:center"><div class="dot" style="background:${t.color};width:10px;height:10px"></div><div class="info" style="flex:1;min-width:0"><div class="name" style="${ch?"color:var(--accent)":""};display:flex;align-items:center">${tokInfo(t)}${grpLbl}${initLbl}</div></div></div>`;});}
   el.innerHTML=h;}
 function rOverlayProps(el){
   let h="";
   // Add New Overlay button always at top
-  h+=`<button class="btn btn-p" id="btn-add-ov" style="width:100%;font-size:11px;padding:5px;margin-bottom:4px" title="Create a new overlay with default settings">➕ Add New Overlay</button>`;
+  const ovFull=S.overlays.length>=10;
+  h+=`<button class="btn btn-p" id="btn-add-ov" style="width:100%;font-size:11px;padding:5px;margin-bottom:4px${ovFull?";opacity:.4;cursor:default":""}" ${ovFull?"disabled":""} title="${ovFull?"OTFBM limit: 10 overlays max — delete one to add another":"Create a new overlay with default settings"}">➕ Add New Overlay</button>`;
+  if(ovFull)h+=`<div style="font-size:9px;color:#e74c3c;margin:-2px 0 4px;text-align:center">OTFBM limit reached (10/10) — remove an overlay to add more</div>`;
   // Add New Overlay form
   if(S.addingOverlay){
     const ao=S.addingOverlay;const nc2=["cone","square","squaretop","line","arrow"].includes(ao.type);
@@ -900,7 +949,7 @@ function rOverlayList(el){let h="";
     const at=a.target||"\uffff",bt=b.target||"\uffff";
     if(at!==bt)return natSort(at,bt);
     return(parseInt(a.ovNum)||0)-(parseInt(b.ovNum)||0);});
-  h+=`<div class="grp-hdr" data-grp="ov"><span class="arrow${S.ovCol?" closed":""}">▼</span><span class="sec-title">Overlays (${S.overlays.length})</span>${S.overlays.length?'<button class="btn btn-s" id="ov-clearall" style="font-size:9px;padding:2px 8px;color:#fff;background:#e74c3c;border-color:#e74c3c;margin-left:4px;border-radius:3px">🗑 Clear All</button>':""}<select class="inp" data-sort="ov" style="font-size:9px;padding:1px 2px;margin-left:auto;min-width:60px;width:60px;box-sizing:border-box"><option value="name"${S.ovSort==="name"?" selected":""}>Target</option><option value="shape"${S.ovSort==="shape"?" selected":""}>Shape</option></select></div>`;
+  h+=`<div class="grp-hdr" data-grp="ov"><span class="vis-eye${S.showOverlays?'':' off'}" data-vis="overlays" style="cursor:pointer;font-size:11px;margin-right:2px;position:relative" title="${S.showOverlays?'Hide overlays':'Show overlays'}">👁</span><span class="arrow${S.ovCol?" closed":""}">▼</span><span class="sec-title">Overlays (${S.overlays.length})</span>${S.overlays.length?'<button class="btn btn-s" data-selall="ov" style="font-size:8px;padding:1px 5px;margin-left:4px" title="Select all overlays">Select All</button><button class="btn btn-s" id="ov-clearall" style="font-size:8px;padding:1px 5px;color:#e74c3c;margin-left:2px" title="Remove all overlays">🗑 Clear</button>':""}<select class="inp" data-sort="ov" style="font-size:9px;padding:1px 2px;margin-left:auto;min-width:60px;width:60px;box-sizing:border-box"><option value="name"${S.ovSort==="name"?" selected":""}>Target</option><option value="shape"${S.ovSort==="shape"?" selected":""}>Shape</option></select></div>`;
   if(!S.ovCol){const shp={circle:"●",circletop:"●",circlecorner:"●",square:"■",squaretop:"■",cone:"◄",arrow:"→",line:"━"};
     sortedOvs.forEach(o=>{const sel=isSel("overlay",o.id);const ic=shp[o.type]||"◆";
     const coord=getOvCoord(o);const _c2d=getOvCoord2(o);const len=(o.type==="line"||o.type==="arrow")&&_c2d&&coord?gridDist(coord.col,coord.row,_c2d.col,_c2d.row):0;
@@ -909,62 +958,13 @@ function rOverlayList(el){let h="";
     h+=`<div class="obj-item${sel?" sel":""}" data-oid="${o.id}" style="display:flex;align-items:center"><span style="color:${o.color};font-size:20px;line-height:14px;width:16px;text-align:center;flex-shrink:0">${ic}</span><div class="info" style="flex:1"><div class="name">${ovN.label}: ${o.type}${sizeStr}${lenStr}${tgtStr}${o.locked?" 🔗":""}</div></div><button class="btn btn-s ov-del-btn" data-delov="${o.id}" style="font-size:9px;padding:1px 5px;color:#e74c3c;flex-shrink:0" title="Delete">✕</button></div>`;});}
   el.innerHTML=h;}
 function rMapTab(el){
-  const st=S.mapSubTab||"info";
-  let h=`<div class="subtabs"><button class="subtab${st==="info"?" active":""}" data-mapsub="info">Options</button><button class="subtab${st==="walls"?" active":""}" data-mapsub="walls">Walls</button><button class="subtab${st==="fog"?" active":""}" data-mapsub="fog">Fog of War</button><button class="subtab${st==="objects"?" active":""}" data-mapsub="objects">Objects</button></div>`;
-  if(st==="walls"){
-    const doorLabels={null:"Wall",open:"Open Door",closed:"Closed Door",secret:"Secret Door",double:"Double Door"};
-    // Draw Wall button at top
-    h+=`<button class="btn btn-p" id="m-walladd" style="width:100%;font-size:11px;padding:5px;margin-bottom:8px">${S.wallDraw?"🔴 Cancel Drawing":"➕ Add New Wall"}</button>`;
-    if(S.wallDraw)h+=`<div style="font-size:10px;color:var(--accent);margin-bottom:6px;padding:0 2px">${S.wallDraw.start?"Click second vertex to complete wall • Hold Shift to chain":"Click a grid vertex (corner) to start"}</div>`;
-    // Selected wall properties
-    if(S.sel.type==="wall"&&S.sel.ids.size===1){const w=S.walls.find(x=>x.id===[...S.sel.ids][0]);if(w){
-      h+=`<div class="sec"><div class="sec-title">Wall Properties</div>
-      <div class="row"><span class="lbl" style="width:50px">Coords</span><span style="font-family:monospace;font-size:11px;color:var(--fg)">${fmtU(w.start.col,w.start.row)} → ${fmtU(w.end.col,w.end.row)}</span></div>
-      <div class="row"><span class="lbl" style="width:50px">Type</span><select class="inp" id="m-walltype"><option value=""${!w.door?" selected":""}>Wall</option><option value="open"${w.door==="open"?" selected":""}>Open Door</option><option value="closed"${w.door==="closed"?" selected":""}>Closed Door</option><option value="secret"${w.door==="secret"?" selected":""}>Secret Door</option><option value="double"${w.door==="double"?" selected":""}>Double Door</option></select></div>
-      <div style="margin-top:6px"><span class="lbl">Color</span><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center">${COLORS.map(c=>'<div class="cswatch'+(w.color===c.hex||(!w.color&&c.code==="bk")?' on':'')+'" style="background:'+c.hex+'" data-color="'+c.hex+'" data-prefix="wcol" title="'+c.n+'"></div>').join("")}</div></div></div>`;}}
-    // Wall list
-    h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">Walls (${S.walls.length})${S.walls.length?'<button class="btn btn-s" id="m-wallclear" style="font-size:9px;padding:2px 8px;color:#fff;background:#e74c3c;border-color:#e74c3c;border-radius:3px">🗑 Clear All</button>':""}</div>`;
-    if(S.walls.length){
-      S.walls.forEach(w=>{const sel=isSel("wall",w.id);const s=fmtU(w.start.col,w.start.row),e=fmtU(w.end.col,w.end.row);
-        h+=`<div class="obj-item${sel?" sel":""}" data-wid="${w.id}" style="display:flex;align-items:center;gap:6px;padding:3px 4px;cursor:pointer;border-radius:4px;font-size:11px">
-        <span style="width:8px;height:8px;border-radius:50%;background:${w.color||"#000"};flex-shrink:0"></span>
-        <span style="flex:1;color:var(--fg)">${s}→${e} <span style="color:var(--fg3)">${doorLabels[w.door]||"Wall"}</span></span>
-        <button class="btn btn-s m-walldel" data-delwall="${w.id}" style="font-size:9px;padding:1px 5px;color:#e74c3c" title="Delete">✕</button></div>`;});}
-    else h+=`<div style="font-size:10px;color:var(--fg3);font-style:italic;padding:4px 0">No walls drawn</div>`;
-    h+="</div>";el.innerHTML=h;return;}
-  if(st==="fog"){
-    // Reveal Region button at top
-    h+=`<button class="btn btn-p" id="m-fowadd" style="width:100%;font-size:11px;padding:5px;margin-bottom:8px">${S.fowDraw?"🔴 Cancel Drawing":"➕ Add New Fog of War Area"}</button>`;
-    if(S.fowDraw)h+=`<div style="font-size:10px;color:var(--accent);margin-bottom:6px;padding:0 2px">${S.fowDraw.start?"Click second corner to complete region":"Click a grid cell to start"}</div>`;
-    // Selected FOW properties (placeholder for future resize)
-    if(S.sel.type==="fow"&&S.sel.ids.size===1){const r=S.fowRegions.find(x=>x.id===[...S.sel.ids][0]);if(r){
-      const tl=fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2)),br=fmtU(Math.max(r.c1,r.c2),Math.max(r.r1,r.r2));
-      h+=`<div class="sec"><div class="sec-title">Region Properties</div>
-      <div style="font-size:11px;color:var(--fg);padding:2px 0">${tl} → ${br} (${Math.abs(r.c2-r.c1)+1}×${Math.abs(r.r2-r.r1)+1} cells)</div></div>`;}}
-    // Region list
-    h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">Revealed Regions (${S.fowRegions.length})${S.fowRegions.length?'<button class="btn btn-s" id="m-fowclear" style="font-size:9px;padding:2px 8px;color:#fff;background:#e74c3c;border-color:#e74c3c;border-radius:3px">🗑 Clear All</button>':""}</div>
-    <div style="font-size:9px;color:var(--fg3);margin-bottom:4px">Fog covers the entire map. Regions reveal areas for players.</div>`;
-    if(S.fowRegions.length){
-      S.fowRegions.forEach(r=>{const sel=isSel("fow",r.id);
-        const tl=fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2));
-        const br=fmtU(Math.max(r.c1,r.c2),Math.max(r.r1,r.r2));
-        const w=Math.abs(r.c2-r.c1)+1,ht=Math.abs(r.r2-r.r1)+1;
-        h+=`<div class="obj-item${sel?" sel":""}" data-fid="${r.id}" style="display:flex;align-items:center;gap:6px;padding:3px 4px;cursor:pointer;border-radius:4px;font-size:11px">
-        <span style="color:var(--accent)">☀</span>
-        <span style="flex:1;color:var(--fg)">${tl}:${br} <span style="color:var(--fg3)">(${w}×${ht})</span></span>
-        <button class="btn btn-s m-fowdel" data-delfow="${r.id}" style="font-size:9px;padding:1px 5px;color:#e74c3c" title="Delete">✕</button></div>`;});}
-    else h+=`<div style="font-size:10px;color:var(--fg3);font-style:italic;padding:4px 0">No revealed regions — entire map is visible</div>`;
-    h+=`</div><div class="sec"><div class="sec-title">FOW Settings</div>
-    <div><span class="lbl">FOW Transparency (w): ${S.fowOpacity||0}%</span><input type="range" id="m-fowopacity" min="0" max="100" value="${S.fowOpacity||0}" style="width:100%;accent-color:var(--accent)"></div>
-    <div style="font-size:9px;color:var(--fg4);margin-top:4px">0% = fully opaque fog (default). Higher = more see-through.</div></div>`;
-    el.innerHTML=h;return;}
-  if(st==="objects"){h+=`<button class="btn btn-p" id="m-objadd" style="width:100%;font-size:11px;padding:5px;margin-bottom:8px" disabled>➕ Add New Map Object</button><div class="sec"><div class="sec-title">Map Objects</div><div style="font-size:11px;color:var(--fg3);line-height:1.5;padding:8px 0">Place OTFBM object icons (traps, chests, fire, stairs, columns, etc.) on the grid. 30 types available.</div><div style="font-size:10px;color:var(--fg4);font-style:italic;margin-top:8px">🚧 Coming soon</div></div>`;el.innerHTML=h;return;}
+  let h="";
   const bgUrl=S.loadedUrl||"";
   const area=S.grid.cols*S.grid.rows;const feel=area>2000?"Epic Battlefield":area>800?"Large Battle":area>300?"Standard Encounter":area>100?"Skirmish":"Close Quarters";
   const mapFt=S.grid.cols*5+"ft × "+S.grid.rows*5+"ft";
-  const cellWarn=S.grid.cellSize<40?" ⚠ Custom tokens won't display below c40":"";
+  const cellWarn=S.grid.cellSize<40?" ⚠ Custom token images require 40px+ grid size":"";
   h+=`<button class="btn btn-p" id="m-bgtop" style="width:100%;font-size:11px;padding:5px;margin-bottom:8px">${bgUrl?"✏️ Edit Background Image":"➕ Add New Background Image"}</button>`;
-  h+=`<div class="sec"><div class="sec-title">Background</div>
+  h+=`<div class="sec"><div class="sec-title" style="display:flex;align-items:center;gap:4px"><span class="vis-eye${S.showBg?'':' off'}" data-vis="bg" style="cursor:pointer;font-size:11px;position:relative" title="${S.showBg?'Hide background':'Show background'}">👁</span>Background</div>
   <div style="display:flex;gap:4px;margin-bottom:4px;align-items:center"><input class="inp" id="m-bgurl" value="${bgUrl}" placeholder="Paste image URL or upload below" style="flex:1;font-family:monospace;font-size:9px" title="${bgUrl||'No background image'}"><button class="btn btn-s" id="m-bgupdate" style="font-size:9px;padding:3px 8px;white-space:nowrap">${bgUrl?"Update":"Load"}</button></div>
   <div style="display:flex;gap:4px;margin-bottom:4px;align-items:center"><input type="file" id="m-bgfile" accept=".jpg,.jpeg,.png,.gif" style="display:none"><button class="btn btn-s" id="m-bgfilebtn" style="font-size:10px;padding:3px 8px;flex:1">📁 Upload Image</button>${bgUrl?`<button class="btn btn-s" id="m-bgremove" style="font-size:9px;padding:3px 6px;color:#e74c3c">Remove</button>`:""}</div>
   <div id="m-bginfo" style="font-size:9px;color:var(--fg3);margin-bottom:4px;min-height:12px"></div>
@@ -1012,6 +1012,53 @@ function rMapTab(el){
   </div>`;
   el.innerHTML=h;
 }
+function rObjectsTab(el){
+  const st=S.objSubTab||"walls";
+  let h=`<div class="subtabs"><button class="subtab${st==="walls"?" active":""}" data-objsub="walls">Walls</button><button class="subtab${st==="fog"?" active":""}" data-objsub="fog">Fog of War</button><button class="subtab${st==="mapobj"?" active":""}" data-objsub="mapobj">Map Objects</button></div>`;
+  if(st==="walls"){
+    const doorLabels={null:"Wall",open:"Open Door",closed:"Closed Door",secret:"Secret Door",double:"Double Door"};
+    h+=`<button class="btn btn-p" id="m-walladd" style="width:100%;font-size:11px;padding:5px;margin-bottom:8px">${S.wallDraw?"🔴 Cancel Drawing":"➕ Add New Wall"}</button>`;
+    if(S.wallDraw)h+=`<div style="font-size:10px;color:var(--accent);margin-bottom:6px;padding:0 2px">${S.wallDraw.start?"Click second vertex to complete wall • Hold Shift to chain":"Click a grid vertex (corner) to start"}</div>`;
+    if(S.sel.type==="wall"&&S.sel.ids.size===1){const w=S.walls.find(x=>x.id===[...S.sel.ids][0]);if(w){
+      h+=`<div class="sec"><div class="sec-title">Wall Properties</div>
+      <div class="row"><span class="lbl" style="width:50px">Coords</span><span style="font-family:monospace;font-size:11px;color:var(--fg)">${fmtU(w.start.col,w.start.row)} → ${fmtU(w.end.col,w.end.row)}</span></div>
+      <div class="row"><span class="lbl" style="width:50px">Type</span><select class="inp" id="m-walltype"><option value=""${!w.door?" selected":""}>Wall</option><option value="open"${w.door==="open"?" selected":""}>Open Door</option><option value="closed"${w.door==="closed"?" selected":""}>Closed Door</option><option value="secret"${w.door==="secret"?" selected":""}>Secret Door</option><option value="double"${w.door==="double"?" selected":""}>Double Door</option></select></div>
+      <div style="margin-top:6px"><span class="lbl">Color</span><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center">${COLORS.map(c=>'<div class="cswatch'+(w.color===c.hex||(!w.color&&c.code==="bk")?' on':'')+'" style="background:'+c.hex+'" data-color="'+c.hex+'" data-prefix="wcol" title="'+c.n+'"></div>').join("")}</div></div></div>`;}}
+    h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:4px"><span class="vis-eye${S.showWalls?'':' off'}" data-vis="walls" style="cursor:pointer;font-size:11px;position:relative" title="${S.showWalls?'Hide walls':'Show walls'}">👁</span>Walls (${S.walls.length})</span><span style="display:flex;gap:4px">${S.walls.length?'<button class="btn btn-s" data-selall="wall" style="font-size:8px;padding:1px 5px" title="Select all walls">Select All</button><button class="btn btn-s" id="m-wallclear" style="font-size:8px;padding:1px 5px;color:#e74c3c" title="Remove all walls">🗑 Clear</button>':""}</span></div>`;
+    if(S.walls.length){
+      S.walls.forEach(w=>{const sel=isSel("wall",w.id);const s=fmtU(w.start.col,w.start.row),e2=fmtU(w.end.col,w.end.row);
+        h+=`<div class="obj-item${sel?" sel":""}" data-wid="${w.id}" style="display:flex;align-items:center;gap:6px;padding:3px 4px;cursor:pointer;border-radius:4px;font-size:11px">
+        <span style="width:8px;height:8px;border-radius:50%;background:${w.color||"#000"};flex-shrink:0"></span>
+        <span style="flex:1;color:var(--fg)">${s}→${e2} <span style="color:var(--fg3)">${doorLabels[w.door]||"Wall"}</span></span>
+        <button class="btn btn-s m-walldel" data-delwall="${w.id}" style="font-size:9px;padding:1px 5px;color:#e74c3c" title="Delete">✕</button></div>`;});}
+    else h+=`<div style="font-size:10px;color:var(--fg3);font-style:italic;padding:4px 0">No walls drawn</div>`;
+    h+="</div>";}
+  else if(st==="fog"){
+    h+=`<button class="btn btn-p" id="m-fowadd" style="width:100%;font-size:11px;padding:5px;margin-bottom:8px">${S.fowDraw?"🔴 Cancel Drawing":"➕ Add New Fog of War Area"}</button>`;
+    if(S.fowDraw)h+=`<div style="font-size:10px;color:var(--accent);margin-bottom:6px;padding:0 2px">${S.fowDraw.start?"Click second corner to complete region":"Click a grid cell to start"}</div>`;
+    if(S.sel.type==="fow"&&S.sel.ids.size===1){const r=S.fowRegions.find(x=>x.id===[...S.sel.ids][0]);if(r){
+      const tl=fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2)),br=fmtU(Math.max(r.c1,r.c2),Math.max(r.r1,r.r2));
+      h+=`<div class="sec"><div class="sec-title">Region Properties</div>
+      <div style="font-size:11px;color:var(--fg);padding:2px 0">${tl} → ${br} (${Math.abs(r.c2-r.c1)+1}×${Math.abs(r.r2-r.r1)+1} cells)</div></div>`;}}
+    h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:4px"><span class="vis-eye${S.showFow?'':' off'}" data-vis="fow" style="cursor:pointer;font-size:11px;position:relative" title="${S.showFow?'Hide fog':'Show fog'}">👁</span>Revealed Regions (${S.fowRegions.length})</span><span style="display:flex;gap:4px">${S.fowRegions.length?'<button class="btn btn-s" data-selall="fow" style="font-size:8px;padding:1px 5px" title="Select all regions">Select All</button><button class="btn btn-s" id="m-fowclear" style="font-size:8px;padding:1px 5px;color:#e74c3c" title="Remove all regions">🗑 Clear</button>':""}</span></div>
+    <div style="font-size:9px;color:var(--fg3);margin-bottom:4px">Fog covers the entire map. Regions reveal areas for players.</div>`;
+    if(S.fowRegions.length){
+      S.fowRegions.forEach(r=>{const sel=isSel("fow",r.id);
+        const tl=fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2));
+        const br=fmtU(Math.max(r.c1,r.c2),Math.max(r.r1,r.r2));
+        const rw=Math.abs(r.c2-r.c1)+1,rh=Math.abs(r.r2-r.r1)+1;
+        h+=`<div class="obj-item${sel?" sel":""}" data-fid="${r.id}" style="display:flex;align-items:center;gap:6px;padding:3px 4px;cursor:pointer;border-radius:4px;font-size:11px">
+        <span style="color:var(--accent)">☀</span>
+        <span style="flex:1;color:var(--fg)">${tl}:${br} <span style="color:var(--fg3)">(${rw}×${rh})</span></span>
+        <button class="btn btn-s m-fowdel" data-delfow="${r.id}" style="font-size:9px;padding:1px 5px;color:#e74c3c" title="Delete">✕</button></div>`;});}
+    else h+=`<div style="font-size:10px;color:var(--fg3);font-style:italic;padding:4px 0">No revealed regions — entire map is visible</div>`;
+    h+=`</div><div class="sec"><div class="sec-title">FOW Settings</div>
+    <div><span class="lbl">FOW Transparency (w): ${S.fowOpacity||0}%</span><input type="range" id="m-fowopacity" min="0" max="100" value="${S.fowOpacity||0}" style="width:100%;accent-color:var(--accent)"></div>
+    <div style="font-size:9px;color:var(--fg4);margin-top:4px">0% = fully opaque fog (default). Higher = more see-through.</div></div>`;}
+  else if(st==="mapobj"){
+    h+=`<button class="btn btn-p" id="m-objadd" style="width:100%;font-size:11px;padding:5px;margin-bottom:8px" disabled>➕ Add New Map Object</button><div class="sec"><div class="sec-title">Map Objects</div><div style="font-size:11px;color:var(--fg3);line-height:1.5;padding:8px 0">Place OTFBM object icons (traps, chests, fire, stairs, columns, etc.) on the grid. 30 types available.</div><div style="font-size:10px;color:var(--fg4);font-style:italic;margin-top:8px">🚧 Coming soon</div></div>`;}
+  el.innerHTML=h;
+}
 window.doImportLoad=function(){const inp=$("m-import-str");const val=inp?inp.value.trim():"";
   if(!val){setStatus("⚠ No import string to load");return;}
   let raw=val.replace(/^.*#/,"");
@@ -1022,10 +1069,14 @@ window.doImportUpdate=function(){const h=buildExportHash();if(h){$("m-import-str
 function buildExportHash(){
   // Export hash builder
   const parts=[];
-  parts.push("g="+S.grid.cols+"x"+S.grid.rows);
+  const g=S.grid,fc=g.fullCols||g.cols,fr=g.fullRows||g.rows;
+  parts.push("g="+fc+"x"+fr);
   const opts=buildOptsStr();if(opts)parts.push("o="+opts);
   if(S.loadedUrl)parts.push("bg="+S.loadedUrl);
-  parts.push("vw=a1:"+S.grid.cols+"x"+S.grid.rows);
+  // View — only export if partial
+  const isPartial=g.startCol>0||g.startRow>0||g.cols<fc||g.rows<fr;
+  if(isPartial)parts.push("vw="+col2l(g.startCol)+(g.startRow+1)+":"+g.cols+"x"+g.rows);
+  else parts.push("vw=a1:"+fc+"x"+fr);
   // Tokens
   const tParts=S.tokens.map(t=>{const n=t.name.replace(/ /g,"_");const pos=fmtU(t.col,t.row);
     const sz=t.size||"M";const cc=h2c(t.color)||"b";const ht=t.height||0;const ti=t.tokenImage||"";
@@ -1055,6 +1106,16 @@ function buildExportHash(){
   // FOW
   const fowSegs2=S.fowRegions.map(r=>fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2))+":"+fmtU(Math.max(r.c1,r.c2),Math.max(r.r1,r.r2)));
   if(fowSegs2.length)parts.push("fw="+fowSegs2.join(","));
+  // Initiative groups
+  const grpMap={};S.tokens.forEach(t=>{if(t.group){if(!grpMap[t.group])grpMap[t.group]=[];grpMap[t.group].push(t.name.replace(/ /g,"_"));}});
+  S.combatants.forEach(c=>{if(c.group&&!Object.values(grpMap).flat().includes(c.name.replace(/ /g,"_"))){if(!grpMap[c.group])grpMap[c.group]=[];grpMap[c.group].push(c.name.replace(/ /g,"_"));}});
+  const igParts=Object.entries(grpMap).map(([g,ms])=>g.replace(/ /g,"_")+":"+ms.join(","));
+  if(igParts.length)parts.push("ig="+igParts.join(";"));
+  // Initiative values
+  const ipParts=[];
+  S.tokens.forEach(t=>{if(t.init!==undefined)ipParts.push(t.name.replace(/ /g,"_")+":"+t.init);});
+  S.combatants.forEach(c=>{if(c.init!==undefined&&!S.tokens.find(t=>t.name===c.name))ipParts.push(c.name.replace(/ /g,"_")+":"+c.init);});
+  if(ipParts.length)parts.push("ip="+ipParts.join(";"));
   return parts.join("&");}
 function ovChanged(ov){if(!origState)return false;const o=origState.overlays.find(x=>x.id===ov.id);if(!o)return true;return ov.size!==o.size||ov.color!==o.color||ov.type!==o.type||ov.under!==o.under||ov.target!==o.target||ov.aimTarget!==o.aimTarget||ov.locked!==o.locked||ov.locked2!==o.locked2||(ov.coord?.col!==o.coord?.col)||(ov.coord?.row!==o.coord?.row)||(ov.coord2?.col!==o.coord2?.col)||(ov.coord2?.row!==o.coord2?.row);}
 // Rebuild a combatant's full note with updated overlay fields
@@ -1207,7 +1268,8 @@ function renderCmd(){
   const hasChanges=mvData||ntData||effectText||uvarStr||unattachedParts.length;
   if(hasChanges){
     const applyData=encApply((mvData||"")+"::"+(ntData||"")+"::"+(effectText||"")+"::"+(uvarStr||""));
-    lines.push("!bscry apply "+applyData);
+    const hiddenFlag=$("cmd-hidden")&&$("cmd-hidden").checked?" -h":"";
+    lines.push("!bscry apply"+hiddenFlag+" "+applyData);
     // Unattached overlays still need raw !map (no combatant to attach to)
     if(unattachedParts.length)lines.push("!map "+unattachedParts.join(" "));
   }
@@ -1224,7 +1286,7 @@ function renderCmd(){
   if(!lines.length){ct.textContent="No changes";ct.style.color="var(--fg4)";btn.textContent="Copy Command";}
   else{
   const warns=[];
-  if(S.grid.cellSize<40&&S.tokens.some(t=>t.tokenImage))warns.push("⚠ Cell size c"+S.grid.cellSize+" — custom token images won't display in OTFBM (min c40)");
+  if(S.grid.cellSize<40&&S.tokens.some(t=>t.tokenImage))warns.push("⚠ Grid size "+S.grid.cellSize+"px per cell — custom token images need 40px or larger to display");
   if(S.mapLoads.length||S.battleLoads.length)warns.push("⚠ After loading, run !bscry again to refresh BattleScry");
   // 10 overlay total limit
   if(S.overlays.length>10)warns.push("⚠ Map has "+S.overlays.length+" overlays — OTFBM limit is 10 total");
@@ -1593,15 +1655,34 @@ function setup(){
   $("btn-fitw").onclick=()=>zoomAt(fitZoom());
   $("btn-fitall").onclick=()=>zoomAt(fitAllZoom());
   $("btn-copy").onclick=()=>{const el=$("cmd-text");const cmdDiv=el.querySelector("div")||el;const t=cmdDiv.textContent;if(t&&t!=="No changes"){navigator.clipboard.writeText(t);$("btn-copy").textContent="✓ Copied!";setTimeout(renderCmd,1500);}};
-  document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");S.tab=b.dataset.tab;renderSB();});
+  $("cmd-hidden").onchange=()=>renderCmd();  document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");S.tab=b.dataset.tab;renderSB();});
   const tc=$("tab-content");
   tc.addEventListener("click",e=>{const t=e.target;
+    // Eyeball visibility toggles
+    if(t.classList.contains("vis-eye")||t.closest(".vis-eye")){
+      const eye=t.classList.contains("vis-eye")?t:t.closest(".vis-eye");
+      const v=eye.dataset.vis;
+      if(v==="tokens")S.showTokens=!S.showTokens;
+      if(v==="overlays")S.showOverlays=!S.showOverlays;
+      if(v==="walls")S.showWalls=!S.showWalls;
+      if(v==="fow")S.showFow=!S.showFow;
+      if(v==="bg")S.showBg=!S.showBg;
+      renderAll();return;}
+    // Select All buttons
+    if(t.dataset.selall||t.closest("[data-selall]")){
+      const btn=t.dataset.selall?t:t.closest("[data-selall]");
+      const g=btn.dataset.selall;
+      if(g==="tok"){S.sel={type:"token",ids:new Set(S.tokens.filter(x=>!x.hidden).map(x=>x.id))};S.tab="tokens";}
+      if(g==="ov"){S.sel={type:"overlay",ids:new Set(S.overlays.map(x=>x.id))};S.tab="overlays";}
+      if(g==="wall"){S.sel={type:"wall",ids:new Set(S.walls.map(x=>x.id))};S.tab="objects";S.objSubTab="walls";}
+      if(g==="fow"){S.sel={type:"fow",ids:new Set(S.fowRegions.map(x=>x.id))};S.tab="objects";S.objSubTab="fog";}
+      renderAll();return;}
     // Add New Overlay button (dynamically rendered in overlays tab)
-    if(t.id==="btn-add-ov"){openAddOverlayForm();return;}
+    if(t.id==="btn-add-ov"){if(S.overlays.length>=10){setStatus("⚠ OTFBM limit: 10 overlays max");return;}openAddOverlayForm();return;}
     if(t.id==="ao-place"){placeNewOverlay();return;}
     if(t.id==="ao-cancel"){cancelAddOverlay();return;}
     // Map sub-tab clicks
-    if(t.classList.contains("subtab")&&t.dataset.mapsub){S.mapSubTab=t.dataset.mapsub;renderSB();return;}
+    if(t.classList.contains("subtab")&&(t.dataset.mapsub||t.dataset.objsub)){if(t.dataset.mapsub)S.mapSubTab=t.dataset.mapsub;if(t.dataset.objsub)S.objSubTab=t.dataset.objsub;renderSB();return;}
     // BG top button — focus URL input
     if(t.id==="m-bgtop"){const inp=$("m-bgurl");if(inp){inp.focus();inp.select();}return;}
     // BG file upload button
@@ -1697,7 +1778,10 @@ function setup(){
     // Remove all walls
     if(t.id==="m-wallclear"){if(!confirm("⚠ You are about to remove ALL walls and doors from the map. This cannot be undone. OK to proceed?"))return;pushU();S.walls=[];clearSel();renderAll();return;}
     // Wall list selection
-    if(t.closest("[data-wid]")){const wid=+t.closest("[data-wid]").dataset.wid;S.sel={type:"wall",ids:new Set([wid])};S.tab="map";S.mapSubTab="walls";renderAll();return;}
+    if(t.closest("[data-wid]")){const wid=+t.closest("[data-wid]").dataset.wid;
+      if(e.ctrlKey||e.metaKey){ctrlToggle(wid);}
+      else S.sel={type:"wall",ids:new Set([wid])};
+      S.tab="objects";S.objSubTab="walls";renderAll();return;}
     // FOW drawing toggle
     if(t.id==="m-fowadd"){S.fowDraw=S.fowDraw?null:{start:null};S.wallDraw=null;document.body.classList.toggle("drawing",!!S.fowDraw);renderAll();return;}
     // FOW delete single
@@ -1705,13 +1789,20 @@ function setup(){
     // Remove all FOW
     if(t.id==="m-fowclear"){if(!confirm("⚠ You are about to remove ALL revealed FOW regions. The entire map will become visible. OK to proceed?"))return;pushU();S.fowRegions=[];clearSel();renderAll();return;}
     // FOW list selection
-    if(t.closest("[data-fid]")){const fid=+t.closest("[data-fid]").dataset.fid;S.sel={type:"fow",ids:new Set([fid])};S.tab="map";S.mapSubTab="fog";renderAll();return;}
+    if(t.closest("[data-fid]")){const fid=+t.closest("[data-fid]").dataset.fid;
+      if(e.ctrlKey||e.metaKey){ctrlToggle(fid);}
+      else S.sel={type:"fow",ids:new Set([fid])};
+      S.tab="objects";S.objSubTab="fog";renderAll();return;}
     // File upload button for analysis
     if(t.classList.contains("cyc")){e.preventDefault();S.sel={type:"token",ids:new Set([+t.dataset.cyc])};const tk=S.tokens.find(x=>x.id===+t.dataset.cyc);if(tk)scrollTo(tk.col,tk.row);renderAll();return;}
     if(t.classList.contains("ovlink")){e.preventDefault();const oid=+t.dataset.ovid;S.sel={type:"overlay",ids:new Set([oid])};S.tab="overlays";const ov=S.overlays.find(x=>x.id===oid);if(ov){const coord=getOvCoord(ov);if(coord)scrollTo(coord.col,coord.row);}renderAll();return;}
     if(t.classList.contains("toklink")){e.preventDefault();const tid=+t.dataset.tokid;S.sel={type:"token",ids:new Set([tid])};const tk=S.tokens.find(x=>x.id===tid);if(tk)scrollTo(tk.col,tk.row);renderAll();return;}
-    if(t.closest("[data-grp]")&&!t.closest("[data-sort]")&&!t.matches("[data-sort]")&&!t.matches("button")&&!t.closest("button")){const g=t.closest("[data-grp]").dataset.grp;if(g==="tok")S.tokCol=!S.tokCol;if(g==="ov")S.ovCol=!S.ovCol;if(g==="np")S.npCol=!S.npCol;renderSB();return;}
-    const ti=t.closest("[data-tid]");if(ti){const id=+ti.dataset.tid;if(e.shiftKey){shiftToggle(id);}else{S.sel={type:"token",ids:new Set([id])};S.tab="tokens";const tk=S.tokens.find(x=>x.id===id);if(tk)scrollTo(tk.col,tk.row);}renderAll();return;}
+    if(t.closest("[data-grp]")&&!t.closest("[data-sort]")&&!t.matches("[data-sort]")&&!t.matches("button")&&!t.closest("button")&&!t.closest(".vis-eye")&&!t.classList.contains("vis-eye")){const g=t.closest("[data-grp]").dataset.grp;if(g==="tok")S.tokCol=!S.tokCol;if(g==="ov")S.ovCol=!S.ovCol;if(g==="np")S.npCol=!S.npCol;renderSB();return;}
+    // Group sub-header click — select all group members
+    if(t.closest("[data-grpsel]")){const grpName=t.closest("[data-grpsel]").dataset.grpsel;
+      const members=S.tokens.filter(x=>x.group===grpName&&!x.hidden);
+      S.sel={type:"token",ids:new Set(members.map(x=>x.id))};S.tab="tokens";renderAll();return;}
+    const ti=t.closest("[data-tid]");if(ti){const id=+ti.dataset.tid;if(e.ctrlKey||e.metaKey){ctrlToggle(id);}else{S.sel={type:"token",ids:new Set([id])};S.tab="tokens";const tk=S.tokens.find(x=>x.id===id);if(tk)scrollTo(tk.col,tk.row);}renderAll();return;}
     const oi=t.closest("[data-oid]");if(oi){const id=+oi.dataset.oid;S.sel={type:"overlay",ids:new Set([id])};S.tab="overlays";const ov=S.overlays.find(x=>x.id===id);if(ov){const coord=getOvCoord(ov);if(coord)scrollTo(coord.col,coord.row);}renderAll();return;}
     // Select unplaced combatant
     const npi=t.closest("[data-npname]");if(npi){S.sel={type:"unplaced",ids:new Set(),name:npi.dataset.npname};renderAll();return;}
@@ -2008,17 +2099,20 @@ function setup(){
     S.drag={offs,ovOffs,act:new Set(Object.keys(offs).map(Number)),ovAct:new Set(Object.keys(ovOffs).map(Number))};
     renderAll();}
 
-  // Unified shift-toggle: properly merges any selection type
-  function shiftToggle(id){
+  // Unified multi-select toggle: works across all object types
+  function ctrlToggle(id){
     const newIds=new Set(S.sel.ids);
     if(newIds.has(id))newIds.delete(id);else newIds.add(id);
     if(!newIds.size){clearSel();return;}
     const hasTok=S.tokens.some(t=>newIds.has(t.id));
     const hasOv=S.overlays.some(o=>newIds.has(o.id));
-    S.sel={type:hasTok&&hasOv?"mixed":hasTok?"token":"overlay",ids:newIds};}
+    const hasWall=S.walls.some(w=>newIds.has(w.id));
+    const hasFow=S.fowRegions.some(r=>newIds.has(r.id));
+    const types=[hasTok&&"token",hasOv&&"overlay",hasWall&&"wall",hasFow&&"fow"].filter(Boolean);
+    S.sel={type:types.length>1?"mixed":types[0]||"token",ids:newIds};}
 
   $("map-svg").addEventListener("mousedown",e=>{
-    e.preventDefault();const shift=e.shiftKey;
+    e.preventDefault();const shift=e.shiftKey;const multi=e.ctrlKey||e.metaKey;// Shift=chain draw, Ctrl/Cmd=multi-select
     // Wall drawing mode — click grid vertices
     if(S.wallDraw){const pt=svgPt(e),g=S.grid,cs=g.cellSize;
       // Snap to nearest grid vertex
@@ -2095,8 +2189,8 @@ function setup(){
     // 1. Overlay click — check actual clicked cell for multiple objects
     const ovG=e.target.closest("[data-oid]");
     if(ovG){const oid=+ovG.dataset.oid;
-      if(isSel("overlay",oid)&&!shift){startDrag(e);return;}
-      if(shift){shiftToggle(oid);renderAll();return;}
+      if(isSel("overlay",oid)&&!multi){startDrag(e);return;}
+      if(multi){ctrlToggle(oid);renderAll();return;}
       // Pixel-accurate: check for multiple objects under cursor
       const hits1=objectsAtPoint(e.clientX,e.clientY);
       if(hits1.toks.length+hits1.ovs.length>1){
@@ -2107,15 +2201,15 @@ function setup(){
     const pieG=e.target.closest("[data-piehit]");
     if(pieG){const ids=pieG.getAttribute("data-piehit").split(",").map(Number);
       const selInPie=ids.filter(id=>isSel("token",id));
-      if(selInPie.length>0&&!shift){startDrag(e);return;}
+      if(selInPie.length>0&&!multi){startDrag(e);return;}
       const hitsPie=objectsAtPoint(e.clientX,e.clientY);
       const pieToks=S.tokens.filter(t=>ids.includes(t.id));
       const items=[...pieToks.map(t=>({...t,_type:"token"})),...hitsPie.ovs.map(o=>({...o,_type:"overlay"}))];
-      showPopup(e,items,shift);return;}
+      showPopup(e,items,multi);return;}
     // 3. Single token click
     const tg=e.target.closest("[data-tid]");
     if(tg){const tid=+tg.dataset.tid;
-      if(shift){shiftToggle(tid);renderAll();return;}
+      if(multi){ctrlToggle(tid);renderAll();return;}
       if(isSel("token",tid)){startDrag(e);return;}
       // Pixel-accurate: check for other objects under cursor
       const hits3=objectsAtPoint(e.clientX,e.clientY);
@@ -2125,10 +2219,12 @@ function setup(){
       S.sel={type:"token",ids:new Set([tid])};S.tab="tokens";startDrag(e);return;}
     // 4. Wall click
     const wg=e.target.closest("[data-wallhit]");
-    if(wg){const wid=+wg.dataset.wallhit;S.sel={type:"wall",ids:new Set([wid])};S.tab="map";S.mapSubTab="walls";renderAll();return;}
+    if(wg){const wid=+wg.dataset.wallhit;
+      if(multi){ctrlToggle(wid);S.tab="objects";S.objSubTab="walls";renderAll();return;}
+      S.sel={type:"wall",ids:new Set([wid])};S.tab="objects";S.objSubTab="walls";renderAll();return;}
     // 5. Background click — pixel-accurate check
     const hitsAll=objectsAtPoint(e.clientX,e.clientY);
-    if(hitsAll.toks.length+hitsAll.ovs.length>1){const items=[...hitsAll.toks.map(t=>({...t,_type:"token"})),...hitsAll.ovs.map(o=>({...o,_type:"overlay"}))];showPopup(e,items,shift);return;}
+    if(hitsAll.toks.length+hitsAll.ovs.length>1){const items=[...hitsAll.toks.map(t=>({...t,_type:"token"})),...hitsAll.ovs.map(o=>({...o,_type:"overlay"}))];showPopup(e,items,multi);return;}
     if(hitsAll.toks.length===1){S.sel={type:"token",ids:new Set([hitsAll.toks[0].id])};S.tab="tokens";startDrag(e);return;}
     if(hitsAll.ovs.length===1){S.sel={type:"overlay",ids:new Set([hitsAll.ovs[0].id])};S.tab="overlays";startDrag(e);return;}
     const pt=svgPt(e);
@@ -2199,6 +2295,68 @@ function setup(){
 
   // Help modal
   $("btn-help").onclick=()=>{$("help-modal").style.display="flex";};
+  // View controls
+  function syncViewInputs(){
+    const g=S.grid;
+    const startLabel=col2l(g.startCol).toUpperCase()+(g.startRow+1);
+    const endLabel=col2l(g.startCol+g.cols-1).toUpperCase()+(g.startRow+g.rows);
+    $("vw-start").value=startLabel;
+    $("vw-end").value=endLabel;
+    const isPartial=g.startCol>0||g.startRow>0||g.cols<(g.fullCols||g.cols)||g.rows<(g.fullRows||g.rows);
+    $("btn-vw-reset").style.display=isPartial?"inline-block":"none";
+    $("vw-start").style.borderColor=isPartial?"var(--accent)":"";
+    $("vw-end").style.borderColor=isPartial?"var(--accent)":"";
+  }
+  $("btn-vw-update").onclick=()=>{
+    const sVal=$("vw-start").value.trim(),eVal=$("vw-end").value.trim();
+    if(!sVal||!eVal){setStatus("⚠ Enter both start and end coordinates");return;}
+    const sm=sVal.match(/^([a-z]+)(\d+)$/i),em=eVal.match(/^([a-z]+)(\d+)$/i);
+    if(!sm||!em){setStatus("⚠ Invalid coordinates — use format like A1, J10");return;}
+    const sc=l2col(sm[1].toLowerCase()),sr=parseInt(sm[2])-1;
+    const ec=l2col(em[1].toLowerCase()),er=parseInt(em[2])-1;
+    const fc=S.grid.fullCols||S.grid.cols,fr=S.grid.fullRows||S.grid.rows;
+    if(sc<0||sr<0||ec>=fc||er>=fr||ec<sc||er<sr){setStatus("⚠ Coordinates out of range");return;}
+    pushU();S.grid.startCol=sc;S.grid.startRow=sr;S.grid.cols=ec-sc+1;S.grid.rows=er-sr+1;
+    renderAll();syncViewInputs();setStatus("✓ View set to "+sVal.toUpperCase()+" → "+eVal.toUpperCase());
+  };
+  $("btn-vw-reset").onclick=()=>{
+    pushU();S.grid.startCol=0;S.grid.startRow=0;
+    S.grid.cols=S.grid.fullCols||S.grid.cols;S.grid.rows=S.grid.fullRows||S.grid.rows;
+    renderAll();syncViewInputs();setStatus("✓ View reset to full map");
+  };
+  // Crop drag mode
+  let cropMode=false,cropStart=null;
+  $("btn-vw-drag").onclick=()=>{
+    cropMode=!cropMode;
+    $("btn-vw-drag").textContent=cropMode?"🔴 Cancel":"✂ Crop";
+    $("btn-vw-drag").style.background=cropMode?"var(--accent)":"";
+    $("btn-vw-drag").style.color=cropMode?"#000":"";
+    if(cropMode){setStatus("Click and drag on the map to define a view area");document.body.style.cursor="crosshair";}
+    else{document.body.style.cursor="";cropStart=null;}
+  };
+  const svgEl=$("map-svg");
+  svgEl.addEventListener("mousedown",function cropDown(e){
+    if(!cropMode)return;e.preventDefault();e.stopPropagation();
+    const g=S.grid,rect=svgEl.getBoundingClientRect(),z=S.zoom;
+    const sx=(e.clientX-rect.left)/z-PAD,sy=(e.clientY-rect.top)/z-PAD;
+    cropStart={col:Math.max(0,Math.floor(sx/g.cellSize)),row:Math.max(0,Math.floor(sy/g.cellSize))};
+  },true);
+  svgEl.addEventListener("mouseup",function cropUp(e){
+    if(!cropMode||!cropStart)return;e.preventDefault();e.stopPropagation();
+    const g=S.grid,rect=svgEl.getBoundingClientRect(),z=S.zoom;
+    const sx=(e.clientX-rect.left)/z-PAD,sy=(e.clientY-rect.top)/z-PAD;
+    const endCol=Math.min((g.fullCols||g.cols)-1,Math.floor(sx/g.cellSize));
+    const endRow=Math.min((g.fullRows||g.rows)-1,Math.floor(sy/g.cellSize));
+    const c1=Math.min(cropStart.col,endCol),r1=Math.min(cropStart.row,endRow);
+    const c2=Math.max(cropStart.col,endCol),r2=Math.max(cropStart.row,endRow);
+    if(c2-c1<1||r2-r1<1){cropStart=null;return;}
+    // Apply absolute coords (add current startCol/startRow offset)
+    pushU();S.grid.startCol=(g.startCol||0)+c1;S.grid.startRow=(g.startRow||0)+r1;
+    S.grid.cols=c2-c1+1;S.grid.rows=r2-r1+1;
+    cropMode=false;cropStart=null;document.body.style.cursor="";
+    $("btn-vw-drag").textContent="✂ Crop";$("btn-vw-drag").style.background="";$("btn-vw-drag").style.color="";
+    renderAll();syncViewInputs();setStatus("✓ View cropped to selection");
+  },true);
   $("help-close").onclick=()=>{$("help-modal").style.display="none";};
   $("help-modal").onclick=e=>{if(e.target===$("help-modal"))$("help-modal").style.display="none";};
 
@@ -2464,13 +2622,13 @@ function setup(){
     const lastW=S.wallDraw&&S.walls.length?S.walls[S.walls.length-1]:null;
     const lastF=S.fowDraw&&S.fowRegions.length?S.fowRegions[S.fowRegions.length-1]:null;
     S.wallDraw=null;S.fowDraw=null;document.body.classList.remove("drawing");
-    if(lastW){S.sel={type:"wall",ids:new Set([lastW.id])};S.mapSubTab="walls";}
-    else if(lastF){S.sel={type:"fow",ids:new Set([lastF.id])};S.mapSubTab="fog";}
+    if(lastW){S.sel={type:"wall",ids:new Set([lastW.id])};S.tab="objects";S.objSubTab="walls";}
+    else if(lastF){S.sel={type:"fow",ids:new Set([lastF.id])};S.tab="objects";S.objSubTab="fog";}
     renderAll();return;}if((e.key==="Delete"||e.key==="Backspace")&&S.sel.ids.size&&!["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName)){pushU();
     if(S.sel.type==="token"||S.sel.type==="mixed")S.tokens=S.tokens.filter(t=>!S.sel.ids.has(t.id));
     if(S.sel.type==="overlay"||S.sel.type==="mixed")S.overlays=S.overlays.filter(o=>!S.sel.ids.has(o.id));
-    if(S.sel.type==="wall")S.walls=S.walls.filter(w=>!S.sel.ids.has(w.id));
-    if(S.sel.type==="fow")S.fowRegions=S.fowRegions.filter(r=>!S.sel.ids.has(r.id));
+    if(S.sel.type==="wall"||S.sel.type==="mixed")S.walls=S.walls.filter(w=>!S.sel.ids.has(w.id));
+    if(S.sel.type==="fow"||S.sel.type==="mixed")S.fowRegions=S.fowRegions.filter(r=>!S.sel.ids.has(r.id));
     clearSel();renderAll();}if(e.ctrlKey&&e.shiftKey&&e.key==="z"){e.preventDefault();redoU();}else if(e.ctrlKey&&e.key==="z"){e.preventDefault();popU();}});
   document.addEventListener("mousedown",e=>{const pp=$("popup");if(pp.style.display==="block"&&!pp.contains(e.target)&&Date.now()-ppOpenedAt>300)pp.style.display="none";
     // Exit wall/FOW drawing mode on click outside viewport (use coords since renderAll may detach targets)
@@ -2765,6 +2923,22 @@ function loadFromHashStr(hash){
     r=r.trim();if(!r)return;const pts=r.split(":");if(pts.length!==2)return;
     const a=parseC(pts[0].trim()),b=parseC(pts[1].trim());
     if(a&&b)S.fowRegions.push({id:uid(),c1:a.col,r1:a.row,c2:b.col,r2:b.row});});}
+  // Parse initiative groups (ig=GroupName:Member1,Member2;Group2:Member3)
+  if(params.ig){params.ig.split(";").forEach(g=>{
+    if(!g.trim())return;const ci=g.indexOf(":");if(ci<1)return;
+    const grpName=g.slice(0,ci).replace(/_/g," ");
+    const members=g.slice(ci+1).split(",").map(m=>m.trim().replace(/_/g," "));
+    members.forEach(m=>{
+      const tk=S.tokens.find(t=>t.name===m);if(tk)tk.group=grpName;
+      const cmb=S.combatants.find(c=>c.name===m);if(cmb)cmb.group=grpName;});});}
+  // Parse initiative order (ip=Name:init;Name2:init2)
+  if(params.ip){params.ip.split(";").forEach(entry=>{
+    if(!entry.trim())return;const ci=entry.indexOf(":");if(ci<1)return;
+    const name=entry.slice(0,ci).replace(/_/g," ");const init=parseInt(entry.slice(ci+1));
+    const tk=S.tokens.find(t=>t.name===name);if(tk)tk.init=isNaN(init)?0:init;
+    const cmb=S.combatants.find(c=>c.name===name);if(cmb)cmb.init=isNaN(init)?0:init;});}
+  // Parse channel ID for tab scoping
+  if(params.ch)S.channelId=params.ch;
   // Always ensure DM is in combatants
   if(!S.combatants.find(c=>c.name==="DM"))S.combatants.push({name:"DM",placed:false});
   origState=snap();origBgUrl=S.loadedUrl||"";undoStack=[];redoStack=[];$("zoom-lbl").textContent=Math.round(S.zoom*100)+"%";
@@ -2774,12 +2948,31 @@ function loadFromHashStr(hash){
   const firstTok=sortedFirst[0];
   if(firstTok)S.sel={type:"token",ids:new Set([firstTok.id])};
   else if(S.overlays.length)S.sel={type:"overlay",ids:new Set([S.overlays[0].id])};
-  $("placeholder").style.display=S.loadedUrl?"none":"flex";
-  renderAll();setStatus("✅ Loaded "+S.tokens.length+" tokens, "+S.overlays.length+" overlays"+(S.walls.length?", "+S.walls.length+" walls":""));}
+  $("placeholder").style.display="none";
+  renderAll();setStatus("✅ Loaded "+S.tokens.length+" tokens, "+S.overlays.length+" overlays"+(S.walls.length?", "+S.walls.length+" walls":""));
+  if(S.grid.cellSize<40&&S.tokens.some(t=>t.tokenImage))setTimeout(()=>setStatus("⚠ Grid size is "+S.grid.cellSize+"px — custom token images need 40px or larger to display"),1500);}
 // Auto-load from URL hash on page load
 function loadFromHash(){const hash=safeHash().slice(1);if(hash)loadFromHashStr(hash);}
 setup();loadFromHash();
-// Auto-load test string if no hash provided
-if(!safeHash()||safeHash()==="#"){const testStr="g=22x33&o=c100&bg=https://iili.io/Ki6hKva.jpg&vw=a1:22x33&t=Ruadan|Q9|G|b|0|8arvw;Carnahan_Eldrake|F22|H|b|0|;1v|L20|M|b|0|;2v|L20|M|b|0|;3v|L20|M|b|0|;4v|L20|M|b|0|;Kharg|F10|M|b|0|;GO1|U16|M|r|0|;GO2|B9|M|r|0|;GO3|L12|M|r|0|;GO4|L12|M|r|0|&np=DM;Tariq&fn=Ruadan~Location: Q9 | Token: 8arvw | Size: G (Gargantuan);;Carnahan_Eldrake~Location: F22 | Size: H (Huge);;1v~Location: L20;;2v~Location: L20;;3v~Location: L20;;4v~Location: L20;;Kharg~Location: F10;;GO1~Location: U16;;GO2~Location: B9;;GO3~Location: L12;;GO4~Location: L12&st=tariq:w2a99;carn_face:wvmt7&sm=slum_gridless;bridge;true;gears&sb=test;walltest&w=-coT3T9,-cbkT9-bM7,-cbkM7-sM4,-cbkM4-dO2,-cbkO2Q5,-crQ5R3,-cbkB4-oC4,-cbkB5-dC5,-cbkB6-sC6,-cbkB7-bC7,-cyB8-oC8,-cbB9-dC9,-ccB10-sC10,-cwB11-bC11";$("url-input").value=testStr;loadFromHashStr(testStr);}
+// Default: 10x10 grid (matches OTFBM default when no map is defined)
+if(!safeHash()||safeHash()==="#"){
+  S.grid.cols=10;S.grid.rows=10;S.grid.fullCols=10;S.grid.fullRows=10;S.grid.cellSize=40;
+  S.tokens=[{id:uid(),name:"DM",col:0,row:0,size:"M",color:"#000000",height:0,tokenImage:"",originalCol:0,originalRow:0,hidden:true}];
+  S.combatants=[{name:"DM",placed:false,note:""}];
+  origState=snap();origBgUrl="";undoStack=[];redoStack=[];
+  $("placeholder").style.display="none";
+  setStatus("Default 10×10 grid — paste a !bscry string to load your map");}
 renderAll();
+// Tab management — notify old tabs for the SAME channel when a new instance opens
+try{
+  const chId=S.channelId||"default";
+  const bc=new BroadcastChannel("battlescry_"+chId);
+  bc.onmessage=(e)=>{if(e.data==="new_instance"){
+    const banner=document.createElement("div");
+    banner.style.cssText="position:fixed;top:0;left:0;right:0;z-index:999;background:#e74c3c;color:#fff;text-align:center;padding:8px 12px;font-size:13px;font-weight:bold;cursor:pointer";
+    banner.textContent="⚠ A newer BattleScry session for this channel is open. Click to close this tab.";
+    banner.onclick=()=>window.close()||location.replace("about:blank");
+    document.body.prepend(banner);}};
+  bc.postMessage("new_instance");
+}catch(e){}
 </script></body></html>
