@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="3.16.2"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="3.18.1"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>🔮 BattleScry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
 <style>
@@ -77,7 +77,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 
 </style></head><body>
 <div id="toolbar">
-  <span class="logo">🔮 BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v3.16.2</span>
+  <span class="logo">🔮 BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v3.18.1</span>
   <button id="sample-badge" style="display:none;background:var(--accent);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border:none;border-radius:4px;cursor:pointer;white-space:nowrap" title="Click to exit demo mode and return to empty grid">👀 DEMO MODE — exit</button>
   <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Revert all changes to original state">⟲ Revert</button>
   <button id="btn-undo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Undo last change (Ctrl+Z)">↩ Undo</button>
@@ -1710,18 +1710,18 @@ function renderCmd(){
     const wSegs=S.walls.map(w=>{const cc=h2c(w.color)||"bk";
       return "-c"+cc+fmtU(w.start.col,w.start.row)+(w.door?doorC[w.door]||"":"")+fmtU(w.end.col,w.end.row);});
     if(wSegs.length)ep.push("Walls: "+wSegs.join(", "));
-    ep.push("View: a1:"+S.grid.cols+"x"+S.grid.rows);
-    // FOW regions
-    const fowSegs=S.fowRegions.map(r=>fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2))+":"+fmtU(Math.max(r.c1,r.c2),Math.max(r.r1,r.r2)));
-    if(fowSegs.length)ep.push("FOW: "+fowSegs.join(", "));
-    // Map objects — emit as <coord>[<coord2>]:<full-type>[,<color>], comma-space separated
+    // Map objects — emit as <coord>[<coord2>]:<full-type>[,<color>], '/'-separated (matches Croebh !map convention)
     const objSegs=S.objects.map(o=>{
       const c1=fmtU(Math.min(o.col,o.col2),Math.min(o.row,o.row2));
       const c2=(o.col===o.col2&&o.row===o.row2)?"":fmtU(Math.max(o.col,o.col2),Math.max(o.row,o.row2));
       const full=(OBJ_META[o.type]&&OBJ_META[o.type].full)||o.type;
       const cl=o.color?","+h2c(o.color):"";
       return c1+c2+":"+full+cl;});
-    if(objSegs.length)ep.push("Objects: "+objSegs.join(", "));
+    if(objSegs.length)ep.push("Objects: "+objSegs.join("/"));
+    ep.push("View: a1:"+S.grid.cols+"x"+S.grid.rows);
+    // FOW regions
+    const fowSegs=S.fowRegions.map(r=>fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2))+":"+fmtU(Math.max(r.c1,r.c2),Math.max(r.r1,r.r2)));
+    if(fowSegs.length)ep.push("FOW: "+fowSegs.join(", "));
     effectText=ep.join(" ~ ");
     // Warn if no attach target
     const attachTarget=S.combatants.find(c=>["DM","Map","Lair"].includes(c.name));
@@ -1843,17 +1843,20 @@ function overlaysAtArea(col,row){return S.overlays.filter(ov=>ovCoversCell(ov,co
 // Get all tokens and overlays under a screen point (pixel-accurate)
 function objectsAtPoint(clientX,clientY){
   const els=document.elementsFromPoint(clientX,clientY);
-  const tokIds=new Set(),ovIds=new Set();
+  const tokIds=new Set(),ovIds=new Set(),objIds=new Set();
   els.forEach(el=>{
     const tid=el.closest?.("[data-tid]");if(tid)tokIds.add(+tid.dataset.tid);
     const oid=el.closest?.("[data-oid]");if(oid)ovIds.add(+oid.dataset.oid);
     const aim=el.closest?.("[data-aim]");if(aim)ovIds.add(+aim.dataset.aim);
     const rsz=el.closest?.("[data-rsz]");if(rsz)ovIds.add(+rsz.dataset.rsz);
     const mc=el.closest?.("[data-movecoord]");if(mc)ovIds.add(+mc.dataset.movecoord);
-    const wr=el.closest?.("[data-widthrsz]");if(wr)ovIds.add(+wr.dataset.widthrsz);});
+    const wr=el.closest?.("[data-widthrsz]");if(wr)ovIds.add(+wr.dataset.widthrsz);
+    const objid=el.closest?.("[data-objid]");if(objid)objIds.add(+objid.dataset.objid);
+    const objrsz=el.closest?.("[data-objrsz]");if(objrsz)objIds.add(+objrsz.dataset.objrsz);});
   const toks=S.tokens.filter(t=>tokIds.has(t.id));
   const ovs=S.overlays.filter(o=>ovIds.has(o.id));
-  return{toks,ovs};}
+  const objs=S.objects.filter(o=>objIds.has(o.id));
+  return{toks,ovs,objs};}
 function showTT(e){const tt=$("tooltip"),svg=$("map-svg"),rect=svg.getBoundingClientRect();
   const x=(e.clientX-rect.left)/S.zoom-PAD,y=(e.clientY-rect.top)/S.zoom-PAD;
   const g=S.grid,col=Math.floor((x-g.offsetX)/g.cellSize),row=Math.floor((y-g.offsetY)/g.cellSize);
@@ -1865,21 +1868,29 @@ function showTT(e){const tt=$("tooltip"),svg=$("map-svg"),rect=svg.getBoundingCl
   // Pixel-accurate hit detection
   const hits=objectsAtPoint(e.clientX,e.clientY);
   if(hits.toks.length) text+=": "+hits.toks.map(t=>tokInfo(t)).join(", ");
-  if(hits.ovs.length){if(hits.toks.length)text+=", ";else text+=": ";text+=hits.ovs.map(o=>{const n=getOvNum(o);return`[${n.label}: ${o.type}${o.size?" "+o.size+"'":""}${o.target?" → "+o.target:""}${o.locked?" 🔗":""}]`;}).join(", ");}}
+  if(hits.ovs.length){if(hits.toks.length)text+=", ";else text+=": ";text+=hits.ovs.map(o=>{const n=getOvNum(o);return`[${n.label}: ${o.type}${o.size?" "+o.size+"'":""}${o.target?" → "+o.target:""}${o.locked?" 🔗":""}]`;}).join(", ");}
+  if(hits.objs.length){if(hits.toks.length||hits.ovs.length)text+=", ";else text+=": ";text+=hits.objs.map(o=>{const meta=OBJ_META[o.type]||{name:o.type};return`{${meta.name}}`;}).join(", ");}}
   tt.textContent=text;tt.style.display="block";tt.style.left=(e.clientX+14)+"px";tt.style.top=(e.clientY-10)+"px";}
 
 // POPUP for multi-object selection — mergeMode adds to existing selection
 let ppOpenedAt=0;
 function showPopup(e,items,mergeMode){ppOpenedAt=Date.now();const pp=$("popup");
-  // Sort: tokens first (alphabetical), then overlays (by target)
-  items.sort((a,b)=>{if(a._type!==b._type)return a._type==="token"?-1:1;if(a._type==="token")return natSort(a.name,b.name);return natSort(a.target||"",b.target||"");});
+  // Sort: tokens first (alphabetical), then overlays (by target), then objects (by type name)
+  const typeRank={token:0,overlay:1,object:2};
+  items.sort((a,b)=>{if(a._type!==b._type)return(typeRank[a._type]??99)-(typeRank[b._type]??99);
+    if(a._type==="token")return natSort(a.name,b.name);
+    if(a._type==="object"){const an=(OBJ_META[a.type]||{}).name||a.type,bn=(OBJ_META[b.type]||{}).name||b.type;return natSort(an,bn);}
+    return natSort(a.target||"",b.target||"");});
   let h=`<h3>Select objects${mergeMode?" (adding to selection)":""}</h3>`;
-  items.forEach(it=>{const isSeld=(S.sel.type==="token"||S.sel.type==="mixed"||S.sel.type==="overlay")&&S.sel.ids.has(it.id);
-    let icon;
-    if(it._type==="token"){icon=`<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${it.color};border:1px solid rgba(0,0,0,.4);vertical-align:middle"></span>`;}
+  items.forEach(it=>{const isSeld=(S.sel.type==="token"||S.sel.type==="mixed"||S.sel.type==="overlay"||S.sel.type==="object")&&S.sel.ids.has(it.id);
+    let icon,lbl;
+    if(it._type==="token"){icon=`<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${it.color};border:1px solid rgba(0,0,0,.4);vertical-align:middle"></span>`;lbl=tokInfo(it);}
+    else if(it._type==="object"){const meta=OBJ_META[it.type]||{name:it.type};
+      icon=`<span style="color:${it.color||"#888"};font-size:18px;line-height:14px;vertical-align:middle">▢</span>`;
+      lbl=meta.name+" @ "+fmtU(Math.min(it.col,it.col2),Math.min(it.row,it.row2));}
     else{const shp={circle:"●",circletop:"●",circlecorner:"●",square:"■",cone:"◄",arrow:"→",line:"━"};
-      icon=`<span style="color:${it.color};font-size:20px;line-height:14px;vertical-align:middle">${shp[it.type]||"◆"}</span>`;}
-    const lbl=it._type==="token"?tokInfo(it):getOvDisplayName(it);
+      icon=`<span style="color:${it.color};font-size:20px;line-height:14px;vertical-align:middle">${shp[it.type]||"◆"}</span>`;
+      lbl=getOvDisplayName(it);}
     h+=`<label><input type="checkbox" data-itype="${it._type}" value="${it.id}" ${isSeld?"checked":""} style="accent-color:var(--accent)"> ${icon} ${lbl}</label>`;});
   h+=`<div style="margin-top:6px"><label style="font-size:11px"><input type="checkbox" id="pp-all" style="accent-color:var(--accent)"> Select All</label></div><div class="actions"><button class="btn btn-s" id="pp-cancel">Cancel</button><button class="btn btn-p" id="pp-ok">OK</button></div>`;
   pp.innerHTML=h;pp.style.display="block";pp.style.left=Math.min(e.clientX,innerWidth-240)+"px";pp.style.top=Math.min(e.clientY,innerHeight-200)+"px";
@@ -1889,14 +1900,19 @@ function showPopup(e,items,mergeMode){ppOpenedAt=Date.now();const pp=$("popup");
     const checked=[...pp.querySelectorAll('input[value]:checked')];
     const newTokIds=checked.filter(c=>c.dataset.itype==="token").map(c=>+c.value);
     const newOvIds=checked.filter(c=>c.dataset.itype==="overlay").map(c=>+c.value);
+    const newObjIds=checked.filter(c=>c.dataset.itype==="object").map(c=>+c.value);
     // Merge with existing selection if mergeMode
-    const allIds=new Set(mergeMode?[...S.sel.ids,...newTokIds,...newOvIds]:[...newTokIds,...newOvIds]);
+    const allIds=new Set(mergeMode?[...S.sel.ids,...newTokIds,...newOvIds,...newObjIds]:[...newTokIds,...newOvIds,...newObjIds]);
     // Remove unchecked items from this popup (deselect)
     if(mergeMode){const unchecked=[...pp.querySelectorAll('input[value]:not(:checked)')].map(c=>+c.value);unchecked.forEach(id=>allIds.delete(id));}
     if(!allIds.size){clearSel();}
-    else{const hasTok=S.tokens.some(t=>allIds.has(t.id));const hasOv=S.overlays.some(o=>allIds.has(o.id));
-      S.sel={type:hasTok&&hasOv?"mixed":hasTok?"token":"overlay",ids:allIds};
-      if(hasTok&&!hasOv)S.tab="tokens";else if(hasOv&&!hasTok)S.tab="overlays";}
+    else{const hasTok=S.tokens.some(t=>allIds.has(t.id));const hasOv=S.overlays.some(o=>allIds.has(o.id));const hasObj=S.objects.some(o=>allIds.has(o.id));
+      const numTypes=[hasTok,hasOv,hasObj].filter(Boolean).length;
+      const type=numTypes>1?"mixed":hasTok?"token":hasOv?"overlay":hasObj?"object":"token";
+      S.sel={type,ids:allIds};
+      if(hasTok&&!hasOv&&!hasObj)S.tab="tokens";
+      else if(hasOv&&!hasTok&&!hasObj)S.tab="overlays";
+      else if(hasObj&&!hasTok&&!hasOv){S.tab="dm";S.dmSubTab="mapobj";}}
     pp.style.display="none";renderAll();};}
 
 
@@ -2716,7 +2732,8 @@ function setup(){
     const hasOv=S.overlays.some(o=>newIds.has(o.id));
     const hasWall=S.walls.some(w=>newIds.has(w.id));
     const hasFow=S.fowRegions.some(r=>newIds.has(r.id));
-    const types=[hasTok&&"token",hasOv&&"overlay",hasWall&&"wall",hasFow&&"fow"].filter(Boolean);
+    const hasObj=S.objects.some(o=>newIds.has(o.id));
+    const types=[hasTok&&"token",hasOv&&"overlay",hasWall&&"wall",hasFow&&"fow",hasObj&&"object"].filter(Boolean);
     S.sel={type:types.length>1?"mixed":types[0]||"token",ids:newIds};}
 
   $("map-svg").addEventListener("mousedown",e=>{
@@ -2765,7 +2782,14 @@ function setup(){
       // Otherwise, treat as selection
       if(e.ctrlKey||e.metaKey){ctrlToggle(oid);S._lastClick={type:"object",id:oid};}
       else if(e.shiftKey){shiftRange("data-objid",oid,"object");}
-      else{S.sel={type:"object",ids:new Set([oid])};S._lastClick={type:"object",id:oid};}
+      else{
+        // Pixel-accurate: check for other items stacked under cursor (tokens, overlays, objects)
+        const hitsObj=objectsAtPoint(e.clientX,e.clientY);
+        if(hitsObj.toks.length+hitsObj.ovs.length+hitsObj.objs.length>1){
+          const items=[...hitsObj.toks.map(t=>({...t,_type:"token"})),...hitsObj.ovs.map(o=>({...o,_type:"overlay"})),...hitsObj.objs.map(o=>({...o,_type:"object"}))];
+          showPopup(e,items,false);return;}
+        S.sel={type:"object",ids:new Set([oid])};S._lastClick={type:"object",id:oid};
+      }
       S.tab="dm";S.dmSubTab="mapobj";renderAll();return;}
     // Ruler mode — click-and-drag to measure. Single click on token = popup; single click on grid = nothing.
     if(S.rulerMode){const pt=svgPt(e),gp=pt2g(pt.x,pt.y);
@@ -2872,8 +2896,8 @@ function setup(){
       if(multi){ctrlToggle(oid);renderAll();return;}
       // Pixel-accurate: check for multiple objects under cursor
       const hits1=objectsAtPoint(e.clientX,e.clientY);
-      if(hits1.toks.length+hits1.ovs.length>1){
-        const items=[...hits1.toks.map(t=>({...t,_type:"token"})),...hits1.ovs.map(o=>({...o,_type:"overlay"}))];
+      if(hits1.toks.length+hits1.ovs.length+hits1.objs.length>1){
+        const items=[...hits1.toks.map(t=>({...t,_type:"token"})),...hits1.ovs.map(o=>({...o,_type:"overlay"})),...hits1.objs.map(o=>({...o,_type:"object"}))];
         showPopup(e,items,false);return;}
       S.sel={type:"overlay",ids:new Set([oid])};S.tab="overlays";renderAll();return;}
     // 2. Pie chart — if selected tokens in this pie, drag; else popup
@@ -2883,7 +2907,7 @@ function setup(){
       if(selInPie.length>0&&!multi){startDrag(e);return;}
       const hitsPie=objectsAtPoint(e.clientX,e.clientY);
       const pieToks=S.tokens.filter(t=>ids.includes(t.id));
-      const items=[...pieToks.map(t=>({...t,_type:"token"})),...hitsPie.ovs.map(o=>({...o,_type:"overlay"}))];
+      const items=[...pieToks.map(t=>({...t,_type:"token"})),...hitsPie.ovs.map(o=>({...o,_type:"overlay"})),...hitsPie.objs.map(o=>({...o,_type:"object"}))];
       showPopup(e,items,multi);return;}
     // 3. Single token click
     const tg=e.target.closest("[data-tid]");
@@ -2892,8 +2916,8 @@ function setup(){
       if(isSel("token",tid)){startDrag(e);return;}
       // Pixel-accurate: check for other objects under cursor
       const hits3=objectsAtPoint(e.clientX,e.clientY);
-      if(hits3.toks.length+hits3.ovs.length>1){
-        const items=[...hits3.toks.map(t=>({...t,_type:"token"})),...hits3.ovs.map(o=>({...o,_type:"overlay"}))];
+      if(hits3.toks.length+hits3.ovs.length+hits3.objs.length>1){
+        const items=[...hits3.toks.map(t=>({...t,_type:"token"})),...hits3.ovs.map(o=>({...o,_type:"overlay"})),...hits3.objs.map(o=>({...o,_type:"object"}))];
         showPopup(e,items,false);return;}
       S.sel={type:"token",ids:new Set([tid])};S.tab="tokens";startDrag(e);return;}
     // 4. Wall click
@@ -2909,9 +2933,10 @@ function setup(){
       renderAll();return;}
     // 5. Background click — pixel-accurate check
     const hitsAll=objectsAtPoint(e.clientX,e.clientY);
-    if(hitsAll.toks.length+hitsAll.ovs.length>1){const items=[...hitsAll.toks.map(t=>({...t,_type:"token"})),...hitsAll.ovs.map(o=>({...o,_type:"overlay"}))];showPopup(e,items,multi);return;}
+    if(hitsAll.toks.length+hitsAll.ovs.length+hitsAll.objs.length>1){const items=[...hitsAll.toks.map(t=>({...t,_type:"token"})),...hitsAll.ovs.map(o=>({...o,_type:"overlay"})),...hitsAll.objs.map(o=>({...o,_type:"object"}))];showPopup(e,items,multi);return;}
     if(hitsAll.toks.length===1){S.sel={type:"token",ids:new Set([hitsAll.toks[0].id])};S.tab="tokens";startDrag(e);return;}
     if(hitsAll.ovs.length===1){S.sel={type:"overlay",ids:new Set([hitsAll.ovs[0].id])};S.tab="overlays";startDrag(e);return;}
+    if(hitsAll.objs.length===1){S.sel={type:"object",ids:new Set([hitsAll.objs[0].id])};S.tab="dm";S.dmSubTab="mapobj";renderAll();return;}
     const pt=svgPt(e);
     mStart={x:pt.x-PAD,y:pt.y-PAD,sx:e.clientX,sy:e.clientY};clearSel();renderAll();
   });
@@ -3123,12 +3148,20 @@ function setup(){
     if(S.resize){S.resize=null;document.body.classList.remove("resizing");renderAll();return;}
     if(S.drag){S.drag=null;renderSB();return;}
     if(S.marquee){
-      // Find objects in marquee
+      // Find tokens + objects in marquee
       const mx1=Math.min(S.marquee.x1,S.marquee.x2),my1=Math.min(S.marquee.y1,S.marquee.y2);
       const mx2=Math.max(S.marquee.x1,S.marquee.x2),my2=Math.max(S.marquee.y1,S.marquee.y2);
-      const ids=new Set();
-      S.tokens.filter(t=>!t.hidden).forEach(t=>{const p=tokCenter(t);if(p.x>=mx1&&p.x<=mx2&&p.y>=my1&&p.y<=my2)ids.add(t.id);});
-      if(ids.size)S.sel={type:"token",ids};
+      const tokIds=new Set(),objIds=new Set();
+      S.tokens.filter(t=>!t.hidden).forEach(t=>{const p=tokCenter(t);if(p.x>=mx1&&p.x<=mx2&&p.y>=my1&&p.y<=my2)tokIds.add(t.id);});
+      const g=S.grid,cs=g.cellSize;
+      S.objects.forEach(o=>{
+        const c=(o.col+o.col2)/2,r=(o.row+o.row2)/2;
+        const px=g.offsetX+(c+0.5)*cs,py=g.offsetY+(r+0.5)*cs;
+        if(px>=mx1&&px<=mx2&&py>=my1&&py<=my2)objIds.add(o.id);});
+      const ids=new Set([...tokIds,...objIds]);
+      if(ids.size){
+        const type=(tokIds.size&&objIds.size)?"mixed":tokIds.size?"token":"object";
+        S.sel={type,ids};}
       S.marquee=null;renderAll();
     }
     mStart=null;};
@@ -3538,12 +3571,14 @@ function setup(){
       if(S.sel.type==="overlay"||S.sel.type==="mixed")S.overlays.filter(o=>S.sel.ids.has(o.id)).forEach(o=>{if(o.coord){o.coord.col+=dc;o.coord.row+=dr;}if(o.coord2){o.coord2.col+=dc;o.coord2.row+=dr;}});
       if(S.sel.type==="wall"||S.sel.type==="mixed")S.walls.filter(w=>S.sel.ids.has(w.id)).forEach(w=>{w.start.col+=dc;w.start.row+=dr;w.end.col+=dc;w.end.row+=dr;});
       if(S.sel.type==="fow"||S.sel.type==="mixed")S.fowRegions.filter(r=>S.sel.ids.has(r.id)).forEach(r=>{r.c1+=dc;r.r1+=dr;r.c2+=dc;r.r2+=dr;});
+      if(S.sel.type==="object"||S.sel.type==="mixed")S.objects.filter(o=>S.sel.ids.has(o.id)).forEach(o=>{o.col+=dc;o.row+=dr;if(o.col2!=null)o.col2+=dc;if(o.row2!=null)o.row2+=dr;});
       renderAll();return;}
     if((e.key==="Delete"||e.key==="Backspace")&&S.sel.ids.size&&!["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName)){pushU();
     if(S.sel.type==="token"||S.sel.type==="mixed")S.tokens=S.tokens.filter(t=>!S.sel.ids.has(t.id));
     if(S.sel.type==="overlay"||S.sel.type==="mixed")S.overlays=S.overlays.filter(o=>!S.sel.ids.has(o.id));
     if(S.sel.type==="wall"||S.sel.type==="mixed")S.walls=S.walls.filter(w=>!S.sel.ids.has(w.id));
     if(S.sel.type==="fow"||S.sel.type==="mixed")S.fowRegions=S.fowRegions.filter(r=>!S.sel.ids.has(r.id));
+    if(S.sel.type==="object"||S.sel.type==="mixed")S.objects=S.objects.filter(o=>!S.sel.ids.has(o.id));
     clearSel();renderAll();}if(e.ctrlKey&&e.shiftKey&&e.key==="z"){e.preventDefault();redoU();}else if(e.ctrlKey&&e.key==="z"){e.preventDefault();popU();}});
   document.addEventListener("mousedown",e=>{const pp=$("popup");if(pp.style.display==="block"&&!pp.contains(e.target)&&Date.now()-ppOpenedAt>300)pp.style.display="none";
     // Exit wall/FOW drawing mode on click outside viewport
