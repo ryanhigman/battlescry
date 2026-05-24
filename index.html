@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="3.18.1"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.4"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>🔮 BattleScry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
 <style>
@@ -77,7 +77,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 
 </style></head><body>
 <div id="toolbar">
-  <span class="logo">🔮 BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v3.18.1</span>
+  <span class="logo">🔮 BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.4</span>
   <button id="sample-badge" style="display:none;background:var(--accent);color:#000;font-size:10px;font-weight:bold;padding:3px 8px;border:none;border-radius:4px;cursor:pointer;white-space:nowrap" title="Click to exit demo mode and return to empty grid">👀 DEMO MODE — exit</button>
   <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Revert all changes to original state">⟲ Revert</button>
   <button id="btn-undo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Undo last change (Ctrl+Z)">↩ Undo</button>
@@ -117,7 +117,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
     <button id="btn-fith" class="btn btn-s" style="font-size:9px;padding:2px 0;width:28px" onmousedown="event.preventDefault()" title="Fit map height to viewport">Fit H</button>
     <button id="btn-fitall" class="btn btn-s" style="font-size:9px;padding:2px 0;width:28px" onmousedown="event.preventDefault()" title="View entire map in viewport">Full</button>
     <hr style="border:0;border-top:1px solid rgba(255,255,255,0.2);margin:2px 0;width:100%">
-    <button id="btn-ruler" class="btn btn-s" style="padding:2px 0;width:28px;height:24px;display:inline-flex;align-items:center;justify-content:center" onmousedown="event.preventDefault()" title="Ruler — measure distances between points or tokens"><svg viewBox="0 0 18 18" width="18" height="18" stroke-linejoin="round"><g transform="rotate(-12 9 9)"><rect x="0.5" y="6.5" width="17" height="2.2" fill="#7BAEC4" stroke="#3F6478" stroke-width="0.3"/><rect x="0.5" y="8.4" width="17" height="4.6" rx="0.4" fill="#A8C7D4" stroke="#3F6478" stroke-width="0.3"/><g stroke="#3F6478" stroke-width="0.7" stroke-linecap="round" fill="none"><line x1="2.2" y1="8.5" x2="2.2" y2="11"/><line x1="3.5" y1="8.5" x2="3.5" y2="9.8"/><line x1="4.8" y1="8.5" x2="4.8" y2="11"/><line x1="6.1" y1="8.5" x2="6.1" y2="9.8"/><line x1="7.4" y1="8.5" x2="7.4" y2="11"/><line x1="8.7" y1="8.5" x2="8.7" y2="9.8"/><line x1="10" y1="8.5" x2="10" y2="11"/><line x1="11.3" y1="8.5" x2="11.3" y2="9.8"/><line x1="12.6" y1="8.5" x2="12.6" y2="11"/><line x1="13.9" y1="8.5" x2="13.9" y2="9.8"/><line x1="15.2" y1="8.5" x2="15.2" y2="11"/></g></g></svg></button>
+    <button id="btn-ruler" class="btn btn-s" style="padding:2px 0;width:28px;height:24px;display:inline-flex;align-items:center;justify-content:center" onmousedown="event.preventDefault()" title="Ruler — measure distances between points or tokens"><svg viewBox="0 0 122.88 122.88" width="16" height="16" fill="currentColor"><path d="M0.92,32.82l31.9-31.9C33.44,0.3,34.24,0,35.05,0c0.8,0,1.61,0.3,2.22,0.92l84.69,84.69c0.61,0.61,0.92,1.42,0.92,2.23c0,0.8-0.31,1.6-0.92,2.21l-0.01,0.01l0.01,0.01l-31.9,31.9c-0.62,0.62-1.42,0.92-2.23,0.92c-0.8,0-1.61-0.3-2.23-0.92L0.92,37.27C0.3,36.65,0,35.84,0,35.05C0,34.24,0.3,33.44,0.92,32.82L0.92,32.82z M105.32,77.15L90.84,91.63c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l14.48-14.48L90.12,61.94l-6.86,6.85c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l6.86-6.86L75.88,47.71L61.4,62.19c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l14.48-14.48L61.09,32.91l-6.86,6.85c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l6.86-6.86L46.43,18.26L31.95,32.74c-1.13,1.13-2.83,1.25-3.8,0.29c-0.97-0.97-0.84-2.67,0.29-3.8l14.48-14.48l-7.87-7.87L6.87,35.05l80.96,80.96l28.17-28.17C102.8,74.62,118.53,90.36,105.32,77.15L105.32,77.15z"/></svg></button>
   </div></div>
   <div id="sidebar"><div id="tabs"><button class="active" data-tab="tokens">Tokens</button><button data-tab="overlays">Overlays</button><button data-tab="dm">DM Tools</button></div><div id="tab-content"><div id="props-area"></div><div id="list-area"></div></div><div id="cmd-bar"><div style="font-size:10px;color:var(--fg3);margin-bottom:3px">Pending changes:</div><div class="cmd" id="cmd-text" style="color:var(--fg4);font-size:10px;line-height:1.4">None — make edits to enable Export Updated Map</div></div></div>
 </div>
@@ -147,7 +147,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
     </div>
   </div>
 </div>
-<div id="load-toast" style="display:none;position:fixed;top:54px;right:14px;z-index:250;background:var(--bg2);border:1px solid var(--accent);border-radius:6px;padding:12px 14px;max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,0.5)">
+<div id="load-toast" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:250;background:var(--bg2);border:1px solid var(--accent);border-radius:6px;padding:14px 18px;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,0.6)">
   <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px"><span style="font-size:16px;flex-shrink:0">✅</span><div style="font-size:12px;color:var(--fg);line-height:1.5"><b id="toast-summary">Map loaded</b><br><span style="color:var(--fg3);font-size:11px">Edit anything, then click <b>📋 Export Updated Map</b> when done.</span></div></div>
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span id="toast-countdown" style="font-size:9px;color:var(--fg4);font-style:italic">Self-destruct in <span id="toast-secs">5</span>s…</span><button class="btn btn-s" id="toast-ok" style="font-size:10px;padding:3px 12px">OK</button></div>
   <label style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--fg4);margin-top:8px;cursor:pointer"><input type="checkbox" id="toast-dontshow" style="accent-color:var(--accent);cursor:pointer"><span>Don't show next time</span></label>
@@ -449,7 +449,7 @@ function showDistPopup(origin){
   dt.textContent=`📏 ${origin.name} (${origin.size}${hStr})`;
   ds.value="";
   function renderDistList(filter){
-    const others=S.tokens.filter(t=>!t.hidden&&t.id!==origin.id);
+    const others=S.tokens.filter(t=>!t.hidden&&!t.mapHidden&&t.id!==origin.id);
     const filtered=filter?others.filter(t=>t.name.toLowerCase().includes(filter.toLowerCase())):others;
     const withDist=filtered.map(t=>({tok:t,dist:cubeDist3D(origin,t)})).sort((a,b)=>a.dist-b.dist);
     let h="";
@@ -597,8 +597,8 @@ function getOvDisplayName(ov){
 function tokLbl(t,mx){const c=SIZES[t.size]?.c||1;const m=mx||Math.max(2,Math.floor(c*5));return t.name.slice(0,m);}
 // Token display info for lists/popups: Name, Name (30'H), Name (S), Name (-10'H, S)
 function tokInfo(t){const parts=[];if(t.height)parts.push(t.height+"'H");if(t.size!=="M")parts.push(t.size);return parts.length?t.name+" ("+parts.join(", ")+")":t.name;}
-function groupToks(){const g={};S.tokens.filter(t=>!t.hidden).forEach(t=>{const k=`${t.col},${t.row},${t.size}`;(g[k]=g[k]||[]).push(t);});return g;}
-function tokensAt(col,row){return S.tokens.filter(t=>{if(t.hidden)return false;const c=Math.ceil(SIZES[t.size]?.c||1);return col>=t.col&&col<t.col+c&&row>=t.row&&row<t.row+c;});}
+function groupToks(){const g={};S.tokens.filter(t=>!t.hidden&&!t.mapHidden).forEach(t=>{const k=`${t.col},${t.row},${t.size}`;(g[k]=g[k]||[]).push(t);});return g;}
+function tokensAt(col,row){return S.tokens.filter(t=>{if(t.hidden||t.mapHidden)return false;const c=Math.ceil(SIZES[t.size]?.c||1);return col>=t.col&&col<t.col+c&&row>=t.row&&row<t.row+c;});}
 function overlaysAt(col,row){return S.overlays.filter(ov=>{if(!ov.coord)return false;return ov.coord.col===col&&ov.coord.row===row;});}
 // Center of token in SVG coords
 function tokCenter(t){const g=S.grid,cp=SIZES[t.size]?.c||1;return{x:g.offsetX+t.col*g.cellSize+(cp*g.cellSize)/2,y:g.offsetY+t.row*g.cellSize+(cp*g.cellSize)/2};}
@@ -1137,8 +1137,8 @@ function buildBattleData(){
   const parts=[];
   // DM entry
   parts.push("DM|||||");
-  // All visible tokens
-  S.tokens.filter(t=>!t.hidden).forEach(t=>{
+  // All visible tokens — exclude map-hidden (user toggled off) from OTFBM rendering
+  S.tokens.filter(t=>!t.hidden&&!t.mapHidden).forEach(t=>{
     const loc=fmtU(t.col,t.row);const tsz=t.size!=="M"?t.size:"";
     const cl=h2c(t.color)||"";const ht=t.height?String(t.height):"";
     const tok=(t.tokenImage||"").replace(/~$/,"");
@@ -1223,35 +1223,35 @@ function rTokenProps(el){
   el.innerHTML=h;}
 function rTokenList(el){let h="";
   const colorName=hex=>{const n=h2c(hex);const names={r:"red",b:"blue",g:"green",y:"yellow",pk:"pink",p:"purple",c:"cyan",bn:"brown",o:"orange",w:"white",bk:"black"};return names[n]||n||"unknown";};
-  // Unplaced Objects group
-  const unplaced=S.combatants.filter(c=>!c.placed&&!S.tokens.find(t=>t.name===c.name&&!t.hidden));
-  if(unplaced.length){
-    h+=`<div class="grp-hdr" data-grp="np"><span class="arrow${S.npCol?" closed":""}">▼</span><span class="sec-title" style="color:var(--fg3)">Unplaced Objects (${unplaced.length})</span></div>`;
-    if(!S.npCol){unplaced.forEach(c=>{const sel=S.sel.type==="unplaced"&&S.sel.name===c.name;const sv=c.savedTok;
-      const dotColor=sv?.color||"var(--fg3)";
-      const initLbl=c.init!==undefined?`<span style="font-family:monospace;font-size:9px;color:var(--fg3);margin-left:auto;padding-left:4px">⚔${c.init}</span>`:"";
-      h+=`<div class="obj-item${sel?" sel":""}" data-npname="${c.name}" style="display:flex;align-items:center"><div class="dot" style="background:${dotColor};width:10px;height:10px;opacity:.6"></div><div class="info" style="flex:1;min-width:0"><div class="name" style="color:var(--fg3);display:flex;align-items:center">${c.name}${sv?.size&&sv.size!=="M"?" ("+sv.size+")":""}${initLbl}</div></div></div>`;});}}
-  // Visible Tokens group
+  // Unified Tokens list — placed (including map-hidden) + unplaced combatants, sorted together.
   const visToks=S.tokens.filter(t=>!t.hidden);
-  const sortedToks=[...visToks].sort((a,b)=>{
+  const unplaced=S.combatants.filter(c=>!c.placed&&!S.tokens.find(t=>t.name===c.name&&!t.hidden));
+  // Normalize into row objects with comparable fields for the sort
+  const rows=[
+    ...visToks.map(t=>({kind:"placed",mapHidden:!!t.mapHidden,id:t.id,name:t.name,color:t.color,init:t.init,group:t.group,coord:fmtU(t.col,t.row),tok:t})),
+    ...unplaced.map(c=>({kind:"unplaced",mapHidden:false,id:null,name:c.name,color:c.savedTok?.color||"",init:c.init,group:null,coord:"—",cmb:c}))
+  ];
+  const sortedRows=[...rows].sort((a,b)=>{
     if(S.tokSort==="color"){const ca=colorName(a.color),cb=colorName(b.color);if(ca!==cb)return natSort(ca,cb);return natSort(a.name,b.name);}
     if(S.tokSort==="init"){return(b.init||0)-(a.init||0)||natSort(a.name,b.name);}
     if(S.tokSort==="group"){const ga=a.group||"\uffff",gb=b.group||"\uffff";if(ga!==gb)return natSort(ga,gb);return natSort(a.name,b.name);}
     return natSort(a.name,b.name);});
-  h+=`<div class="grp-hdr" data-grp="tok">${visToks.length?`<span class="vis-eye${S.showTokens?'':' off'}" data-vis="tokens" style="cursor:pointer;font-size:11px;margin-right:2px;position:relative" title="${S.showTokens?'Hide all tokens':'Show all tokens'}">👁</span><span class="arrow${S.tokCol?" closed":""}">▼</span>`:""}<span class="sec-title">Tokens (${visToks.length})</span>${visToks.length?`<button class="btn btn-s" data-selall="tok" style="font-size:8px;padding:1px 5px;margin-left:4px" title="${allSel('tok')?'Unselect all tokens':'Select all tokens'}">${allSel("tok")?"Unselect All":"Select All"}</button><select class="inp" data-sort="tok" style="font-size:9px;padding:1px 2px;margin-left:auto;min-width:60px;width:60px;box-sizing:border-box"><option value="init"${S.tokSort==="init"?" selected":""}>Init ⚔</option><option value="name"${S.tokSort==="name"?" selected":""}>A-Z</option><option value="color"${S.tokSort==="color"?" selected":""}>Color</option><option value="group"${S.tokSort==="group"?" selected":""}>Group</option></select>`:""}</div>`;
+  const total=rows.length;
+  const placedCt=visToks.length,unplacedCt=unplaced.length;
+  const headerCount=(placedCt&&unplacedCt)?`${total} — ${placedCt} placed, ${unplacedCt} unplaced`:`${total}`;
+  h+=`<div class="grp-hdr" data-grp="tok">${total?`<span class="vis-eye${S.showTokens?'':' off'}" data-vis="tokens" style="cursor:pointer;font-size:11px;margin-right:2px;position:relative" title="${S.showTokens?'Hide all tokens':'Show all tokens'}">👁</span><span class="arrow${S.tokCol?" closed":""}">▼</span>`:""}<span class="sec-title">Tokens (${headerCount})</span>${total?`<button class="btn btn-s" data-selall="tok" style="font-size:8px;padding:1px 5px;margin-left:4px" title="${allSel('tok')?'Unselect all tokens':'Select all tokens'}">${allSel("tok")?"Unselect All":"Select All"}</button><select class="inp" data-sort="tok" style="font-size:9px;padding:1px 2px;margin-left:auto;min-width:60px;width:60px;box-sizing:border-box"><option value="init"${S.tokSort==="init"?" selected":""}>Init ⚔</option><option value="name"${S.tokSort==="name"?" selected":""}>A-Z</option><option value="color"${S.tokSort==="color"?" selected":""}>Color</option><option value="group"${S.tokSort==="group"?" selected":""}>Group</option></select>`:""}</div>`;
   if(!S.tokCol){
     const useGrpHdrs=S.tokSort==="init"||S.tokSort==="group";
     let lastGrp=null;
-    // Track which groups are collapsed
     if(!S._grpCol)S._grpCol={};
-    sortedToks.forEach(t=>{const sel=isSel("token",t.id),ch=tokChanged(t);
-      const inGroup=useGrpHdrs&&t.group;
-      // Group headers for init/group sort
+    sortedRows.forEach(row=>{
+      const inGroup=useGrpHdrs&&row.group;
+      // Group sub-headers (init/group sort)
       if(useGrpHdrs){
-        const g=t.group||null;
+        const g=row.group||null;
         if(g!==lastGrp){
           if(g){
-            const members=sortedToks.filter(x=>x.group===g);
+            const members=sortedRows.filter(x=>x.group===g);
             const grpInit=members.length?Math.max(...members.map(x=>x.init||0)):"";
             const collapsed=S._grpCol[g];
             h+=`<div class="grp-subhdr" data-grpsel="${g}" style="display:flex;align-items:center;gap:4px;padding:3px 6px;margin-top:2px;background:var(--bg3);border-radius:3px;cursor:pointer;font-size:10px;color:var(--fg2)" title="Click to select all in group"><span class="arrow${collapsed?" closed":""}" data-grptoggle="${g}" style="font-size:9px">▼</span><span style="font-size:11px">📁</span><span style="font-weight:bold;flex:1">${g}</span><span style="color:var(--fg3)">(${members.length})</span>${grpInit!==""?`<span style="font-family:monospace;font-size:9px;color:var(--fg3)">⚔${grpInit}</span>`:""}</div>`;
@@ -1259,11 +1259,36 @@ function rTokenList(el){let h="";
             h+=`<div style="padding:2px 4px;margin-top:4px;font-size:9px;color:var(--fg3);border-top:1px solid var(--bg3)">Ungrouped</div>`;}
           lastGrp=g;}}
       // Skip if group is collapsed
-      if(inGroup&&S._grpCol[t.group])return;
+      if(inGroup&&S._grpCol[row.group])return;
+      // Visual treatment: outline dot + dim name for unplaced OR map-hidden placed
+      const isDim=row.kind==="unplaced"||row.mapHidden;
+      const sel=row.kind==="placed"?isSel("token",row.id):(S.sel.type==="unplaced"&&S.sel.name===row.name);
+      const ch=row.kind==="placed"&&tokChanged(row.tok);
+      // Eye icon — shown for placed (toggleable), empty spacer for unplaced
+      const eyeHTML=row.kind==="placed"
+        ?`<span class="tok-eye" data-tokhide="${row.id}" style="cursor:pointer;font-size:10px;width:16px;text-align:center;flex-shrink:0;opacity:${row.mapHidden?0.95:0.5};color:${row.mapHidden?"#e74c3c":"inherit"}" title="${row.mapHidden?"Show on BattleScry map view — combat state unchanged":"Hide from BattleScry map view — combat state unchanged"}">👁</span>`
+        :`<span style="display:inline-block;width:16px;flex-shrink:0"></span>`;
+      // Dot — filled circle for visible placed, outline ring for unplaced or map-hidden
+      const dotColor=row.color||"var(--fg3)";
+      const dotHTML=isDim
+        ?`<div class="dot" style="background:transparent;border:1.5px solid ${dotColor};width:7px;height:7px;box-sizing:content-box"></div>`
+        :`<div class="dot" style="background:${dotColor};width:10px;height:10px"></div>`;
+      // Name color
+      const nameStyle=ch?"color:var(--accent)":(isDim?"color:var(--fg3)":"");
+      // Name text content (placed: tokInfo; unplaced: name + optional size)
+      const nameContent=row.kind==="placed"
+        ?tokInfo(row.tok)
+        :(row.name+(row.cmb.savedTok?.size&&row.cmb.savedTok.size!=="M"?" ("+row.cmb.savedTok.size+")":""));
+      // Inline group badge (when not sorting by init/group)
+      const grpLbl=(row.kind==="placed"&&S.tokSort!=="init"&&S.tokSort!=="group"&&row.group)
+        ?`<span style="font-size:8px;color:var(--fg3);background:var(--bg3);padding:0 3px;border-radius:2px;margin-left:4px">${row.group}</span>`:"";
+      // Right-side metadata: coord (always) + init (when init-sorted)
+      const coordHTML=`<span style="font-family:monospace;font-size:9px;color:var(--fg4);margin-left:6px;flex-shrink:0">${row.coord}</span>`;
+      const initLbl=(S.tokSort==="init"&&row.init!==undefined)
+        ?`<span style="font-family:monospace;font-size:9px;color:var(--fg3);margin-left:6px;flex-shrink:0">⚔${row.init}</span>`:"";
       const indent=inGroup?"padding-left:18px;":"";
-      const initLbl=(S.tokSort==="init"&&t.init!==undefined)?`<span style="font-family:monospace;font-size:9px;color:var(--fg3);margin-left:auto;padding-left:4px">⚔${t.init}</span>`:"";
-      const grpLbl=(S.tokSort!=="init"&&S.tokSort!=="group"&&t.group)?`<span style="font-size:8px;color:var(--fg3);background:var(--bg3);padding:0 3px;border-radius:2px;margin-left:4px">${t.group}</span>`:"";
-      h+=`<div class="obj-item${sel?" sel":""}" data-tid="${t.id}" style="display:flex;align-items:center;${indent}"><span class="tok-eye" data-tokhide="${t.id}" style="cursor:pointer;font-size:10px;width:16px;text-align:center;flex-shrink:0;opacity:0.5" title="Toggle visibility on map">👁</span><div class="dot" style="background:${t.color};width:10px;height:10px"></div><div class="info" style="flex:1;min-width:0"><div class="name" style="${ch?"color:var(--accent)":""};display:flex;align-items:center">${tokInfo(t)}${grpLbl}${initLbl}</div></div></div>`;});}
+      const dataAttr=row.kind==="placed"?`data-tid="${row.id}"`:`data-npname="${row.name}"`;
+      h+=`<div class="obj-item${sel?" sel":""}" ${dataAttr} style="display:flex;align-items:center;${indent}">${eyeHTML}${dotHTML}<div class="info" style="flex:1;min-width:0"><div class="name" style="${nameStyle};display:flex;align-items:center">${nameContent}${grpLbl}</div></div>${coordHTML}${initLbl}</div>`;});}
   el.innerHTML=h;}
 function rOverlayProps(el){
   let h="";
@@ -1629,7 +1654,8 @@ function renderCmd(){
   // Sample mode — disable Copy and show special message
   const hideLbl=$("hide-toggle-label");
   if(S.sampleMode){if(hideLbl)hideLbl.style.display="none";ct.innerHTML='<span style="color:var(--accent)">👀 Demo mode — explore the tool freely. Exports are disabled to keep your real Discord games safe.</span>';btn.textContent="📋 Demo mode — exports disabled";btn.disabled=true;btn.classList.remove("ready");btn.title="Demo mode is active. Click 👀 DEMO MODE in the toolbar to exit and return to an empty grid.";return;}
-  if(hideLbl)hideLbl.style.display="";
+  // Secret Mode is hidden by default; only shown when there are actual changes to export (see has-changes branch below)
+  if(hideLbl)hideLbl.style.display="none";
   btn.title="Copy the !bscry apply command to clipboard, then paste it in Discord to apply your changes";
   // Fresh startup detection — no background loaded and no real combatants
   const isEmptyStartup=!S.loadedUrl&&S.tokens.length<=1&&S.walls.length===0&&S.fowRegions.length===0&&S.overlays.length===0&&S.objects.length===0;
@@ -1782,6 +1808,7 @@ function renderCmd(){
     else summaryParts.push("map");}
   if(uvarOps.length)summaryParts.push(uvarOps.length+" save"+(uvarOps.length>1?"s":""));
   btn.disabled=false;btn.classList.add("ready");
+  if(hideLbl)hideLbl.style.display="";
   btn.textContent=mv.length>MAX_MV?`⚠ ${mv.length}/${MAX_MV}! Copy`:`📋 Export Updated Map (${summaryParts.join(", ")})`;}}
 
 // Check if cell is within overlay area
@@ -2416,9 +2443,9 @@ function setup(){
     // Group folder expand/collapse toggle
     if(t.dataset.grptoggle){e.stopPropagation();const g=t.dataset.grptoggle;
       if(!S._grpCol)S._grpCol={};S._grpCol[g]=!S._grpCol[g];renderSB();return;}
-    // Token hide/show toggle
+    // Token map-visibility toggle — flips mapHidden (user-toggleable), NOT hidden (system flag)
     if(t.dataset.tokhide){e.stopPropagation();const tid=+t.dataset.tokhide;
-      const tok=S.tokens.find(x=>x.id===tid);if(tok){pushU();tok.hidden=!tok.hidden;renderAll();}return;}
+      const tok=S.tokens.find(x=>x.id===tid);if(tok){pushU();tok.mapHidden=!tok.mapHidden;renderAll();}return;}
     if(t.closest("[data-grpsel]")){const grpName=t.closest("[data-grpsel]").dataset.grpsel;
       const members=S.tokens.filter(x=>x.group===grpName&&!x.hidden);
       S.sel={type:"token",ids:new Set(members.map(x=>x.id))};S.tab="tokens";renderAll();return;}
@@ -2794,14 +2821,18 @@ function setup(){
     // Ruler mode — click-and-drag to measure. Single click on token = popup; single click on grid = nothing.
     if(S.rulerMode){const pt=svgPt(e),gp=pt2g(pt.x,pt.y);
       if(gp.col>=0&&gp.col<S.grid.cols&&gp.row>=0&&gp.row<S.grid.rows){
-        const hitTok=S.tokens.filter(t=>!t.hidden).find(t=>{
+        const hitTok=S.tokens.filter(t=>!t.hidden&&!t.mapHidden).find(t=>{
           const c=tokCubeCells(t);return gp.col>=t.col&&gp.col<t.col+c&&gp.row>=t.row&&gp.row<t.row+c;});
         // Clear any prior measurement line
         S.rulerStart=null;S.rulerEnd=null;S.rulerDist=null;S.rulerLabel=null;
+        // For empty-grid clicks, snap start to the clicked cell's center; for token clicks, keep raw
+        // pixel so the perimeter calc against a later endpoint works correctly.
+        let sx=pt.x-PAD,sy=pt.y-PAD;
+        if(!hitTok){const g=S.grid,cs=g.cellSize;sx=g.offsetX+(gp.col+0.5)*cs;sy=g.offsetY+(gp.row+0.5)*cs;}
         // Start tracking drag (don't show line until movement detected)
         S.rulerDrag={
           startTok:hitTok||null,
-          startVbX:pt.x-PAD,startVbY:pt.y-PAD,
+          startVbX:sx,startVbY:sy,
           startCol:gp.col,startRow:gp.row,
           moved:false};
         renderSVG();}return;}
@@ -3028,14 +3059,19 @@ function setup(){
       if(ov)ov.coord2={col,row};
       renderSVG();renderCmd();return;}
     // Ruler drag — live preview during drag
-    if(S.rulerDrag){const pt=svgPt(e);const vbx=pt.x-PAD,vby=pt.y-PAD;
+    if(S.rulerDrag){const pt=svgPt(e);let vbx=pt.x-PAD,vby=pt.y-PAD;
       const dx=vbx-S.rulerDrag.startVbX,dy=vby-S.rulerDrag.startVbY;
-      // Threshold to distinguish click from drag (4px)
+      // Threshold to distinguish click from drag (4px) — use raw delta, not snapped
       if(!S.rulerDrag.moved){if(Math.abs(dx)<4&&Math.abs(dy)<4)return;S.rulerDrag.moved=true;}
       const gp=pt2g(pt.x,pt.y);
+      // Snap cursor pixel to nearest cell center for end-point rendering.
+      // Token-anchored ends override this via tokPerimPoint below.
+      if(gp.col>=0&&gp.col<S.grid.cols&&gp.row>=0&&gp.row<S.grid.rows){
+        const g=S.grid,cs=g.cellSize;
+        vbx=g.offsetX+(gp.col+0.5)*cs;vby=g.offsetY+(gp.row+0.5)*cs;}
       let endTok=null;
       if(gp.col>=0&&gp.col<S.grid.cols&&gp.row>=0&&gp.row<S.grid.rows){
-        endTok=S.tokens.filter(t=>!t.hidden).find(t=>{const c=tokCubeCells(t);return gp.col>=t.col&&gp.col<t.col+c&&gp.row>=t.row&&gp.row<t.row+c;});
+        endTok=S.tokens.filter(t=>!t.hidden&&!t.mapHidden).find(t=>{const c=tokCubeCells(t);return gp.col>=t.col&&gp.col<t.col+c&&gp.row>=t.row&&gp.row<t.row+c;});
         // Don't measure a token to itself
         if(endTok&&S.rulerDrag.startTok&&endTok.id===S.rulerDrag.startTok.id)endTok=null;}
       // Compute pixel-precise endpoints (perimeter for tokens, raw point for grid)
@@ -3152,7 +3188,7 @@ function setup(){
       const mx1=Math.min(S.marquee.x1,S.marquee.x2),my1=Math.min(S.marquee.y1,S.marquee.y2);
       const mx2=Math.max(S.marquee.x1,S.marquee.x2),my2=Math.max(S.marquee.y1,S.marquee.y2);
       const tokIds=new Set(),objIds=new Set();
-      S.tokens.filter(t=>!t.hidden).forEach(t=>{const p=tokCenter(t);if(p.x>=mx1&&p.x<=mx2&&p.y>=my1&&p.y<=my2)tokIds.add(t.id);});
+      S.tokens.filter(t=>!t.hidden&&!t.mapHidden).forEach(t=>{const p=tokCenter(t);if(p.x>=mx1&&p.x<=mx2&&p.y>=my1&&p.y<=my2)tokIds.add(t.id);});
       const g=S.grid,cs=g.cellSize;
       S.objects.forEach(o=>{
         const c=(o.col+o.col2)/2,r=(o.row+o.row2)/2;
@@ -3757,7 +3793,6 @@ function loadFromHashStr(hash){
   if(S.overlays.length)sumParts.push(S.overlays.length+" overlay"+(S.overlays.length!==1?"s":""));
   if(S.objects.length)sumParts.push(S.objects.length+" object"+(S.objects.length!==1?"s":""));
   setStatus(hasMap?"✅ Loaded map + "+S.tokens.length+" tokens"+(wc?", "+wc+" walls":"")+(fc?", "+fc+" FOW regions":""):mergeMode?"✅ Merged heights/overlays":"✅ Loaded "+S.tokens.length+" tokens");
-  if(hasMap&&typeof showLoadToast==="function")showLoadToast("Map loaded: "+sumParts.join(", "));
   const ui=$("url-input");if(ui)ui.value=hasMap?"✅ Loaded map + tokens":mergeMode?"✅ Merged":"✅ Loaded tokens";
   // If we already have tokens loaded and this is token-only data, MERGE instead of replace
   if(!mergeMode){
@@ -3935,6 +3970,15 @@ function loadFromHashStr(hash){
   if(firstTok)S.sel={type:"token",ids:new Set([firstTok.id])};
   else if(S.overlays.length)S.sel={type:"overlay",ids:new Set([S.overlays[0].id])};
   $("placeholder").style.display="none";
+  // Build summary toast with FINAL counts (after parsing). Skip in sample mode — demo has no export.
+  if(hasMap&&!S.sampleMode&&typeof showLoadToast==="function"){
+    const rt=S.tokens.filter(t=>!t.hidden).length;
+    const sp=[rt+" token"+(rt!==1?"s":"")];
+    if(S.walls.length)sp.push(S.walls.length+" wall"+(S.walls.length!==1?"s":""));
+    if(S.fowRegions.length)sp.push(S.fowRegions.length+" FOW region"+(S.fowRegions.length!==1?"s":""));
+    if(S.overlays.length)sp.push(S.overlays.length+" overlay"+(S.overlays.length!==1?"s":""));
+    if(S.objects.length)sp.push(S.objects.length+" object"+(S.objects.length!==1?"s":""));
+    showLoadToast("Map loaded: "+sp.join(", "));}
   renderAll();setStatus("✅ Loaded "+S.tokens.length+" tokens, "+S.overlays.length+" overlays"+(S.walls.length?", "+S.walls.length+" walls":""));
   // Auto-fit after load
   setTimeout(()=>{try{S._fitRecheck=true;zoomAt(smartFit());}catch(e){}},0);
@@ -3966,7 +4010,7 @@ function loadSample(){
   closeWelcome();
   let raw=SAMPLE_STRING;
   if(raw.includes("|"))raw=raw.replace(/\|/g,"%7C").replace(/\{/g,"%7B").replace(/\}/g,"%7D").replace(/ /g,"%20");
-  try{loadFromHashStr(raw);S.sampleMode=true;$("sample-badge").style.display="inline-block";renderCmd();setStatus("👀 Demo loaded — explore freely (exports disabled)");setTimeout(()=>{S._fitRecheck=true;if(typeof zoomAt==="function"&&typeof smartFit==="function")zoomAt(smartFit());},50);}
+  try{S.sampleMode=true;loadFromHashStr(raw);$("sample-badge").style.display="inline-block";renderCmd();setStatus("👀 Demo loaded — explore freely (exports disabled)");setTimeout(()=>{S._fitRecheck=true;if(typeof zoomAt==="function"&&typeof smartFit==="function")zoomAt(smartFit());},50);}
   catch(err){setStatus("⚠ Sample load failed: "+err.message);}}
 $("welcome-sample").onclick=e=>{e.preventDefault();loadSample();};
 // Demo mode exit handler
