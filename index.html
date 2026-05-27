@@ -1,5 +1,35 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.51"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<!--
+================================================================================
+BattleScry v0.1.55                                       https://battlescry.com
+================================================================================
+Single-file web battlemap editor for D&D 5e, designed to round-trip with the
+Avrae Discord bot and the OTFBM renderer.
+
+ARCHITECTURE
+  - Vanilla JS + inline SVG canvas. No build step, no dependencies, no framework.
+  - State lives in `S` (search "const S={"). Mutations go through pushU() for undo.
+  - Render: renderAll() -> renderSVG() + renderSB() (sidebar) + renderCmd() (export).
+  - Tabs: Map | Tokens | Overlays | Structures (Structures subtabs: Walls | Map Objects).
+
+DATA CONTRACT (kept in sync with bscry_alias.py)
+  - Companion alias version: 0.2.29. Both files must be deployed together.
+  - URL hash params: g, o, bg, vw, t, ip, np, w, fw, ob, fn, st, sm, sb, tl, ig, tm.
+  - Name transport: spaces encoded as %20 (NOT underscore). User underscores survive.
+  - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
+
+RECENT CHANGES
+  v0.1.55 - User-typed underscores in names survive end-to-end (%20 encoding).
+  v0.1.54 - slugifyName preserves spaces; conflict suffix uses " N" (space + number).
+  v0.1.53 - Save success modal; conflict tolerance for space-vs-underscore names.
+  v0.1.52 - Saved Battlemaps card grid + BS-logo fallback; token preview in props.
+  v0.1.51 - Sample/demo mode removed; samples load as normal editable sessions.
+  v0.1.50 - Sample analyze flow; ruler survives zoom; Advanced section open-state.
+  v0.1.49 - Map tab redesigned; layout dropdown; dark mode grid color auto-swap.
+  v0.1.48 - Tab reorg: Map promoted to top-level; Structures tab; FOW on Map tab.
+================================================================================
+-->
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.55"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -119,7 +149,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.51</span>
+  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.55</span>
   <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Revert all changes to original state">⟲ Revert</button>
   <button id="btn-undo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Undo last change (Ctrl+Z)">↩ Undo</button>
   <button id="btn-redo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
@@ -1382,11 +1412,11 @@ function buildBattleData(){
     const ov=myOvs[0]?buildOvCode(myOvs[0]):"";
     const ov2=myOvs[1]?buildOvCode(myOvs[1]):"";
     const aimOv=myOvs.find(o=>o.aimTarget);
-    const aim=aimOv?aimOv.aimTarget.replace(/ /g,"_"):"";
-    parts.push([t.name.replace(/ /g,"_"),loc,tsz,cl,ht,tok,ov,ov2,aim].join("|"));});
+    const aim=aimOv?aimOv.aimTarget.replace(/ /g,"%20"):"";
+    parts.push([t.name.replace(/ /g,"%20"),loc,tsz,cl,ht,tok,ov,ov2,aim].join("|"));});
   // Unplaced combatants
   S.combatants.filter(cb=>!cb.placed&&cb.name!=="DM").forEach(cb=>{
-    parts.push(cb.name.replace(/ /g,"_")+"|||||");});
+    parts.push(cb.name.replace(/ /g,"%20")+"|||||");});
   return mapPart+"::"+parts.join(";;");}
 function buildOptsStr(){
   let o="";
@@ -1437,7 +1467,7 @@ function rTokenProps(el){
   else if(S.sel.type==="unplaced"){h+=`<button class="btn btn-p" id="p-srd-browse" style="width:100%;font-size:11px;padding:5px;margin-bottom:4px">➕ Customize Token Image</button>`;}
   const sc=S.sel.ids.size;
   if(sc===1&&(S.sel.type==="token"||S.sel.type==="mixed")){const t=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(t){const mv=t.originalCol!==t.col||t.originalRow!==t.row;const st=tokensAt(t.col,t.row).filter(x=>x.id!==t.id);const canRev=tokChanged(t);
-    h+=`<div class="sec"><div class="sec-title">${t.name}</div>
+    h+=`<div class="sec"><div class="sec-title" style="display:flex;align-items:center;gap:10px">${renderTokenPreview(t,60)}<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.name}">${t.name}</span></div>
       ${mv?`<div style="font-size:10px;color:var(--accent);font-family:monospace;margin-bottom:4px">Moved: ${fmtU(t.originalCol,t.originalRow)} → ${fmtU(t.col,t.row)}</div>`:""}
       <div class="row"><div style="flex:1"><span class="lbl">Position</span><input class="inp" id="p-pos" value="${fmtU(t.col,t.row)}" style="font-family:monospace" title="Type a grid coordinate (e.g. F5) or click here, then click anywhere on the map"></div>
       <div style="flex:1"><span class="lbl">Height</span><div class="row" style="gap:2px"><input type="number" class="inp" id="p-ht" value="${t.height}" style="width:50px" title="Height above ground in feet (0 = ground level)"><span style="font-size:10px;color:var(--fg3)">ft</span></div></div></div>
@@ -1449,7 +1479,10 @@ function rTokenProps(el){
   // Unplaced combatant properties
   if(S.sel.type==="unplaced"){const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb){
     const sv=cmb.savedTok||{};
-    h+=`<div class="sec"><div class="sec-title" style="color:var(--fg3)">Unplaced: ${cmb.name}</div>
+    // Construct a token-shaped object so renderTokenPreview can handle unplaced combatants
+    // identically to placed tokens (same color/image/letter logic)
+    const previewToken={name:cmb.name,color:sv.color||"#3498db",tokenImage:sv.tokenImage||""};
+    h+=`<div class="sec"><div class="sec-title" style="display:flex;align-items:center;gap:10px;color:var(--fg3)">${renderTokenPreview(previewToken,60)}<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${cmb.name}">Unplaced: ${cmb.name}</span></div>
       <div class="row"><div style="flex:1"><span class="lbl">Size</span><select class="inp" id="p-npsize">${Object.entries(SIZES).map(([k,v])=>`<option value="${k}"${(sv.size||"M")===k?" selected":""}>${k} - ${v.l}</option>`).join("")}</select></div><div style="flex:1"><span class="lbl">Color</span><div class="colors">${cSw(sv.color||"#3498db","prop")}</div></div></div>
       <div class="row" style="align-items:center"><div style="flex:1"><span class="lbl">Token Shortcode</span><input class="inp" id="p-nptokcode" value="${sv.tokenImage||""}" style="font-family:monospace" readonly placeholder="none"></div>
       <a href="#" id="p-nptokdialog" style="font-size:10px;color:var(--accent);white-space:nowrap;margin-top:14px">${sv.tokenImage?"✏️ Update":"➕ Add Image"}</a></div>`;
@@ -1673,7 +1706,8 @@ function rFowSection(){
 function rSaveLoadSections(){
   let h=`<div class="sec" style="margin-top:16px;padding-top:12px;border-top:2px solid var(--bg3)"><div class="sec-title" title="Saved maps persist in Avrae and survive between sessions. Only names are stored in your !bscry link; the full map data is fetched only when you click Load.">🗺️ Save / Load Battlemap <span style="font-size:9px;color:var(--fg4);font-weight:normal;cursor:help">ⓘ</span></div>
   <div style="font-size:9px;color:var(--fg3);margin-bottom:6px">Saves the static scene: <b>background + grid + walls + FOW + objects</b>. Not tokens or initiative.</div>
-  <div style="display:flex;gap:4px;margin-bottom:6px"><input class="inp" id="m-mapsavename" placeholder="Map name" style="flex:1;font-size:10px"><button class="btn btn-s" id="m-mapsave" style="font-size:9px;padding:2px 8px;white-space:nowrap">💾 Save Map</button></div>
+  <div style="display:flex;gap:4px;margin-bottom:2px"><input class="inp" id="m-mapsavename" placeholder="Map name (e.g. goblin lair)" maxlength="50" style="flex:1;font-size:10px"><button class="btn btn-s" id="m-mapsave" style="font-size:9px;padding:2px 8px;white-space:nowrap">💾 Save Map</button></div>
+  <div id="m-mapsave-preview" style="font-size:9px;color:var(--fg4);font-style:italic;margin-bottom:6px;min-height:12px"></div>
   ${(()=>{
     const all=[...S.savedMaps,...S.mapSaves.map(s=>s.name).filter(n=>!S.savedMaps.includes(n))].filter(n=>!S.mapDeletes.includes(n));
     const ct=all.length;
@@ -1682,7 +1716,8 @@ function rSaveLoadSections(){
   })()}</div>
   <div class="sec"><div class="sec-title" title="Saved battles persist in Avrae and survive between sessions. Only names are stored in your !bscry link; the full battle data is fetched only when you click Load.">⚔️ Save / Load Battle <span style="font-size:9px;color:var(--fg4);font-weight:normal;cursor:help">ⓘ</span></div>
   <div style="font-size:9px;color:var(--fg3);margin-bottom:6px">Saves <b>everything above PLUS tokens + initiative + per-combatant state</b>. Use to pause and resume an active fight.</div>
-  <div style="display:flex;gap:4px;margin-bottom:6px"><input class="inp" id="m-btlsavename" placeholder="Battle name" style="flex:1;font-size:10px"><button class="btn btn-s" id="m-btlsave" style="font-size:9px;padding:2px 8px;white-space:nowrap">⚔️ Save Battle</button></div>
+  <div style="display:flex;gap:4px;margin-bottom:2px"><input class="inp" id="m-btlsavename" placeholder="Battle name (e.g. session 4 ambush)" maxlength="50" style="flex:1;font-size:10px"><button class="btn btn-s" id="m-btlsave" style="font-size:9px;padding:2px 8px;white-space:nowrap">⚔️ Save Battle</button></div>
+  <div id="m-btlsave-preview" style="font-size:9px;color:var(--fg4);font-style:italic;margin-bottom:6px;min-height:12px"></div>
   <div id="m-savedbattles">${(()=>{
     const all=[...S.savedBattles,...S.battleSaves.map(s=>s.name).filter(n=>!S.savedBattles.includes(n))].filter(n=>!S.battleDeletes.includes(n));
     if(!all.length)return'<div style="font-size:10px;color:var(--fg3);font-style:italic">No saved battles</div>';
@@ -1850,6 +1885,58 @@ window.analyzeBackgroundForLayout=function(url){
     img2.src=url;};
   img.src=proxyUrl||url;
 };
+// Normalize a name for equality comparison only (not for storage).
+// Treats space and underscore as equivalent so "goblin lair" matches "goblin_lair".
+// This handles legacy maps saved via Croebh's `-savemap goblin lair` (key has space) being detected
+// as a conflict when the BS user types either variant. Storage form stays whatever slugifyName produced.
+function normalizeNameForCompare(name){
+  return (name||"").trim().toLowerCase().replace(/[\s_]+/g,"_");
+}
+// Normalize a save name to match Croebh's storage convention:
+// - lowercased (matches `.lower()` in Croebh's -savemap)
+// - whitespace collapsed and trimmed
+// - transport-breaking chars (; & = |) replaced with spaces (then collapsed) so the URL hash
+//   and apply-payload encoding aren't corrupted
+// - 50 char max
+// SPACES ARE PRESERVED. Croebh and BS both accept multi-word names. The space ↔ underscore
+// dance happens transparently at the transport layer (BS encodes space→underscore in apply commands,
+// alias decoder undoes it; alias serializes space→underscore in URL, BS parser undoes it).
+function slugifyName(raw){
+  if(!raw)return"";
+  let s=raw.toLowerCase();
+  s=s.replace(/[;&=|%]/g," ");
+  s=s.replace(/\s+/g," ");
+  s=s.trim();
+  s=s.slice(0,50);
+  return s;}
+// Find next available " N" suffix for a given base name against an existing set of names.
+// Uses a space separator (not underscore) so the suffixed name reads naturally: "goblin lair 1".
+// e.g. existing=["goblin lair","goblin lair 1","goblin lair 3"], base="goblin lair" -> returns "goblin lair 2"
+function nextAvailableSuffix(base,existing){
+  // Build comparable form for `existing` so legacy underscore-named entries collide correctly
+  const takenKeys=new Set(existing.map(e=>normalizeNameForCompare(e)));
+  for(let i=1;i<1000;i++){
+    const candidate=base+" "+i;
+    if(!takenKeys.has(normalizeNameForCompare(candidate)))return candidate;}
+  return base+" "+Date.now();// fallback - effectively guaranteed unique
+}
+// Render a small token preview (default circle+letter, or custom OTFBM image).
+// Used in token properties so users can see what their token actually looks like in Discord.
+// Falls back to default-style render if the custom image fails to load (CORS, deleted from imgur, etc).
+function renderTokenPreview(token,size){
+  size=size||70;
+  const color=token.color||"#3498db";
+  const letter=(token.name||"?").charAt(0).toUpperCase();
+  if(token.tokenImage){
+    const code=token.tokenImage.replace(/~$/,"");
+    const url="https://token.otfbm.io/img/"+code;
+    // Custom token: image with token color as ring/border. Onerror handler swaps to default-style render if image fails.
+    return `<div style="width:${size}px;height:${size}px;flex-shrink:0;border-radius:50%;overflow:hidden;border:3px solid ${color};background:var(--bg);box-sizing:border-box">
+      <img src="${url}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.45)}px;font-weight:bold;color:#fff;background:${color}&quot;>${letter}</div>'"/>
+    </div>`;}
+  // Default token: colored circle with first letter (matches OTFBM default rendering)
+  return `<div style="width:${size}px;height:${size}px;flex-shrink:0;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.45)}px;font-weight:bold;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4);box-sizing:border-box">${letter}</div>`;
+}
 function captureCurrentMapState(){
   // Snapshot current scene as a saved-map entry. Used by "Save Map" UI to capture state into mapBackgrounds.
   // Fields match Croebh's mapBackgrounds schema so saves are interoperable with `!map -mapload <name>`.
@@ -1952,16 +2039,16 @@ function buildExportHash(){
   if(isPartial)parts.push("vw="+col2l(g.startCol)+(g.startRow+1)+":"+g.cols+"x"+g.rows);
   else parts.push("vw=a1:"+fc+"x"+fr);
   // Tokens
-  const tParts=S.tokens.map(t=>{const n=t.name.replace(/ /g,"_");const pos=fmtU(t.col,t.row);
+  const tParts=S.tokens.map(t=>{const n=t.name.replace(/ /g,"%20");const pos=fmtU(t.col,t.row);
     const sz=t.size||"M";const cc=h2c(t.color)||"b";const ht=t.height||0;const ti=t.tokenImage||"";
     return n+"|"+pos+"|"+sz+"|"+cc+"|"+ht+"|"+ti;});
   if(tParts.length)parts.push("t="+tParts.join(";"));
   // Unplaced
-  const npNames=S.combatants.filter(c=>!c.placed&&!S.tokens.find(t=>t.name===c.name)).map(c=>c.name.replace(/ /g,"_"));
+  const npNames=S.combatants.filter(c=>!c.placed&&!S.tokens.find(t=>t.name===c.name)).map(c=>c.name.replace(/ /g,"%20"));
   if(npNames.length)parts.push("np="+npNames.join(";"));
   // Notes
   const fnParts=S.tokens.map(t=>{const cmb=S.combatants.find(c=>c.name===t.name);if(!cmb||!cmb.note)return null;
-    return t.name.replace(/ /g,"_")+"~"+cmb.note;}).filter(Boolean);
+    return t.name.replace(/ /g,"%20")+"~"+cmb.note;}).filter(Boolean);
   if(fnParts.length)parts.push("fn="+fnParts.join(";;"));
   // Saved tokens
   const stParts=[...S.savedTokens,...S.tokenSaves.filter(ts=>!S.savedTokens.find(s=>s.name===ts.name))].map(t=>t.name+":"+t.shortcode);
@@ -1992,14 +2079,14 @@ function buildExportHash(){
     return c1+c2+cl+"$"+o.type;});
   if(objSegsExp.length)parts.push("ob="+objSegsExp.join(";"));
   // Initiative groups
-  const grpMap={};S.tokens.forEach(t=>{if(t.group){if(!grpMap[t.group])grpMap[t.group]=[];grpMap[t.group].push(t.name.replace(/ /g,"_"));}});
-  S.combatants.forEach(c=>{if(c.group&&!Object.values(grpMap).flat().includes(c.name.replace(/ /g,"_"))){if(!grpMap[c.group])grpMap[c.group]=[];grpMap[c.group].push(c.name.replace(/ /g,"_"));}});
-  const igParts=Object.entries(grpMap).map(([g,ms])=>g.replace(/ /g,"_")+":"+ms.join(","));
+  const grpMap={};S.tokens.forEach(t=>{if(t.group){if(!grpMap[t.group])grpMap[t.group]=[];grpMap[t.group].push(t.name.replace(/ /g,"%20"));}});
+  S.combatants.forEach(c=>{if(c.group&&!Object.values(grpMap).flat().includes(c.name.replace(/ /g,"%20"))){if(!grpMap[c.group])grpMap[c.group]=[];grpMap[c.group].push(c.name.replace(/ /g,"%20"));}});
+  const igParts=Object.entries(grpMap).map(([g,ms])=>g.replace(/ /g,"%20")+":"+ms.join(","));
   if(igParts.length)parts.push("ig="+igParts.join(";"));
   // Initiative values
   const ipParts=[];
-  S.tokens.forEach(t=>{if(t.init!==undefined)ipParts.push(t.name.replace(/ /g,"_")+":"+t.init);});
-  S.combatants.forEach(c=>{if(c.init!==undefined&&!S.tokens.find(t=>t.name===c.name))ipParts.push(c.name.replace(/ /g,"_")+":"+c.init);});
+  S.tokens.forEach(t=>{if(t.init!==undefined)ipParts.push(t.name.replace(/ /g,"%20")+":"+t.init);});
+  S.combatants.forEach(c=>{if(c.init!==undefined&&!S.tokens.find(t=>t.name===c.name))ipParts.push(c.name.replace(/ /g,"%20")+":"+c.init);});
   if(ipParts.length)parts.push("ip="+ipParts.join(";"));
   return parts.join("&");}
 function ovChanged(ov){if(!origState)return false;const o=origState.overlays.find(x=>x.id===ov.id);if(!o)return true;return ov.size!==o.size||ov.color!==o.color||ov.type!==o.type||ov.under!==o.under||ov.target!==o.target||ov.aimTarget!==o.aimTarget||ov.locked!==o.locked||ov.locked2!==o.locked2||(ov.coord?.col!==o.coord?.col)||(ov.coord?.row!==o.coord?.row)||(ov.coord2?.col!==o.coord2?.col)||(ov.coord2?.row!==o.coord2?.row);}
@@ -2129,7 +2216,7 @@ function renderCmd(){
   const ntParts=[];
   noteTargets.forEach(name=>{
     const newNote=rebuildNote(name);
-    ntParts.push(name.replace(/ /g,"_")+"~"+newNote);});
+    ntParts.push(name.replace(/ /g,"%20")+"~"+newNote);});
   const ntData=ntParts.join(";;");
   // Build map effect text (full state for DM's map effect)
   const mapNeedsUpdate=mapChanged()||(origState&&(S.walls.length!==(origState.walls||[]).length||S.fowRegions.length!==(origState.fowRegions||[]).length||S.objects.length!==(origState.objects||[]).length||S.walls.some(w=>!(origState.walls||[]).find(ow=>ow.id===w.id))||S.fowRegions.some(r=>!(origState.fowRegions||[]).find(or=>or.id===r.id))||S.objects.some(o=>{const oo=(origState.objects||[]).find(x=>x.id===o.id);return !oo||o.col!==oo.col||o.row!==oo.row||o.col2!==oo.col2||o.row2!==oo.row2||o.type!==oo.type||o.color!==oo.color;})));
@@ -2160,15 +2247,15 @@ function renderCmd(){
     if(!attachTarget)warns.push("⚠ No DM/Map/Lair combatant - map settings not saved! Add one with !i add 0 DM -p 50");}
   // Build uvar operations
   const uvarOps=[];
-  S.tokenSaves.forEach(ts=>uvarOps.push("st+"+ts.name.replace(/ /g,"_")+":"+ts.shortcode));
-  S.tokenDeletes.forEach(name=>uvarOps.push("st-"+name.replace(/ /g,"_")));
+  S.tokenSaves.forEach(ts=>uvarOps.push("st+"+ts.name.replace(/ /g,"%20")+":"+ts.shortcode));
+  S.tokenDeletes.forEach(name=>uvarOps.push("st-"+name.replace(/ /g,"%20")));
   // Saved battles: emit full per-battle state as JSON (sb+<JSON>). One top-level key = battle name.
   // JSON-as-payload instead of pipe-fields because per-combatant data has variable, unbounded field counts.
   S.battleSaves.forEach(b=>{
     const {name,...rest}=b;
     const obj={[name]:rest};
     uvarOps.push("sb+"+JSON.stringify(obj));});
-  S.battleDeletes.forEach(name=>uvarOps.push("sb-"+name.replace(/ /g,"_")));
+  S.battleDeletes.forEach(name=>uvarOps.push("sb-"+name.replace(/ /g,"%20")));
   // Saved maps: write full state to mapBackgrounds via 9-field sm+. Captured at save time.
   // Field 9 (thumb) is an OTFBM URL computed by buildOtfbmUrl. Encoded with encodeURIComponent
   // plus an explicit `_` → `%5F` step because:
@@ -2176,21 +2263,21 @@ function renderCmd(){
   //   b) encodeURIComponent doesn't touch `_` by spec (it's in the unreserved set)
   // The thumb stays percent-encoded through the entire round-trip; BS decodes via decodeURIComponent on receive.
   S.mapSaves.forEach(m=>{
-    const enc=v=>(v||"").toString().replace(/ /g,"_").replace(/[|;]/g,"");
+    const enc=v=>(v||"").toString().replace(/ /g,"%20").replace(/[|;]/g,"");
     const encThumb=v=>encodeURIComponent(v||"").replace(/_/g,"%5F");
     uvarOps.push("sm+"+enc(m.name)+"|"+enc(m.mapbg)+"|"+enc(m.mapsize)+"|"+enc(m.mapoptions)+"|"+enc(m.walls)+"|"+enc(m.objects)+"|"+enc(m.view)+"|"+enc(m.fow)+"|"+encThumb(m.thumb));});
-  S.mapDeletes.forEach(name=>uvarOps.push("sm-"+name.replace(/ /g,"_")));
+  S.mapDeletes.forEach(name=>uvarOps.push("sm-"+name.replace(/ /g,"%20")));
   // Token labels for baked tokens: write metadata to bscry_tokenLabels AND ensure shortcode is in mapTokens via st+.
   // The shortcode entry goes through the normal st+ path (added below) since tokenLabelSaves entries also live in tokenSaves.
   S.tokenLabelSaves.forEach(c=>{
-    const enc=v=>(v||"").toString().replace(/ /g,"_").replace(/[|;]/g,"");
+    const enc=v=>(v||"").toString().replace(/ /g,"%20").replace(/[|;]/g,"");
     uvarOps.push("tl+"+enc(c.name)+"|"+enc(c.origCode)+"|"+enc(c.labelText)+"|"+enc(c.labelSize)+"|"+enc(c.labelColor)+"|"+enc(c.labelBg)+"|"+enc(c.labelPos));
     // Also ensure shortcode goes to mapTokens via st+ (de-dupe if already pending in tokenSaves)
     if(c.newCode&&!S.tokenSaves.find(t=>t.name===c.name)){
       uvarOps.push("st+"+enc(c.name)+":"+c.newCode);}});
   // Deleting a baked token removes BOTH the shortcode (st-) and the metadata (tl-)
   S.tokenLabelDeletes.forEach(name=>{
-    const enc=name.replace(/ /g,"_");
+    const enc=name.replace(/ /g,"%20");
     uvarOps.push("tl-"+enc);
     if(!S.tokenDeletes.includes(name))uvarOps.push("st-"+enc);});
   const uvarStr=uvarOps.join(";;");
@@ -2763,15 +2850,36 @@ function setup(){
       S.loadedUrl="";$("map-img").style.display="none";$("map-img").src="";renderAll();return;}
     // Save current map - capture full scene state into a save object
     if(t.id==="m-mapsave"){
-      const name=$("m-mapsavename")?.value.trim();if(!name){showError("Enter a map name");return;}
-      const state=captureCurrentMapState();
-      const thumb=buildOtfbmUrl(state);
-      const entry={name,...state,thumb};
-      // Remove any existing pending save with the same name, then add the new one
-      S.mapSaves=S.mapSaves.filter(s=>s.name!==name);
-      S.mapSaves.push(entry);
-      S.mapDeletes=S.mapDeletes.filter(n=>n!==name);
-      $("m-mapsavename").value="";renderAll();return;}
+      const raw=$("m-mapsavename")?.value;
+      const name=slugifyName(raw||"");
+      if(!name){showError("Enter a map name");return;}
+      // Build the set of all existing names (saved-on-Avrae + pending saves, minus deletes)
+      const existing=[...S.savedMaps,...S.mapSaves.map(s=>s.name).filter(n=>!S.savedMaps.includes(n))].filter(n=>!S.mapDeletes.includes(n));
+      // Use normalizeNameForCompare for conflict check - treats spaces and underscores as equivalent,
+      // so a legacy map "goblin lair" (with space) conflicts when user types "goblin_lair" (with underscore)
+      const nameKey=normalizeNameForCompare(name);
+      const conflictingName=existing.find(e=>normalizeNameForCompare(e)===nameKey);
+      const doSave=(finalName,nameWasChanged)=>{
+        const state=captureCurrentMapState();
+        const thumb=buildOtfbmUrl(state);
+        const entry={name:finalName,...state,thumb};
+        S.mapSaves=S.mapSaves.filter(s=>normalizeNameForCompare(s.name)!==normalizeNameForCompare(finalName));
+        S.mapSaves.push(entry);
+        S.mapDeletes=S.mapDeletes.filter(n=>normalizeNameForCompare(n)!==normalizeNameForCompare(finalName));
+        $("m-mapsavename").value="";
+        const prev=document.getElementById("m-mapsave-preview");if(prev)prev.textContent="";
+        renderAll();
+        showSaveSuccessModal("battlemap",raw||finalName,finalName);};
+      if(conflictingName){
+        // Show conflict modal - 3 choices: replace, save as suffix, cancel
+        const suggestedNext=nextAvailableSuffix(name,existing.map(normalizeNameForCompare));
+        showSaveConflictModal("battlemap",conflictingName,suggestedNext).then(choice=>{
+          if(choice==="replace")doSave(conflictingName,name!==conflictingName);
+          else if(choice==="suffix")doSave(suggestedNext,true);
+          // cancel: do nothing
+        });}
+      else doSave(name,name!==(raw||"").trim());
+      return;}
     // Browse Saved Maps - open gallery modal with thumbnails
     if(t.id==="m-mapbrowse"){if(t.disabled)return;showBrowseMapsModal();return;}
     // Load saved map - confirm, then copy `!bscry loadmap "<name>"` for the user to paste in Discord
@@ -2794,14 +2902,29 @@ function setup(){
       renderAll();return;}
     // Save current battle - capture full scene state plus per-combatant data into a save object
     if(t.id==="m-btlsave"){
-      const name=$("m-btlsavename")?.value.trim();if(!name){showError("Enter a battle name");return;}
-      const captured=captureCurrentBattleState(name);
-      const entry={name,...captured[name]};
-      // Remove any pending save with the same name, then add the new one
-      S.battleSaves=S.battleSaves.filter(s=>s.name!==name);
-      S.battleSaves.push(entry);
-      S.battleDeletes=S.battleDeletes.filter(n=>n!==name);
-      $("m-btlsavename").value="";renderAll();return;}
+      const raw=$("m-btlsavename")?.value;
+      const name=slugifyName(raw||"");
+      if(!name){showError("Enter a battle name");return;}
+      const existing=[...S.savedBattles,...S.battleSaves.map(s=>s.name).filter(n=>!S.savedBattles.includes(n))].filter(n=>!S.battleDeletes.includes(n));
+      const nameKey=normalizeNameForCompare(name);
+      const conflictingName=existing.find(e=>normalizeNameForCompare(e)===nameKey);
+      const doSave=(finalName)=>{
+        const captured=captureCurrentBattleState(finalName);
+        const entry={name:finalName,...captured[finalName]};
+        S.battleSaves=S.battleSaves.filter(s=>normalizeNameForCompare(s.name)!==normalizeNameForCompare(finalName));
+        S.battleSaves.push(entry);
+        S.battleDeletes=S.battleDeletes.filter(n=>normalizeNameForCompare(n)!==normalizeNameForCompare(finalName));
+        $("m-btlsavename").value="";
+        const prev=document.getElementById("m-btlsave-preview");if(prev)prev.textContent="";
+        renderAll();
+        showSaveSuccessModal("battle",raw||finalName,finalName);};
+      if(conflictingName){
+        const suggestedNext=nextAvailableSuffix(name,existing.map(normalizeNameForCompare));
+        showSaveConflictModal("battle",conflictingName,suggestedNext).then(choice=>{
+          if(choice==="replace")doSave(conflictingName);
+          else if(choice==="suffix")doSave(suggestedNext);});}
+      else doSave(name);
+      return;}
     // Load saved battle - confirm, then copy `!bscry loadbattle "<name>"` for the user to paste in Discord
     if(t.classList.contains("m-btlload")){const name=t.dataset.btlname;
       showLoadModalStep1("Load Saved Battle: \""+name+"\"","battle","This replaces your current map state AND overwrites saved combatants' notes (location, size, color, overlays). All saved combatants must already be in active combat.").then(ok=>{
@@ -3160,7 +3283,12 @@ function setup(){
   },{capture:false});
   tc.addEventListener("input",e=>{if(e.target.dataset.objplaceHex&&S.placingObject){S.placingObject.color=e.target.value;renderSB();return;}
     if(e.target.dataset.objhex){const o=S.objects.find(x=>x.id===+e.target.dataset.objhex);if(o){o.color=e.target.value;renderSVG();renderCmd();return;}}
-    if(e.target.id==="m-opacity"){S.gridOpacity=e.target.value/100;renderSVG();}if(e.target.id==="m-fowopacity"){S.fowOpacity=100-e.target.value;renderSVG();renderCmd();}});
+    if(e.target.id==="m-opacity"){S.gridOpacity=e.target.value/100;renderSVG();}if(e.target.id==="m-fowopacity"){S.fowOpacity=100-e.target.value;renderSVG();renderCmd();}
+    // Live slug preview - shows the user what their map/battle name will become before they save.
+    // Triggers on map and battle save name inputs.
+    if(e.target.id==="m-mapsavename"){const prev=document.getElementById("m-mapsave-preview");if(prev){const slug=slugifyName(e.target.value);prev.textContent=slug?`→ saves as: ${slug}`:"";}}
+    if(e.target.id==="m-btlsavename"){const prev=document.getElementById("m-btlsave-preview");if(prev){const slug=slugifyName(e.target.value);prev.textContent=slug?`→ saves as: ${slug}`:"";}}
+  });
 
   // Coordinate pick mode - focus on coord field activates map click-to-place
   document.addEventListener("focusin",e=>{
@@ -4544,7 +4672,7 @@ function loadFromHashStr(hash){
     S.tokens=[{id:uid(),name:"DM",col:0,row:0,size:"M",color:"#000000",height:0,tokenImage:"",originalCol:0,originalRow:0,hidden:true}];
     if(params.t){params.t.split(";").forEach(ts=>{
       if(!ts.trim())return;const parts=ts.split("|");if(parts.length<2)return;
-      const name=parts[0].replace(/_/g," "),coord=parseC((parts[1]||"").trim());if(!coord)return;
+      const name=parts[0],coord=parseC((parts[1]||"").trim());if(!coord)return;
       const size=(parts[2]||"M").trim(),colorCode=(parts[3]||"").trim(),height=+(parts[4]||0),tokCode=(parts[5]||"").trim();
       S.tokens.push({id:uid(),name,col:coord.col,row:coord.row,size:SIZES[size]?size:"M",color:colorCode?c2h(colorCode):"#3498db",height,tokenImage:tokCode,originalCol:coord.col,originalRow:coord.row});
     });}
@@ -4552,7 +4680,7 @@ function loadFromHashStr(hash){
     // Merge mode: match by name, only update explicitly-set properties
     if(params.t){params.t.split(";").forEach(ts=>{
       if(!ts.trim())return;const parts=ts.split("|");if(parts.length<2)return;
-      const name=parts[0].replace(/_/g," ");
+      const name=parts[0];
       const coord=parseC((parts[1]||"").trim());
       const size=(parts[2]||"").trim();
       const colorCode=(parts[3]||"").trim();
@@ -4578,11 +4706,11 @@ function loadFromHashStr(hash){
   
   if(params.ov){params.ov.split(";").forEach(os=>{
     if(!os.trim())return;const ti=os.indexOf("~");if(ti===-1)return;
-    const target=os.slice(0,ti).replace(/_/g," ");let ovPart=os.slice(ti+1);
+    const target=os.slice(0,ti);let ovPart=os.slice(ti+1);
     // Extract @aim_target if present
     let aimTarget="";
     const atIdx=ovPart.indexOf("@");
-    if(atIdx>-1){aimTarget=ovPart.slice(atIdx+1).replace(/_/g," ");ovPart=ovPart.slice(0,atIdx);}
+    if(atIdx>-1){aimTarget=ovPart.slice(atIdx+1);ovPart=ovPart.slice(0,atIdx);}
     let ovStr=ovPart;
     
     // Detect {targ} and {aim} positions
@@ -4616,7 +4744,7 @@ function loadFromHashStr(hash){
   // Overlay/Overlay2/.../Aim/Aim2/... fields and reuse the same parse logic.
   if(!S.overlays.length&&params.fn){params.fn.split(";;").forEach(entry=>{
     const ti=entry.indexOf("~");if(ti===-1)return;
-    const target=entry.slice(0,ti).replace(/_/g," ");
+    const target=entry.slice(0,ti);
     const noteText=entry.slice(ti+1);
     const ovByNum={},aimByNum={};
     noteText.split(" | ").forEach(f=>{
@@ -4645,26 +4773,29 @@ function loadFromHashStr(hash){
   // Build combatants list: all tokens (excluding hidden DM) + unplaced from np=
   S.combatants=S.tokens.filter(t=>!t.hidden).map(t=>({name:t.name,placed:true}));
   if(params.np){params.np.split(";").forEach(n=>{
-    const name=n.trim().replace(/_/g," ");if(!name)return;
+    const name=n.trim();if(!name)return;
     if(!S.combatants.find(c=>c.name===name))S.combatants.push({name,placed:false});});}
   // Parse full notes for round-trip (fn=Name~note;;Name2~note2)
   S.fullNotes={};
   if(params.fn){params.fn.split(";;").forEach(entry=>{
     const ti=entry.indexOf("~");if(ti===-1)return;
-    const name=entry.slice(0,ti).replace(/_/g," ");
+    const name=entry.slice(0,ti);
     const note=entry.slice(ti+1);
     S.fullNotes[name]=note;});}
   // Parse saved tokens (st=name:shortcode;name2:shortcode2)
   S.savedTokens=[];S.tokenSaves=[];S.tokenDeletes=[];
   if(params.st){params.st.split(";").forEach(entry=>{
     const ci=entry.indexOf(":");if(ci===-1)return;
-    const name=entry.slice(0,ci).replace(/_/g," ");
+    const name=entry.slice(0,ci);
     const code=entry.slice(ci+1).trim();
     if(name&&code)S.savedTokens.push({name,shortcode:code});});}
-  // Parse saved maps (sm=name1;name2;name3)
+  // Parse saved maps (sm=name1;name2;name3).
+  // Names use spaces as the canonical form. Alias serializes via %20 for URL safety; BS receives
+  // pre-decoded values from decodeURIComponent. Both BS and Croebh use spaces in storage keys, but
+  // user-typed underscores (e.g. via -savemap goblin_lair in Discord) are now preserved end-to-end.
   S.savedMaps=[];S.mapSaves=[];S.mapDeletes=[];
   if(params.sm){params.sm.split(";").forEach(name=>{
-    const n=name.trim().replace(/_/g," ");if(n)S.savedMaps.push(n);});}
+    const n=name.trim();if(n)S.savedMaps.push(n);});}
   // Parse map thumbnails (tm=name1|encoded_url1;;name2|encoded_url2). Each URL was encoded via
   // encodeURIComponent on the BS save side and survived the round-trip; decode here for display.
   // Populated for saved maps that have a `thumb` field. Pre-feature saves have no entry; UI shows
@@ -4672,24 +4803,24 @@ function loadFromHashStr(hash){
   S.mapThumbs={};
   if(params.tm){params.tm.split(";;").forEach(entry=>{
     const i=entry.indexOf("|");if(i<1)return;
-    const n=entry.slice(0,i).trim().replace(/_/g," ");
+    const n=entry.slice(0,i).trim();
     const enc=entry.slice(i+1).trim();if(!n||!enc)return;
     try{S.mapThumbs[n]=decodeURIComponent(enc);}catch(e){S.mapThumbs[n]=enc;}});}
-  // Parse saved battles (sb=name1;name2;name3)
+  // Parse saved battles (sb=name1;name2;name3). Same convention as saved maps.
   S.savedBattles=[];S.battleSaves=[];S.battleDeletes=[];
   if(params.sb){params.sb.split(";").forEach(name=>{
-    const n=name.trim().replace(/_/g," ");if(n)S.savedBattles.push(n);});}
+    const n=name.trim();if(n)S.savedBattles.push(n);});}
   // Parse token labels (tl=name|orig|text|size|color|bg|pos;...) - metadata only; shortcode comes from savedTokens via st=
   S.tokenLabels=[];S.tokenLabelSaves=[];S.tokenLabelDeletes=[];
   if(params.tl){params.tl.split(";").forEach(entry=>{
     const f=entry.split("|");if(f.length<1)return;
-    const name=(f[0]||"").trim().replace(/_/g," ");
+    const name=(f[0]||"").trim();
     if(!name)return;
     // Resolve newCode by looking up the savedTokens entry for this name
     const stEntry=S.savedTokens.find(s=>s.name===name);
     const newCode=stEntry?stEntry.shortcode:"";
     S.tokenLabels.push({name,origCode:(f[1]||"").trim(),newCode,
-      labelText:(f[2]||"").replace(/_/g," "),
+      labelText:(f[2]||""),
       labelSize:(f[3]||"M"),labelColor:(f[4]||"w"),labelBg:(f[5]||"bk"),labelPos:(f[6]||"bc")});});}
   // Parse walls (w=-cbkB2B9, -crC5C9)
   S.walls=[];
@@ -4740,15 +4871,15 @@ function loadFromHashStr(hash){
   // Parse initiative groups (ig=GroupName:Member1,Member2;Group2:Member3)
   if(params.ig){params.ig.split(";").forEach(g=>{
     if(!g.trim())return;const ci=g.indexOf(":");if(ci<1)return;
-    const grpName=g.slice(0,ci).replace(/_/g," ");
-    const members=g.slice(ci+1).split(",").map(m=>m.trim().replace(/_/g," "));
+    const grpName=g.slice(0,ci);
+    const members=g.slice(ci+1).split(",").map(m=>m.trim());
     members.forEach(m=>{
       const tk=S.tokens.find(t=>t.name===m);if(tk)tk.group=grpName;
       const cmb=S.combatants.find(c=>c.name===m);if(cmb)cmb.group=grpName;});});}
   // Parse initiative order (ip=Name:init;Name2:init2)
   if(params.ip){params.ip.split(";").forEach(entry=>{
     if(!entry.trim())return;const ci=entry.indexOf(":");if(ci<1)return;
-    const name=entry.slice(0,ci).replace(/_/g," ");const init=parseInt(entry.slice(ci+1));
+    const name=entry.slice(0,ci);const init=parseInt(entry.slice(ci+1));
     const tk=S.tokens.find(t=>t.name===name);if(tk)tk.init=isNaN(init)?0:init;
     const cmb=S.combatants.find(c=>c.name===name);if(cmb)cmb.init=isNaN(init)?0:init;});}
   // Parse channel ID for tab scoping
@@ -4826,48 +4957,107 @@ function showLoadSuccessModal(kind,name){
 // Click Delete → confirm + add to S.mapDeletes pending list.
 // Pending saves (not yet applied) appear with a (pending) tag. Recompute the list each time so
 // pending saves / deletes / new thumbs reflect immediately.
+// Success modal shown after a save completes. Always shows the final stored name so the user
+// can verify what was actually saved (especially important when slugifyName transformed their input).
+// If the typed name and stored name differ, calls out the transformation explicitly.
+function showSaveSuccessModal(kind,typedName,savedName){
+  const typed=(typedName||"").trim();
+  const wasTransformed=typed&&typed!==savedName;
+  const bd=document.createElement("div");bd.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px";
+  const d=document.createElement("div");d.style.cssText="background:var(--bg2);border:2px solid #2ecc71;border-radius:8px;padding:0;max-width:420px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.5)";
+  d.innerHTML=`<div style="padding:14px 20px;border-bottom:1px solid var(--bg3)">
+    <div style="font-weight:700;font-size:14px;color:#2ecc71">✓ Success</div></div>
+  <div style="padding:16px 20px;font-size:12px;color:var(--fg);line-height:1.6">
+    Saved ${kind} as <code style="background:var(--bg);padding:2px 6px;border-radius:3px;font-size:12px;color:var(--accent)">${savedName}</code>${wasTransformed?` <span style="color:var(--fg3)">(from <code style="background:var(--bg);padding:1px 4px;border-radius:2px;font-size:11px;color:var(--fg3)">${typed.replace(/</g,"&lt;")}</code>)</span>`:""}.
+    <div style="margin-top:10px;padding:8px 10px;background:var(--bg);border-radius:4px;font-size:10px;color:var(--fg3);line-height:1.4">
+      ${kind==="battlemap"?"Background + grid + walls + FOW + objects are queued.":"Tokens, initiative, and combatant notes are queued in addition to the map state."}
+      Run the <code>!bscry</code> apply command (Copy button in toolbar) when you're ready to push the change to Avrae.
+    </div></div>
+  <div style="padding:12px 20px;border-top:1px solid var(--bg3);display:flex;justify-content:flex-end">
+    <button class="btn btn-p" id="sss-ok" style="font-size:11px;padding:6px 16px">OK</button>
+  </div>`;
+  bd.appendChild(d);document.body.appendChild(bd);
+  const close=()=>bd.remove();
+  d.querySelector("#sss-ok").onclick=close;
+  bd.onclick=(e)=>{if(e.target===bd)close();};
+  const esc=(ev)=>{if(ev.key==="Escape"){document.removeEventListener("keydown",esc);close();}};
+  document.addEventListener("keydown",esc);
+}
+// Save conflict modal. Returns a Promise that resolves to "replace", "suffix", or "cancel".
+// Triggered when user tries to save a map/battle with a name that already exists.
+// Three choices - replace silently, save with auto-incremented suffix, or back out.
+function showSaveConflictModal(kind,existingName,suggestedSuffix){
+  return new Promise(resolve=>{
+    const bd=document.createElement("div");bd.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px";
+    const d=document.createElement("div");d.style.cssText="background:var(--bg2);border:2px solid var(--accent);border-radius:8px;padding:0;max-width:440px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.5)";
+    d.innerHTML=`<div style="padding:14px 20px;border-bottom:1px solid var(--bg3)">
+      <div style="font-weight:700;font-size:14px;color:var(--accent)">⚠ Name Already Exists</div></div>
+    <div style="padding:16px 20px;font-size:12px;color:var(--fg);line-height:1.5">
+      A ${kind} named <b>"${existingName}"</b> already exists. What would you like to do?
+      <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:4px;font-size:11px;color:var(--fg2);line-height:1.4">
+        <div><b>Replace existing</b>: Overwrites the existing ${kind}. The old version is gone forever.</div>
+        <div style="margin-top:6px"><b>Save as <code>${suggestedSuffix}</code></b>: Keeps both. Uses the next available number suffix.</div>
+      </div></div>
+    <div style="padding:12px 20px;border-top:1px solid var(--bg3);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn btn-s" id="scm-cancel" style="font-size:11px;padding:6px 12px">Cancel</button>
+      <button class="btn btn-s" id="scm-replace" style="font-size:11px;padding:6px 12px;color:#e74c3c">Replace existing</button>
+      <button class="btn btn-p" id="scm-suffix" style="font-size:11px;padding:6px 12px">Save as ${suggestedSuffix}</button>
+    </div>`;
+    bd.appendChild(d);document.body.appendChild(bd);
+    const done=(choice)=>{bd.remove();resolve(choice);};
+    d.querySelector("#scm-cancel").onclick=()=>done("cancel");
+    d.querySelector("#scm-replace").onclick=()=>done("replace");
+    d.querySelector("#scm-suffix").onclick=()=>done("suffix");
+    bd.onclick=(e)=>{if(e.target===bd)done("cancel");};
+    // ESC = cancel
+    const esc=(ev)=>{if(ev.key==="Escape"){document.removeEventListener("keydown",esc);done("cancel");}};
+    document.addEventListener("keydown",esc);
+  });}
 function showBrowseMapsModal(){
-  // Build the list - same logic as the now-removed sidebar list
   const all=[...S.savedMaps,...S.mapSaves.map(s=>s.name).filter(n=>!S.savedMaps.includes(n))].filter(n=>!S.mapDeletes.includes(n));
   if(!all.length){setStatus("No saved maps yet - save one first");return;}
-  // Backdrop
-  const bd=document.createElement("div");bd.id="bm-bd";bd.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px";
-  const d=document.createElement("div");d.style.cssText="background:var(--bg2);border:2px solid var(--accent);border-radius:8px;padding:0;max-width:560px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.5)";
-  // Header
+  // Sort A-Z (case-insensitive, though all names should already be lowercase per slugifyName)
+  all.sort((a,b)=>a.localeCompare(b));
+  const bd=document.createElement("div");bd.id="bm-bd";bd.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px";
+  const d=document.createElement("div");d.style.cssText="background:var(--bg2);border:2px solid var(--accent);border-radius:8px;padding:0;max-width:720px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.6)";
   d.innerHTML=`<div style="padding:14px 20px;border-bottom:1px solid var(--bg3);display:flex;align-items:center;gap:12px">
-    <div style="font-weight:700;font-size:14px;color:var(--accent);flex:1">🗂 Browse Saved Maps</div>
+    <div style="font-weight:700;font-size:15px;color:var(--accent);flex:1">🗂 Saved Battlemaps <span style="font-size:10px;color:var(--fg3);font-weight:400">(${all.length})</span></div>
     <button class="btn btn-s" id="bm-close" style="font-size:11px;padding:4px 10px">✕ Close</button></div>
-  <div id="bm-list" style="overflow-y:auto;padding:8px 0;flex:1"></div>`;
+  <div id="bm-grid" style="overflow-y:auto;padding:14px 20px;flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px"></div>
+  <div style="padding:8px 20px;border-top:1px solid var(--bg3);font-size:10px;color:var(--fg4);font-style:italic;line-height:1.4">Thumbnails are only available for maps saved in BattleScry. Older saves (or maps saved via <code>!map -savemap</code> in Discord) show the BattleScry logo as a placeholder.</div>`;
   bd.appendChild(d);document.body.appendChild(bd);
-  // Render rows
-  const list=d.querySelector("#bm-list");
+  const grid=d.querySelector("#bm-grid");
   all.forEach(name=>{
     const isPending=!!S.mapSaves.find(s=>s.name===name);
-    // Prefer pending save's thumb (most recent state), fall back to alias-supplied thumb, then placeholder
+    // Prefer pending save's thumb (most recent state), fall back to alias-supplied thumb
     let thumb="";
     const pending=S.mapSaves.find(s=>s.name===name);
     if(pending&&pending.thumb)thumb=pending.thumb;
     else if(S.mapThumbs&&S.mapThumbs[name])thumb=S.mapThumbs[name];
-    const row=document.createElement("div");row.style.cssText="display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--bg3)";
+    // Card: image area (thumb or BS logo fallback) + name + load action + corner delete
+    // Click on image area opens fullscreen preview; click on Load button loads the map.
+    const card=document.createElement("div");
+    card.style.cssText="background:var(--bg);border:1px solid var(--bg3);border-radius:6px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .12s;position:relative";
+    card.onmouseenter=()=>card.style.borderColor="var(--accent)";
+    card.onmouseleave=()=>card.style.borderColor="var(--bg3)";
     const thumbHtml=thumb
-      ?`<img src="${thumb}" data-thumb="${thumb}" class="bm-thumb" style="width:96px;height:64px;object-fit:cover;border:1px solid var(--bg3);border-radius:4px;cursor:pointer;background:var(--bg)" title="Click to view full size">`
-      :`<div style="width:96px;height:64px;border:1px dashed var(--bg4);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--fg4);text-align:center;line-height:1.3;background:var(--bg)">No<br>preview</div>`;
-    row.innerHTML=`${thumbHtml}
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;color:var(--fg);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}${isPending?' <span style="color:var(--accent);font-size:9px;font-weight:normal">(pending)</span>':""}</div>
-      </div>
-      <button class="btn btn-p bm-load" data-mapname="${name}" style="font-size:10px;padding:4px 10px">Load</button>
-      <button class="btn btn-s bm-del" data-mapname="${name}" style="font-size:10px;padding:4px 8px;color:#e74c3c">✕</button>`;
-    list.appendChild(row);});
-  // Wire up
+      ? `<img src="${thumb}" data-thumb="${thumb}" class="bm-thumb" style="width:100%;aspect-ratio:3/2;object-fit:cover;cursor:zoom-in;background:#222;display:block" title="Click to view full size">`
+      : `<div class="bm-thumb-fallback" style="width:100%;aspect-ratio:3/2;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--bg3),var(--bg5));border-bottom:1px solid var(--bg3)">
+           <svg width="60%" height="60%" viewBox="0 0 100 100" style="opacity:.35"><use href="#bscry-logo"/></svg>
+         </div>`;
+    card.innerHTML=`${thumbHtml}
+      <button class="bm-del" data-mapname="${name}" title="Delete this saved map" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);color:#e74c3c;border:none;border-radius:50%;width:24px;height:24px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1">✕</button>
+      <div style="padding:8px 10px 10px;display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:12px;font-weight:600;color:var(--fg);word-break:break-all;line-height:1.3" title="${name}">${name}${isPending?' <span style="color:var(--accent);font-size:9px;font-weight:normal">(pending)</span>':""}</div>
+        <button class="btn btn-p bm-load" data-mapname="${name}" style="font-size:11px;padding:5px;width:100%">Load</button>
+      </div>`;
+    grid.appendChild(card);});
   const close=()=>bd.remove();
   d.querySelector("#bm-close").onclick=close;
   bd.onclick=(e)=>{if(e.target===bd)close();};
-  d.querySelectorAll(".bm-thumb").forEach(img=>{
-    img.onclick=(e)=>{e.stopPropagation();showFullscreenThumb(img.dataset.thumb);};});
+  d.querySelectorAll(".bm-thumb").forEach(img=>{img.onclick=(e)=>{e.stopPropagation();showFullscreenThumb(img.dataset.thumb);};});
   d.querySelectorAll(".bm-load").forEach(btn=>{
-    btn.onclick=()=>{const name=btn.dataset.mapname;close();
-      // Defer slightly so the close animation doesn't fight with the load modal appearing
+    btn.onclick=(e)=>{e.stopPropagation();const name=btn.dataset.mapname;close();
       setTimeout(()=>{
         showLoadModalStep1("Load Saved Map: \""+name+"\"","map","This replaces your current map state (background, walls, FOW, objects). Save your current map first if you want to keep it.").then(ok=>{
           if(!ok)return;
@@ -4876,7 +5066,7 @@ function showBrowseMapsModal(){
             .catch(()=>setStatus("⚠ Copy failed - manually paste: "+cmd));});
       },50);};});
   d.querySelectorAll(".bm-del").forEach(btn=>{
-    btn.onclick=()=>{const name=btn.dataset.mapname;
+    btn.onclick=(e)=>{e.stopPropagation();const name=btn.dataset.mapname;
       if(!confirm("Delete saved map '"+name+"'?"))return;
       const wasLoaded=S.savedMaps.includes(name);
       const wasPending=!!S.mapSaves.find(s=>s.name===name);
@@ -4884,7 +5074,6 @@ function showBrowseMapsModal(){
       S.mapSaves=S.mapSaves.filter(s=>s.name!==name);
       if(wasLoaded&&!wasPending)S.mapDeletes.push(name);
       close();renderAll();
-      // Reopen if there are still maps
       const remaining=[...S.savedMaps,...S.mapSaves.map(s=>s.name).filter(n=>!S.savedMaps.includes(n))].filter(n=>!S.mapDeletes.includes(n));
       if(remaining.length)setTimeout(showBrowseMapsModal,50);};});}
 function showFullscreenThumb(url){
@@ -4904,8 +5093,8 @@ function loadFromHash(){const hash=safeHash().slice(1);if(hash)loadFromHashStr(h
     const cleanParts=hash.split("&").filter(p=>!p.startsWith("_lm=")&&!p.startsWith("_lb="));
     const cleanHash=cleanParts.join("&");
     try{history.replaceState(null,"",cleanHash?"#"+cleanHash:location.pathname);}catch(e){}
-    if(params._lm)setTimeout(()=>showLoadSuccessModal("map",params._lm.replace(/_/g," ")),300);
-    if(params._lb)setTimeout(()=>showLoadSuccessModal("battle",params._lb.replace(/_/g," ")),300);}}
+    if(params._lm)setTimeout(()=>showLoadSuccessModal("map",params._lm),300);
+    if(params._lb)setTimeout(()=>showLoadSuccessModal("battle",params._lb),300);}}
 setup();loadFromHash();
 // Populate Map tab's bginfo + layout dropdown if the hash loaded a background image.
 // Without this, an existing bg shows "Image loading..." forever because the analyze flow only fires on UI interaction.
