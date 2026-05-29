@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.55                                       https://battlescry.com
+BattleScry v0.1.56                                       https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -13,23 +13,25 @@ ARCHITECTURE
   - Tabs: Map | Tokens | Overlays | Structures (Structures subtabs: Walls | Map Objects).
 
 DATA CONTRACT (kept in sync with bscry_alias.py)
-  - Companion alias version: 0.2.29. Both files must be deployed together.
+  - Companion alias version: 0.2.30. Both files must be deployed together.
   - URL hash params: g, o, bg, vw, t, ip, np, w, fw, ob, fn, st, sm, sb, tl, ig, tm.
   - Name transport: spaces encoded as %20 (NOT underscore). User underscores survive.
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.55 - User-typed underscores in names survive end-to-end (%20 encoding).
+  v0.1.56 - Preview Zoom (zoom/pan saved-map thumbnails); AOE 2D affected tokens with
+            3 rules (Touch / Cell-50%-DMG / Token-50%) and dotted ring on map; Add New
+            Combatant inline form on Tokens tab with full round-trip (emits !i add).
+  v0.1.55 - User-typed underscores in names survive end-to-end (%20 encoding everywhere).
   v0.1.54 - slugifyName preserves spaces; conflict suffix uses " N" (space + number).
   v0.1.53 - Save success modal; conflict tolerance for space-vs-underscore names.
   v0.1.52 - Saved Battlemaps card grid + BS-logo fallback; token preview in props.
   v0.1.51 - Sample/demo mode removed; samples load as normal editable sessions.
   v0.1.50 - Sample analyze flow; ruler survives zoom; Advanced section open-state.
   v0.1.49 - Map tab redesigned; layout dropdown; dark mode grid color auto-swap.
-  v0.1.48 - Tab reorg: Map promoted to top-level; Structures tab; FOW on Map tab.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.55"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.56"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -149,7 +151,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.55</span>
+  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.56</span>
   <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Revert all changes to original state">⟲ Revert</button>
   <button id="btn-undo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Undo last change (Ctrl+Z)">↩ Undo</button>
   <button id="btn-redo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
@@ -661,7 +663,7 @@ const IS_TOUCH='ontouchstart'in window||navigator.maxTouchPoints>0;
 const HANDLE_R=IS_TOUCH?16:8;// Bigger touch targets on mobile
 // Convert touch event to mouse-like coordinates
 function touchPt(e){const t=e.touches[0]||e.changedTouches[0];return{clientX:t.clientX,clientY:t.clientY,target:document.elementFromPoint(t.clientX,t.clientY)||e.target,shiftKey:e.shiftKey,preventDefault:()=>e.preventDefault()};}
-const S={grid:{cellSize:40,offsetX:0,offsetY:0,cols:26,rows:26,startCol:0,startRow:0,fullCols:26,fullRows:26},tokens:[],overlays:[],walls:[],objects:[],combatants:[],sel:{type:null,ids:new Set()},zoom:1,showGrid:true,showOverlays:true,showWalls:true,showObjects:true,showTokens:true,showFow:true,showBg:true,coordLabels:true,autoDetect:true,gridOpacity:0.99,darkMode:false,noBorder:false,altFont:false,gridColor:"",fowOpacity:0,labelFont:"Figtree",loadedUrl:"",tab:"map",addingOverlay:null,structSubTab:"walls",_uiMapAdvOpen:false,_uiMapImportOpen:false,drag:null,marquee:null,tokCol:false,ovCol:false,npCol:true,tokSort:"init",ovSort:"name",sidebarOpen:true,coordPick:null,diagRule:"5105",fowRegions:[],wallDraw:null,fowDraw:null,spaceHeld:false,panDrag:null,fowResize:null,wallDrag:null,rulerMode:false,rulerStart:null,rulerEnd:null,rulerDrag:null,placingObject:null,objDraw:null,objResize:null,objMove:null,savedTokens:[],tokenSaves:[],tokenDeletes:[],savedMaps:[],mapSaves:[],mapDeletes:[],mapThumbs:{},savedBattles:[],battleSaves:[],battleDeletes:[],tokenLabels:[],tokenLabelSaves:[],tokenLabelDeletes:[]};
+const S={grid:{cellSize:40,offsetX:0,offsetY:0,cols:26,rows:26,startCol:0,startRow:0,fullCols:26,fullRows:26},tokens:[],overlays:[],walls:[],objects:[],combatants:[],sel:{type:null,ids:new Set()},zoom:1,showGrid:true,showOverlays:true,showWalls:true,showObjects:true,showTokens:true,showFow:true,showBg:true,coordLabels:true,autoDetect:true,gridOpacity:0.99,darkMode:false,noBorder:false,altFont:false,gridColor:"",fowOpacity:0,labelFont:"Figtree",loadedUrl:"",tab:"map",addingOverlay:null,addingCombatant:null,placingCombatant:null,structSubTab:"walls",_uiMapAdvOpen:false,_uiMapImportOpen:false,_uiAoeRuleOpen:false,aoeRule:"cell50",drag:null,marquee:null,tokCol:false,ovCol:false,npCol:true,tokSort:"init",ovSort:"name",sidebarOpen:true,coordPick:null,diagRule:"5105",fowRegions:[],wallDraw:null,fowDraw:null,spaceHeld:false,panDrag:null,fowResize:null,wallDrag:null,rulerMode:false,rulerStart:null,rulerEnd:null,rulerDrag:null,placingObject:null,objDraw:null,objResize:null,objMove:null,savedTokens:[],tokenSaves:[],tokenDeletes:[],savedMaps:[],mapSaves:[],mapDeletes:[],mapThumbs:{},savedBattles:[],battleSaves:[],battleDeletes:[],tokenLabels:[],tokenLabelSaves:[],tokenLabelDeletes:[]};
 // 3D cube distance between two tokens (nearest surface-to-surface, in feet)
 function tokCubeCells(t){const c=Math.max(1,SIZES[t.size]?.c||1);return c;}
 function cubeDist3D(a,b){
@@ -908,6 +910,19 @@ function renderSVG(){
   selToks.forEach(grp=>{if(grp.length===1)rTok(svg,grp[0]);else rPie(svg,grp);});
   }
   if(S.showOverlays)S.overlays.filter(o=>!o.under&&isSel("overlay",o.id)).forEach(o=>rOv(svg,o));
+  // AOE visual cue: when a single overlay is selected, draw a dotted ring on affected tokens.
+  // The ring uses the overlay's color so it's distinct from the yellow selection highlight.
+  // Doesn't fire when multiple things are selected (multi-move case) to avoid clutter.
+  if(S.sel.type==="overlay"&&S.sel.ids.size===1){
+    const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);
+    if(ov){const affected=aoeAffectedTokens(ov,S.aoeRule||"cell50");
+      if(affected.length){const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY;
+        affected.forEach(tid=>{const t=S.tokens.find(x=>x.id===tid);if(!t)return;
+          const szSpec=SIZES[t.size]||SIZES.M;const cells=Math.max(1,szSpec.c);
+          const cx=ox+(t.col+cells/2)*cs,cy=oy+(t.row+cells/2)*cs;
+          const r=cells*cs*0.55;// slightly outside token footprint
+          svg.appendChild(sEl("circle",{cx,cy,r,fill:"none",stroke:ov.color||"#fbbf24","stroke-width":Math.max(2,cs*0.06),"stroke-dasharray":"4 3","stroke-opacity":0.85,"pointer-events":"none"}));});}}
+  }
   // Marquee rect
   if(S.marquee){const m=S.marquee,x=Math.min(m.x1,m.x2),y=Math.min(m.y1,m.y2),mw=Math.abs(m.x2-m.x1),mh=Math.abs(m.y2-m.y1);
     svg.appendChild(sEl("rect",{x,y,width:mw,height:mh,fill:"rgba(251,191,36,0.15)",stroke:"#fbbf24","stroke-width":1,"stroke-dasharray":"4 2","pointer-events":"none"}));}
@@ -1451,6 +1466,7 @@ function hasAnyChanges(){if(!origState)return false;
   if(S.tokenSaves.length||S.tokenDeletes.length)return true;
   if(S.mapSaves.length||S.mapDeletes.length)return true;
   if(S.battleSaves.length||S.battleDeletes.length)return true;
+  if(S.combatants.some(c=>c.isNew))return true;
   if(S.tokens.some(t=>!t.hidden&&tokChanged(t)))return true;
   if(S.overlays.some(o=>ovChanged(o)))return true;
   if(origState.tokens.some(ot=>!ot.hidden&&!S.tokens.find(t=>t.id===ot.id)))return true;
@@ -1461,6 +1477,29 @@ function hasAnyChanges(){if(!origState)return false;
   return false;}
 function rTokenProps(el){
   let h="";
+  // Add New Combatant button at top - mirrors the Overlays tab pattern.
+  // For non-PC, non-monster combatants (NPCs, destructible objects, environmental hazards).
+  // PCs and monsters must be added in Avrae via the usual !i add / cset workflow.
+  const isAdding=!!S.addingCombatant;
+  h+=`<button class="btn btn-p" id="btn-add-cb" style="width:100%;font-size:11px;padding:5px;margin-bottom:4px" title="Add a non-PC, non-monster combatant to initiative (e.g. brazier, NPC, destructible object). PCs and monsters must be added in Avrae.">${isAdding?"− Cancel New Combatant":"➕ Add New Combatant"}</button>`;
+  if(isAdding){
+    const ac=S.addingCombatant;
+    h+=`<div class="sec" style="border:1px solid var(--accent);background:var(--bg)"><div class="sec-title" style="color:var(--accent)">➕ New Combatant</div>
+    <div style="font-size:9px;color:var(--fg3);margin-bottom:6px;line-height:1.4">Equivalent to: <code style="font-size:9px;background:var(--bg3);padding:1px 4px;border-radius:2px">!i add 0 name -p init -ac N -hp N -note "..."</code></div>
+    <div class="row"><div style="flex:1"><span class="lbl">Name *</span><input class="inp" id="ac-name" value="${ac.name||""}" maxlength="50" placeholder="e.g. Brazier" style="font-size:11px"></div></div>
+    <div class="row"><div style="flex:1"><span class="lbl">Initiative</span><input type="number" class="inp" id="ac-init" value="${ac.initStr||""}" placeholder="50" min="-50" max="200" style="font-size:11px"></div>
+    <div style="flex:1"><span class="lbl">Size</span><select class="inp" id="ac-size" style="font-size:11px">${Object.entries(SIZES).map(([k,v])=>`<option value="${k}"${(ac.size||"M")===k?" selected":""}>${k} - ${v.l}</option>`).join("")}</select></div></div>
+    <div class="row"><div style="flex:1"><span class="lbl">AC</span><input type="number" class="inp" id="ac-ac" value="${ac.ac||""}" placeholder="15" min="0" max="50" style="font-size:11px"></div>
+    <div style="flex:1"><span class="lbl">HP (sets max too)</span><input type="number" class="inp" id="ac-hp" value="${ac.hp||""}" placeholder="30" min="0" max="9999" style="font-size:11px"></div></div>
+    <div class="row"><div style="flex:1"><span class="lbl">Color</span><div class="colors">${cSw(ac.color||"#888888","ac")}</div></div></div>
+    <div class="row"><div style="flex:1"><span class="lbl">Note</span><input class="inp" id="ac-note" value="${(ac.note||"").replace(/"/g,"&quot;")}" placeholder="destructible, immune to fire..." maxlength="100" style="font-size:10px"></div></div>
+    <label style="display:flex;align-items:flex-start;gap:6px;font-size:11px;margin-top:6px;cursor:pointer" title="When hidden, players see only condition labels (Healthy/Injured/Bloodied/Critical/Dead) instead of HP numbers. Applied via !i opt -h on apply."><input type="checkbox" id="ac-hide" ${ac.hideStats?"checked":""} style="accent-color:var(--accent);margin-top:2px"><span>Hide AC/HP from players</span></label>
+    <div class="row" style="margin-top:6px;align-items:end"><div style="flex:1"><span class="lbl" title="Where to place this combatant on the map (or leave empty/Unplaced)">Location</span><input class="inp" id="ac-loc" value="${ac.location||""}" placeholder="Unplaced (or type F5)" style="font-family:monospace;font-size:11px"></div>
+    <button class="btn btn-s" id="ac-pick" style="font-size:11px;padding:5px 8px;white-space:nowrap;margin-bottom:0" title="Pick location by clicking on the map">🎯 Pick on map</button></div>
+    <div class="row" style="gap:4px;margin-top:8px"><button class="btn btn-p" id="ac-submit" style="flex:1;font-size:11px;padding:6px">Add Combatant</button><button class="btn btn-s" id="ac-cancel" style="flex:1;font-size:11px;padding:6px">Cancel</button></div>
+    </div>`;
+    el.innerHTML=h;return;
+  }
   // Token image button at top
   if(S.sel.ids.size===1&&(S.sel.type==="token"||S.sel.type==="mixed")){const _bt=S.tokens.find(x=>x.id===[...S.sel.ids][0]);
     if(_bt)h+=`<button class="btn btn-p" id="p-srd-browse" style="width:100%;font-size:11px;padding:5px;margin-bottom:4px">${_bt.tokenImage?"✏️ Manage Custom Token":"➕ Customize Token Image"}</button>`;}
@@ -1559,6 +1598,15 @@ function rTokenList(el){let h="";
   el.innerHTML=h;}
 function rOverlayProps(el){
   let h="";
+  // AOE rule selector - per-session preference for how overlays decide "affected tokens".
+  // Default: cell50 (DMG: a cell is affected if AOE covers >50% of it).
+  const aoeRule=S.aoeRule||"cell50";
+  h+=`<details ${S._uiAoeRuleOpen?'open':''} data-section="aoe-rule" style="margin-bottom:6px;padding:6px 8px;background:var(--bg);border:1px solid var(--bg3);border-radius:4px"><summary style="cursor:pointer;font-size:11px;color:var(--fg3);user-select:none">⚙ AOE Rule: <b style="color:var(--accent)">${aoeRule==="cell50"?"Cell ≥50% (DMG)":aoeRule==="touch"?"Touch (any overlap)":"Token ≥50%"}</b></summary>
+    <div style="margin-top:6px;font-size:10px;color:var(--fg2);line-height:1.5">Determines which tokens an overlay "affects". Stored locally; saved with battlemaps and battles.</div>
+    <label style="display:flex;align-items:flex-start;gap:6px;margin-top:6px;font-size:11px;cursor:pointer"><input type="radio" name="aoe-rule" value="touch" ${aoeRule==="touch"?"checked":""} style="margin-top:2px;accent-color:var(--accent)"><div><b>Touch</b> — any pixel overlap of AOE and token footprint.</div></label>
+    <label style="display:flex;align-items:flex-start;gap:6px;margin-top:4px;font-size:11px;cursor:pointer"><input type="radio" name="aoe-rule" value="cell50" ${aoeRule==="cell50"?"checked":""} style="margin-top:2px;accent-color:var(--accent)"><div><b>Cell ≥50%</b> (DMG default) — a cell is affected when AOE covers more than half of it. Any affected cell in a token's footprint affects the token.</div></label>
+    <label style="display:flex;align-items:flex-start;gap:6px;margin-top:4px;font-size:11px;cursor:pointer"><input type="radio" name="aoe-rule" value="token50" ${aoeRule==="token50"?"checked":""} style="margin-top:2px;accent-color:var(--accent)"><div><b>Token ≥50%</b> — AOE must cover more than half of the token's <i>total</i> footprint area. Matters for L/H/G creatures.</div></label>
+  </details>`;
   // Add New Overlay button always at top
   const ovFull=S.overlays.length>=10;
   h+=`<button class="btn btn-p" id="btn-add-ov" style="width:100%;font-size:11px;padding:5px;margin-bottom:4px${ovFull?";opacity:.4;cursor:default":""}" ${ovFull?"disabled":""} title="${ovFull?"OTFBM limit: 10 overlays max - delete one to add another":"Create a new overlay with default settings"}">➕ Add New Overlay</button>`;
@@ -1601,6 +1649,13 @@ function rOverlayProps(el){
         if(nc2){const c2desc=ov.aimTarget?"tracks "+ov.aimTarget:((()=>{const r=getOvCoord2(ov);return r?fmtU(r.col,r.row):"?";})());
           return`<div style="font-size:10px;color:var(--fg3);margin-top:2px">${c1desc} → ${c2desc}</div>`;}
         return`<div style="font-size:10px;color:var(--fg3);margin-top:2px">at ${c1desc}</div>`;})()}
+      ${(()=>{
+        // AOE -> Affected Tokens display. Per the current S.aoeRule (touch / cell50 / token50).
+        const ids=aoeAffectedTokens(ov,S.aoeRule||"cell50");
+        if(!ids.length)return`<div style="font-size:10px;color:var(--fg4);font-style:italic;margin-top:6px;padding:4px 6px;background:var(--bg);border-radius:3px">No tokens affected by this AOE.</div>`;
+        const names=ids.map(id=>{const t=S.tokens.find(x=>x.id===id);return t?t.name:null;}).filter(Boolean);
+        const ruleLbl=(S.aoeRule||"cell50")==="cell50"?"Cell ≥50%":(S.aoeRule||"cell50")==="touch"?"Touch":"Token ≥50%";
+        return`<div style="font-size:10px;margin-top:6px;padding:4px 6px;background:var(--bg);border-radius:3px;border-left:3px solid ${ov.color||"var(--accent)"}"><b style="color:var(--fg)">Affects (${ruleLbl}):</b> <span style="color:var(--fg2)">${names.join(", ")}</span></div>`;})()}
       <div class="row" style="gap:4px;margin-top:4px"><button class="btn btn-s" style="flex:1" id="p-ovrevert" title="Reset this overlay to original state">Revert</button><button class="btn btn-s" style="flex:1;color:#e74c3c" id="p-ovdel" title="Delete this overlay">Delete</button></div></div>`;}}
   el.innerHTML=h;}
 function rOverlayList(el){let h="";const _ovSelBtn=allSel('ov')?'Unselect All':'Select All';
@@ -1936,6 +1991,91 @@ function renderTokenPreview(token,size){
     </div>`;}
   // Default token: colored circle with first letter (matches OTFBM default rendering)
   return `<div style="width:${size}px;height:${size}px;flex-shrink:0;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.45)}px;font-weight:bold;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4);box-sizing:border-box">${letter}</div>`;
+}
+// AOE -> Affected Tokens computation.
+// Given an overlay, returns array of token IDs that are inside the AOE shape per the current rule.
+//
+// Rules:
+//   "touch"   - any pixel overlap of token footprint with AOE -> affected
+//   "cell50"  - DMG default: a cell is affected if AOE covers >50% of it. Token is affected if
+//               any cell in its footprint is affected.
+//   "token50" - AOE must cover >50% of the token's total footprint area to affect it. Matters most
+//               for L/H/G creatures where one corner-clip cell shouldn't auto-affect them.
+//
+// Implementation: point-sampling. For each cell in a token's footprint, sample a 5x5 grid (25 pts).
+// Then apply the rule to decide affected status. Accuracy is ~96% on the 50% threshold - fine for
+// game purposes. Cheap: O(tokens * footprint_cells * 25) per AOE.
+function getOverlayShape(ov){
+  const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY;
+  const f=ft=>(ft/5)*cs;
+  const cc=(c,r)=>({x:ox+c*cs+cs/2,y:oy+r*cs+cs/2});
+  const tl=(c,r)=>({x:ox+c*cs,y:oy+r*cs});
+  const coord=getOvCoord(ov);if(!coord)return null;
+  // Shape returns either {type:"circle",cx,cy,r} or {type:"poly",pts:[[x,y],...]}
+  if(ov.type==="circle"){const p=cc(coord.col,coord.row);return{type:"circle",cx:p.x,cy:p.y,r:f(ov.size)};}
+  if(ov.type==="circletop"){const t=tl(coord.col,coord.row),rad=f(ov.size);return{type:"circle",cx:t.x+rad,cy:t.y+rad,r:rad};}
+  if(ov.type==="circlecorner"){const p=tl(coord.col,coord.row);return{type:"circle",cx:p.x,cy:p.y,r:f(ov.size)};}
+  if(ov.type==="square"){const p=tl(coord.col,coord.row),sz=f(ov.size),_c2=getOvCoord2(ov);
+    if(!_c2)return{type:"poly",pts:[[p.x,p.y],[p.x+sz,p.y],[p.x+sz,p.y+sz],[p.x,p.y+sz]]};
+    const sc=cc(coord.col,coord.row),ac=cc(_c2.col,_c2.row);
+    const aimA=Math.atan2(ac.y-sc.y,ac.x-sc.x),snA=Math.round(aimA/(Math.PI/4))*(Math.PI/4);
+    const sp={x:sc.x+Math.round(Math.cos(snA))*cs/2,y:sc.y+Math.round(Math.sin(snA))*cs/2};
+    const a=Math.atan2(ac.y-sp.y,ac.x-sp.x);
+    const dx=Math.cos(a),dy=Math.sin(a),px=Math.cos(a+Math.PI/2),py=Math.sin(a+Math.PI/2);
+    const nl={x:sp.x-sz/2*px,y:sp.y-sz/2*py},nr={x:sp.x+sz/2*px,y:sp.y+sz/2*py};
+    const fl={x:nl.x+sz*dx,y:nl.y+sz*dy},fr={x:nr.x+sz*dx,y:nr.y+sz*dy};
+    return{type:"poly",pts:[[nl.x,nl.y],[nr.x,nr.y],[fr.x,fr.y],[fl.x,fl.y]]};}
+  if(ov.type==="cone"){const c2=getOvCoord2(ov);if(!c2)return null;
+    const sc=cc(coord.col,coord.row),ac=cc(c2.col,c2.row);
+    const aimA=Math.atan2(ac.y-sc.y,ac.x-sc.x),snA=Math.round(aimA/(Math.PI/4))*(Math.PI/4);
+    const p1={x:sc.x+Math.round(Math.cos(snA))*cs/2,y:sc.y+Math.round(Math.sin(snA))*cs/2};
+    const a=Math.atan2(ac.y-p1.y,ac.x-p1.x),l=f(ov.size);
+    const bx=p1.x+l*Math.cos(a),by=p1.y+l*Math.sin(a),hw=l/2;
+    const px=Math.cos(a+Math.PI/2),py=Math.sin(a+Math.PI/2);
+    return{type:"poly",pts:[[p1.x,p1.y],[bx+hw*px,by+hw*py],[bx-hw*px,by-hw*py]]};}
+  if(ov.type==="line"||ov.type==="arrow"){const _c2=getOvCoord2(ov);if(!_c2)return null;
+    const p1=cc(coord.col,coord.row),p2=cc(_c2.col,_c2.row);
+    const lw=f(ov.width||(ov.type==="arrow"?1:5))/2;
+    const a=Math.atan2(p2.y-p1.y,p2.x-p1.x),ppx=Math.cos(a+Math.PI/2),ppy=Math.sin(a+Math.PI/2);
+    return{type:"poly",pts:[[p1.x-lw*ppx,p1.y-lw*ppy],[p1.x+lw*ppx,p1.y+lw*ppy],[p2.x+lw*ppx,p2.y+lw*ppy],[p2.x-lw*ppx,p2.y-lw*ppy]]};}
+  return null;
+}
+function pointInOverlay(px,py,shape){
+  if(!shape)return false;
+  if(shape.type==="circle"){const dx=px-shape.cx,dy=py-shape.cy;return dx*dx+dy*dy<=shape.r*shape.r;}
+  // Ray casting point-in-polygon
+  const pts=shape.pts;let inside=false;
+  for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+    const xi=pts[i][0],yi=pts[i][1],xj=pts[j][0],yj=pts[j][1];
+    if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/(yj-yi)+xi))inside=!inside;}
+  return inside;
+}
+function aoeAffectedTokens(ov,rule){
+  if(!ov)return[];
+  const shape=getOverlayShape(ov);if(!shape)return[];
+  const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY;
+  const SAMPLES=5;// 5x5 = 25 samples per cell
+  const affected=[];
+  for(const t of S.tokens){
+    if(t.hidden)continue;// Don't count hidden tokens (DM placeholder etc)
+    const szSpec=SIZES[t.size]||SIZES.M;
+    const cells=Math.max(1,szSpec.c);// T treated as 1 cell
+    // Iterate over token's footprint cells
+    let cellsAffected=0,totalCells=cells*cells,totalSamples=cells*cells*SAMPLES*SAMPLES,samplesInside=0,anyHit=false;
+    for(let dc=0;dc<cells;dc++)for(let dr=0;dr<cells;dr++){
+      const cellX=ox+(t.col+dc)*cs,cellY=oy+(t.row+dr)*cs;
+      let cellSamples=0;
+      for(let si=0;si<SAMPLES;si++)for(let sj=0;sj<SAMPLES;sj++){
+        const px=cellX+(si+0.5)/SAMPLES*cs,py=cellY+(sj+0.5)/SAMPLES*cs;
+        if(pointInOverlay(px,py,shape)){cellSamples++;samplesInside++;anyHit=true;}}
+      if(cellSamples*2>SAMPLES*SAMPLES)cellsAffected++;// >50% of this cell covered
+    }
+    let hit=false;
+    if(rule==="touch")hit=anyHit;
+    else if(rule==="cell50")hit=cellsAffected>0;
+    else if(rule==="token50")hit=samplesInside*2>totalSamples;
+    if(hit)affected.push(t.id);}
+  return affected;
 }
 function captureCurrentMapState(){
   // Snapshot current scene as a saved-map entry. Used by "Save Map" UI to capture state into mapBackgrounds.
@@ -2286,10 +2426,19 @@ function renderCmd(){
   // combatant state - they show in the !bscry response embed once, then disappear on next !map view.
   const ffShortcodes=S.overlays.filter(ov=>!ov.target).map(buildOvCode).filter(s=>s);
   const ffStr=ffShortcodes.join(";");
-  // Build single !bscry apply command: moves::notes::mapflags::uvars::freefloaters
-  const hasChanges=mvData||ntData||effectText||uvarStr||ffStr;
+  // New combatants - users added via the Add Combatant form. Section 6 of apply payload.
+  // Format: name|init|ac|hp|hide|note|color|size;next;... (empty fields allowed for unset values)
+  // Alias runs `!i add 0 name -p init -ac N -hp N -note "..."` for each, plus `-h` toggle if hidden.
+  const newCombatants=S.combatants.filter(c=>c.isNew);
+  const ncStr=newCombatants.map(c=>{
+    const st=c.savedTok||{};
+    return [c.name,c.init==null?"":c.init,c.ac==null?"":c.ac,c.hp==null?"":c.hp,c.hideStats?"1":"0",c.note||"",st.color||"",st.size||"M"]
+      .map(v=>(v+"").replace(/ /g,"%20").replace(/[|;]/g,"")).join("|");
+  }).join(";");
+  // Build single !bscry apply command: moves::notes::mapflags::uvars::freefloaters::newcombatants
+  const hasChanges=mvData||ntData||effectText||uvarStr||ffStr||ncStr;
   if(hasChanges){
-    const applyData=encApply((mvData||"")+"::"+(ntData||"")+"::"+(effectText||"")+"::"+(uvarStr||"")+"::"+(ffStr||""));
+    const applyData=encApply((mvData||"")+"::"+(ntData||"")+"::"+(effectText||"")+"::"+(uvarStr||"")+"::"+(ffStr||"")+"::"+(ncStr||""));
     const hiddenFlag=$("cmd-hidden")&&$("cmd-hidden").checked?" -h":"";
     lines.push("!bscry apply"+hiddenFlag+" "+applyData);
   }
@@ -2799,6 +2948,7 @@ function setup(){
   tc.addEventListener("toggle",e=>{const d=e.target;if(d.tagName!=="DETAILS")return;
     if(d.dataset.section==="map-advanced")S._uiMapAdvOpen=d.open;
     else if(d.dataset.section==="map-import")S._uiMapImportOpen=d.open;
+    else if(d.dataset.section==="aoe-rule")S._uiAoeRuleOpen=d.open;
   },true);
   tc.addEventListener("click",e=>{const t=e.target;
     // Eyeball visibility toggles
@@ -2824,6 +2974,57 @@ function setup(){
       renderAll();return;}
     // Add New Overlay button (dynamically rendered in overlays tab)
     if(t.id==="btn-add-ov"){if(S.overlays.length>=10){setStatus("⚠ OTFBM limit: 10 overlays max");return;}openAddOverlayForm();return;}
+    // Toggle Add New Combatant form on Tokens tab
+    if(t.id==="btn-add-cb"){
+      if(S.addingCombatant){S.addingCombatant=null;}
+      else S.addingCombatant={name:"",initStr:"",ac:"",hp:"",size:"M",color:"#888888",hideStats:false,note:"",location:""};
+      renderSB();return;}
+    if(t.id==="ac-cancel"){S.addingCombatant=null;renderSB();return;}
+    if(t.id==="ac-pick"){
+      // Capture current form values, close form, enter placement mode.
+      // The map click handler watches S.placingCombatant and places the combatant.
+      const ac=S.addingCombatant;if(!ac)return;
+      // Pull current values from inputs (form may have user-typed-but-not-yet-saved data)
+      const v=id=>document.getElementById(id)?.value||"";
+      ac.name=v("ac-name").trim();ac.initStr=v("ac-init");ac.ac=v("ac-ac");ac.hp=v("ac-hp");
+      ac.size=v("ac-size")||"M";ac.note=v("ac-note");
+      ac.hideStats=document.getElementById("ac-hide")?.checked||false;
+      if(!ac.name){setStatus("⚠ Name required before picking location");return;}
+      S.placingCombatant={data:ac};
+      S.addingCombatant=null;
+      document.body.classList.add("drawing");
+      setStatus(`🎯 Click on map to place "${ac.name}"`);
+      renderSB();return;}
+    if(t.id==="ac-submit"){
+      const ac=S.addingCombatant;if(!ac)return;
+      const v=id=>document.getElementById(id)?.value||"";
+      const name=slugifyName(v("ac-name"));
+      if(!name){setStatus("⚠ Name required");return;}
+      // Check name conflicts (token + combatant lists)
+      if(S.tokens.find(t=>normalizeNameForCompare(t.name)===normalizeNameForCompare(name))
+        ||S.combatants.find(c=>normalizeNameForCompare(c.name)===normalizeNameForCompare(name))){
+        setStatus(`⚠ Combatant "${name}" already exists`);return;}
+      const init=parseInt(v("ac-init"))||0;
+      const acVal=v("ac-ac")?parseInt(v("ac-ac")):undefined;
+      const hpVal=v("ac-hp")?parseInt(v("ac-hp")):undefined;
+      const note=v("ac-note").trim();
+      const size=v("ac-size")||"M";
+      const hideStats=document.getElementById("ac-hide")?.checked||false;
+      const loc=v("ac-loc").trim();
+      pushU();
+      // Add to combatants list with full metadata; isNew flag triggers !i add on apply.
+      const cb={name,placed:false,init,ac:acVal,hp:hpVal,hpMax:hpVal,note,hideStats,group:"",isNew:true,
+        savedTok:{color:ac.color||"#888888",size,tokenImage:""}};
+      S.combatants.push(cb);
+      // Parse location: empty/unplaced → stay unplaced; valid coord → place at that coord
+      let placed=false;
+      if(loc){const coord=parseC(loc);if(coord){
+        S.tokens.push({id:uid(),name,col:coord.col,row:coord.row,size,color:ac.color||"#888888",height:0,tokenImage:"",originalCol:coord.col,originalRow:coord.row});
+        cb.placed=true;placed=true;}}
+      S.addingCombatant=null;
+      renderAll();
+      setStatus(`✓ Added combatant "${name}"${placed?" at "+loc:" (unplaced)"}`);
+      return;}
     if(t.id==="ao-place"){placeNewOverlay();return;}
     if(t.id==="ao-cancel"){cancelAddOverlay();return;}
     // Map sub-tab clicks
@@ -3058,6 +3259,15 @@ function setup(){
       if(pfx==="wcol"){const w=S.sel.type==="wall"?S.walls.find(x=>x.id===[...S.sel.ids][0]):null;if(w){pushU();w.color=hex;renderAll();}return;}
       if(pfx==="ocol"){const o=S.sel.type==="object"?S.objects.find(x=>x.id===[...S.sel.ids][0]):null;if(o){pushU();o.color=hex;renderAll();}return;}
       if(pfx==="ao"&&S.addingOverlay){S.addingOverlay.color=hex;renderSB();return;}
+      if(pfx==="ac"&&S.addingCombatant){
+        // Capture other form fields before re-render so user doesn't lose what they typed
+        const v=id=>document.getElementById(id)?.value||"";
+        const ac=S.addingCombatant;
+        ac.name=v("ac-name");ac.initStr=v("ac-init");ac.ac=v("ac-ac");ac.hp=v("ac-hp");
+        ac.size=v("ac-size")||"M";ac.note=v("ac-note");ac.location=v("ac-loc");
+        ac.hideStats=document.getElementById("ac-hide")?.checked||false;
+        ac.color=hex;
+        renderSB();return;}
       if(pfx==="prop"&&S.sel.ids.size===1){pushU();if(S.sel.type==="token"||S.sel.type==="mixed"){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk)tk.color=hex;}if(S.sel.type==="overlay"){const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);if(ov)ov.color=hex;}renderAll();}
       if(pfx==="prop"&&S.sel.type==="unplaced"){const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb){if(!cmb.savedTok)cmb.savedTok={};cmb.savedTok.color=hex;renderAll();}}
       if(pfx==="aov"){t.closest(".colors").querySelectorAll(".cswatch").forEach(s=>s.classList.remove("on"));t.classList.add("on");}return;}
@@ -3085,6 +3295,11 @@ function setup(){
     if(t.id==="p-srd-browse"||t.id==="p-nptokdialog"){openSrdModal();return;}
   });
   tc.addEventListener("change",e=>{
+    // AOE rule radio - persists to localStorage so it survives page reload
+    if(e.target.name==="aoe-rule"&&["touch","cell50","token50"].includes(e.target.value)){
+      S.aoeRule=e.target.value;
+      try{localStorage.setItem("bscry_aoeRule",e.target.value);}catch(_){}
+      renderAll();return;}
     // Skip inputs that shouldn't trigger re-renders. Re-rendering replaces the input
     // element, wiping the user's typed value before the subsequent click handler reads it.
     if(e.target.id==="m-import-str")return;
@@ -3359,6 +3574,24 @@ function setup(){
       const r=S.fowRegions.find(x=>x.id===fowId);
       if(r){pushU();S.fowResize={id:fowId,dir:fowHandle};document.body.classList.add("resizing");}
       e.preventDefault();e.stopPropagation();return;}
+    // Combatant placement - drops the new combatant at the clicked cell
+    if(S.placingCombatant){const pt=svgPt(e),gp=pt2g(pt.x,pt.y);
+      if(gp.col>=0&&gp.col<S.grid.cols&&gp.row>=0&&gp.row<S.grid.rows){
+        const ac=S.placingCombatant.data;
+        const name=slugifyName(ac.name||"");
+        if(name){
+          if(S.tokens.find(t=>normalizeNameForCompare(t.name)===normalizeNameForCompare(name))
+            ||S.combatants.find(c=>normalizeNameForCompare(c.name)===normalizeNameForCompare(name))){
+            setStatus(`⚠ Combatant "${name}" already exists`);}
+          else{pushU();
+            const init=parseInt(ac.initStr)||0;
+            const acVal=ac.ac?parseInt(ac.ac):undefined;
+            const hpVal=ac.hp?parseInt(ac.hp):undefined;
+            S.combatants.push({name,placed:true,init,ac:acVal,hp:hpVal,hpMax:hpVal,note:ac.note||"",hideStats:!!ac.hideStats,group:"",isNew:true,savedTok:{color:ac.color||"#888888",size:ac.size||"M",tokenImage:""}});
+            S.tokens.push({id:uid(),name,col:gp.col,row:gp.row,size:ac.size||"M",color:ac.color||"#888888",height:0,tokenImage:"",originalCol:gp.col,originalRow:gp.row});
+            setStatus(`✓ Placed "${name}" at ${fmtU(gp.col,gp.row)}`);}}}
+      S.placingCombatant=null;document.body.classList.remove("drawing");
+      renderAll();return;}
     if(S.fowDraw){const pt=svgPt(e),gp=pt2g(pt.x,pt.y);
       if(gp.col>=0&&gp.col<S.grid.cols&&gp.row>=0&&gp.row<S.grid.rows){
         S.fowDraw.start={col:gp.col,row:gp.row};S.fowDraw.end=null;S.fowDraw.dragging=true;renderAll();}return;}
@@ -5076,14 +5309,72 @@ function showBrowseMapsModal(){
       close();renderAll();
       const remaining=[...S.savedMaps,...S.mapSaves.map(s=>s.name).filter(n=>!S.savedMaps.includes(n))].filter(n=>!S.mapDeletes.includes(n));
       if(remaining.length)setTimeout(showBrowseMapsModal,50);};});}
+// Zoomable, pannable fullscreen preview for saved-map thumbnails.
+// - Mouse wheel zooms (centered on cursor)
+// - Click-drag pans
+// - +/- buttons + Fit + 100% buttons in toolbar
+// - ESC or close button exits
+// Useful for giant maps where the default fit-to-window view doesn't show details.
 function showFullscreenThumb(url){
-  const bd=document.createElement("div");bd.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:10000;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:30px";
-  bd.innerHTML=`<img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;border:2px solid var(--accent);border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,.6)">`;
+  const bd=document.createElement("div");bd.id="fs-thumb-bd";bd.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;display:flex;flex-direction:column;padding:0;overflow:hidden";
+  bd.innerHTML=`<div style="padding:8px 14px;display:flex;align-items:center;gap:8px;background:var(--bg2);border-bottom:1px solid var(--bg3);flex-shrink:0">
+    <button id="fst-zoomout" class="btn btn-s" style="font-size:14px;padding:4px 10px" title="Zoom out (or scroll down)">−</button>
+    <span id="fst-zoom-label" style="font-family:monospace;font-size:11px;color:var(--fg2);min-width:50px;text-align:center">100%</span>
+    <button id="fst-zoomin" class="btn btn-s" style="font-size:14px;padding:4px 10px" title="Zoom in (or scroll up)">+</button>
+    <button id="fst-fit" class="btn btn-s" style="font-size:10px;padding:4px 10px;margin-left:6px" title="Fit image to window">Fit</button>
+    <button id="fst-100" class="btn btn-s" style="font-size:10px;padding:4px 10px" title="100% (actual pixel size)">100%</button>
+    <span style="flex:1;text-align:center;font-size:10px;color:var(--fg3);font-style:italic">Scroll to zoom · drag to pan · ESC to close</span>
+    <button id="fst-close" class="btn btn-s" style="font-size:11px;padding:4px 10px">✕ Close</button>
+  </div>
+  <div id="fst-stage" style="flex:1;overflow:hidden;position:relative;cursor:grab;background:#000">
+    <img id="fst-img" src="${url}" draggable="false" style="position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none">
+  </div>`;
   document.body.appendChild(bd);
+
+  const stage=bd.querySelector("#fst-stage");
+  const img=bd.querySelector("#fst-img");
+  const zLabel=bd.querySelector("#fst-zoom-label");
+  // View state: zoom (1.0 = 100% pixels), pan offset (x,y in stage coords)
+  const view={zoom:1,x:0,y:0,natW:0,natH:0};
+  function apply(){img.style.transform=`translate(${view.x}px,${view.y}px) scale(${view.zoom})`;zLabel.textContent=Math.round(view.zoom*100)+"%";}
+  function fit(){
+    const sw=stage.clientWidth,sh=stage.clientHeight;
+    if(!view.natW||!view.natH||!sw||!sh){view.zoom=1;view.x=0;view.y=0;apply();return;}
+    const zw=sw/view.natW,zh=sh/view.natH;
+    view.zoom=Math.min(zw,zh)*0.96;// 4% padding
+    view.x=(sw-view.natW*view.zoom)/2;
+    view.y=(sh-view.natH*view.zoom)/2;
+    apply();}
+  img.onload=()=>{view.natW=img.naturalWidth;view.natH=img.naturalHeight;img.style.width=view.natW+"px";img.style.height=view.natH+"px";fit();};
+  // Wheel zoom - centered on cursor position
+  stage.addEventListener("wheel",e=>{
+    e.preventDefault();
+    const rect=stage.getBoundingClientRect();
+    const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    // Image-space point under cursor before zoom
+    const ix=(mx-view.x)/view.zoom,iy=(my-view.y)/view.zoom;
+    const factor=e.deltaY<0?1.15:1/1.15;
+    view.zoom=Math.max(0.05,Math.min(10,view.zoom*factor));
+    // Re-center so the same image point stays under the cursor
+    view.x=mx-ix*view.zoom;view.y=my-iy*view.zoom;
+    apply();
+  },{passive:false});
+  // Drag to pan
+  let dragging=null;
+  stage.addEventListener("mousedown",e=>{if(e.button!==0)return;dragging={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};stage.style.cursor="grabbing";e.preventDefault();});
+  window.addEventListener("mousemove",e=>{if(!dragging)return;view.x=dragging.vx+(e.clientX-dragging.x);view.y=dragging.vy+(e.clientY-dragging.y);apply();});
+  window.addEventListener("mouseup",()=>{if(dragging){dragging=null;stage.style.cursor="grab";}});
+  // Toolbar buttons
+  bd.querySelector("#fst-zoomout").onclick=()=>{const oldZ=view.zoom;view.zoom=Math.max(0.05,view.zoom/1.25);const sw=stage.clientWidth/2,sh=stage.clientHeight/2;view.x=sw-(sw-view.x)*(view.zoom/oldZ);view.y=sh-(sh-view.y)*(view.zoom/oldZ);apply();};
+  bd.querySelector("#fst-zoomin").onclick=()=>{const oldZ=view.zoom;view.zoom=Math.min(10,view.zoom*1.25);const sw=stage.clientWidth/2,sh=stage.clientHeight/2;view.x=sw-(sw-view.x)*(view.zoom/oldZ);view.y=sh-(sh-view.y)*(view.zoom/oldZ);apply();};
+  bd.querySelector("#fst-fit").onclick=fit;
+  bd.querySelector("#fst-100").onclick=()=>{view.zoom=1;view.x=(stage.clientWidth-view.natW)/2;view.y=(stage.clientHeight-view.natH)/2;apply();};
+  // Close
   const close=()=>{bd.remove();document.removeEventListener("keydown",esc);};
   const esc=(e)=>{if(e.key==="Escape")close();};
-  bd.onclick=close;
-  document.addEventListener("keydown",esc);}
+  bd.querySelector("#fst-close").onclick=close;
+  document.addEventListener("keydown",esc);
+}
 // Auto-load from URL hash on page load
 function loadFromHash(){const hash=safeHash().slice(1);if(hash)loadFromHashStr(hash);
   // Detect loadmap/loadbattle success markers added by the alias. Strip them from the URL before
@@ -5095,7 +5386,11 @@ function loadFromHash(){const hash=safeHash().slice(1);if(hash)loadFromHashStr(h
     try{history.replaceState(null,"",cleanHash?"#"+cleanHash:location.pathname);}catch(e){}
     if(params._lm)setTimeout(()=>showLoadSuccessModal("map",params._lm),300);
     if(params._lb)setTimeout(()=>showLoadSuccessModal("battle",params._lb),300);}}
-setup();loadFromHash();
+setup();
+// Restore session-scoped UI preferences from localStorage (not exported to Avrae).
+// AOE rule: how Area-of-Effect overlays decide which tokens are "affected" (touch / cell-50% / token-50%).
+try{const _ar=localStorage.getItem("bscry_aoeRule");if(_ar&&["touch","cell50","token50"].includes(_ar))S.aoeRule=_ar;}catch(e){}
+loadFromHash();
 // Populate Map tab's bginfo + layout dropdown if the hash loaded a background image.
 // Without this, an existing bg shows "Image loading..." forever because the analyze flow only fires on UI interaction.
 if(S.loadedUrl)setTimeout(()=>window.analyzeBackgroundForLayout(S.loadedUrl),150);
