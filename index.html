@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.78                                       https://battlescry.com
+BattleScry v0.1.80                                       https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,16 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.80 - Number fields in the combatant form now use a consistent full-height spinner (stacked
+            up/down buttons sized to the field). Replaces the Height -/+ stepper and adds spinners to
+            Current HP, Max HP, AC, and Initiative Order. Group-pinned (read-only) init shows inert
+            buttons. Buttons clamp to each field min/max and fire input+change so existing edit logic
+            runs. Removed the now-unused .stepbtn style.
+  v0.1.79 - Combatant form layout pass: token edit icon moved to the upper-right corner of the
+            preview (more conventional); Initiative field renamed "Initiative Order" and set to equal
+            width with the Group field; AC field centered between Max HP and the Hide HP/AC checkbox;
+            the hidden-from-players line now reads "Condition: <word>" with the word colored by health
+            (Healthy/Injured/Bloodied/Critical/Dead). (Spinner overhaul follows in v0.1.80.)
   v0.1.78 - The inline custom-color swatch now shows a tooltip with its hex on hover
             (e.g. "Custom color: #6A2F9C").
   v0.1.77 - Refined the custom-color indicator: instead of a "Custom" chip stacked below the swatch
@@ -156,7 +166,7 @@ RECENT CHANGES
             excludes attach-to/origin token from affected list.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.78"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.80"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -181,13 +191,21 @@ input,select,textarea,button{font-family:inherit}
 .colors{display:flex;gap:2px;flex-wrap:wrap}
 .cswatch{width:16px;height:16px;border-radius:3px;cursor:pointer;border:1px solid transparent;transition:border-color .1s,box-shadow .1s,transform .1s}.cswatch:hover{border-color:#fff;transform:scale(1.1)}.cswatch.on{border-color:#fff;box-shadow:0 0 0 1px var(--accent)}.cswatch:focus{outline:none;box-shadow:0 0 0 1px var(--accent),0 0 0 3px var(--fg)}
 .nospin::-webkit-outer-spin-button,.nospin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.nospin{-moz-appearance:textfield}
-.stepbtn{width:22px;flex-shrink:0;background:#44403a;border:1px solid #55504a;border-radius:4px;color:var(--fg);cursor:pointer;font-size:14px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}.stepbtn:hover{background:#55504a;border-color:var(--accent)}.stepbtn:active{background:var(--accent);color:#1a1814}
+.spinwrap{display:flex;align-items:stretch;width:100%}
+.spinwrap>.inp{border-top-right-radius:0;border-bottom-right-radius:0}
+.spincol{display:flex;flex-direction:column;width:16px;flex-shrink:0}
+.spinb{flex:1;background:#44403a;border:1px solid #55504a;border-left:none;color:var(--fg);cursor:pointer;font-size:8px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;min-height:0;user-select:none}
+.spincol .spinb:first-child{border-top-right-radius:4px;border-bottom:none}
+.spincol .spinb:last-child{border-bottom-right-radius:4px}
+.spinb:hover{background:#55504a;border-color:var(--accent)}
+.spinb:active{background:var(--accent);color:#1a1814}
+.spincol-off .spinb{opacity:.35;cursor:not-allowed}
 /* Color picker grid used inside the unified combatant form (renderCombatantForm).
    2 rows of 6 swatches for a compact, predictable layout. */
 .cb-colors{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:2px 0;max-width:140px}
 .cb-colors .cswatch{width:18px;height:18px}
 .tok-edit-wrap{position:relative;display:inline-block}
-.tok-edit-icon{position:absolute;right:-4px;bottom:-4px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#1a1814;border:2px solid var(--bg2);cursor:pointer;font-size:0;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.5)}
+.tok-edit-icon{position:absolute;right:-4px;top:-4px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#1a1814;border:2px solid var(--bg2);cursor:pointer;font-size:0;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.5)}
 .tok-edit-icon::before{content:"";width:14px;height:14px;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.375 2.625 a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.375-9.375z"/></svg>');background-size:contain;background-repeat:no-repeat;background-position:center}
 .tok-edit-icon:hover{background:#e5ab10;transform:scale(1.08)}
 /* Smart modal system: consistent backdrop + container styling across all modals.
@@ -306,7 +324,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.78</span>
+  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.80</span>
   <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Revert all changes to original state">⟲ Revert</button>
   <button id="btn-undo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Undo last change (Ctrl+Z)">↩ Undo</button>
   <button id="btn-redo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
@@ -1629,6 +1647,24 @@ function updateConditionDisplay(){
   el.textContent=cond.label;
   el.style.color=cond.color;
 }
+// Full-height vertical number spinner: a number input plus stacked up/down buttons sized to the
+// field height. Buttons carry data-spin="<id>:<+/-step>"; the click handler dispatches input+change
+// so the field's existing handlers run. Readonly fields render inert (greyed) buttons.
+function spinNum(id,value,o){
+  o=o||{};
+  const step=o.step||1;
+  let a="";
+  if(o.min!==undefined)a+=` min="${o.min}"`;
+  if(o.max!==undefined)a+=` max="${o.max}"`;
+  a+=` step="${step}"`;
+  if(o.placeholder)a+=` placeholder="${escAttr(o.placeholder)}"`;
+  if(o.readonly)a+=" readonly";
+  const ist=(o.center?"text-align:center;":"")+(o.istyle||"");
+  const col=o.readonly
+    ?`<div class="spincol spincol-off"><span class="spinb" aria-hidden="true">&#9650;</span><span class="spinb" aria-hidden="true">&#9660;</span></div>`
+    :`<div class="spincol"><button type="button" class="spinb" data-spin="${id}:${step}" tabindex="-1" aria-label="increase">&#9650;</button><button type="button" class="spinb" data-spin="${id}:-${step}" tabindex="-1" aria-label="decrease">&#9660;</button></div>`;
+  return `<div class="spinwrap"><input type="number" class="inp nospin" id="${id}" value="${escAttr(value)}"${a} style="flex:1;min-width:0;box-sizing:border-box;font-size:11px;padding:6px 4px;${ist}">${col}</div>`;
+}
 function renderCombatantForm(opts){
   const mode=opts.mode;
   let name="",initStr="",size="M",color="",tokenImage="",hpCur="",hpMax="",ac="",hideStats=false,note="",location="",height=0,group="";
@@ -1688,7 +1724,7 @@ function renderCombatantForm(opts){
         <div style="flex:1;min-width:0"><span class="lbl" title="Type a coord (e.g. F5) or click here then click the map">Location</span>
           <input class="inp" id="cb-loc" value="${escAttr(location)}" placeholder="${mode==="add"?"Unplaced":"-"}" style="width:100%;box-sizing:border-box;font-family:monospace;font-size:11px;padding:6px 6px"></div>
         <div style="width:104px;flex-shrink:0"><span class="lbl">Height</span>
-          <div style="display:flex;align-items:stretch;gap:2px"><button type="button" class="stepbtn" id="cb-h-dec" title="-5 ft">&minus;</button><input type="number" class="inp nospin" id="cb-height" value="${height}" step="5" min="-995" max="995" style="width:38px;text-align:center;font-size:11px;padding:6px 2px"><button type="button" class="stepbtn" id="cb-h-inc" title="+5 ft">+</button><span style="font-size:10px;color:var(--fg3);align-self:center;margin-left:1px">ft</span></div></div>
+          <div style="display:flex;align-items:flex-end;gap:4px"><div style="width:60px">${spinNum("cb-height",height,{step:5,min:-995,max:995,center:true})}</div><span style="font-size:10px;color:var(--fg3);align-self:center">ft</span></div></div>
       </div>
     </div>
   </div>`;
@@ -1703,23 +1739,25 @@ function renderCombatantForm(opts){
   // are hidden entirely so a player using BattleScry can't inadvertently see a creature's exact
   // numbers; the DM unchecks to reveal and edit them. A condition word stands in while hidden.
   h+=`<div class="row" style="align-items:flex-end;gap:6px">
-    <div id="cb-stats-wrap" style="${hideStats?"display:none":"display:flex"};gap:6px;align-items:flex-end">
-      <div style="width:62px"><span class="lbl">Current HP</span>
-        <input type="number" class="inp nospin" id="cb-hpcur" value="${escAttr(hpCur)}" min="-9999" max="9999" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 4px"></div>
+    <div id="cb-stats-wrap" style="${hideStats?"display:none":"display:flex"};flex:1;gap:6px;align-items:flex-end">
+      <div style="width:74px"><span class="lbl">Current HP</span>
+        ${spinNum("cb-hpcur",hpCur,{min:-9999,max:9999})}</div>
       <div style="font-size:14px;color:var(--fg3);padding-bottom:7px">/</div>
-      <div style="width:54px"><span class="lbl">Max HP</span>
-        <input type="number" class="inp nospin" id="cb-hpmax" value="${escAttr(hpMax)}" min="0" max="9999" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 4px"></div>
-      <div style="width:48px"><span class="lbl">AC</span>
-        <input type="number" class="inp nospin" id="cb-ac" value="${escAttr(ac)}" min="0" max="50" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 4px"></div>
+      <div style="width:66px"><span class="lbl">Max HP</span>
+        ${spinNum("cb-hpmax",hpMax,{min:0,max:9999})}</div>
+      <div style="flex:1;min-width:6px"></div>
+      <div style="width:60px"><span class="lbl">AC</span>
+        ${spinNum("cb-ac",ac,{min:0,max:50})}</div>
+      <div style="flex:1;min-width:6px"></div>
     </div>
     <div id="cb-cond-wrap" style="${hideStats?"":"display:none;"}flex:1;min-width:0"><span class="lbl">Hidden from players</span>
-      <div style="font-size:11px;font-weight:600;color:${condition.color}" id="cb-condition">${condition.label}</div></div>
+      <div style="font-size:11px;font-weight:600;color:var(--fg2)">Condition: <span id="cb-condition" style="color:${condition.color}">${condition.label}</span></div></div>
     <label style="margin-left:auto;flex-shrink:0;display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer;padding-bottom:7px" title="When checked, the HP and AC fields are hidden so players using BattleScry don't see a creature's exact numbers; uncheck to reveal and edit. On the map, players see only a condition word (Healthy/Injured/Bloodied/Critical/Dead). Applied via !i opt -h on apply."><input type="checkbox" id="cb-hide" ${hideStats?"checked":""} style="accent-color:var(--accent)"><span>Hide HP/AC</span></label>
   </div>`;
   // ROW 4: Initiative + Group (combobox: type a new group or pick one already in the encounter)
   h+=`<div class="row" style="gap:8px;align-items:flex-end">
-    <div style="width:96px;flex-shrink:0"><span class="lbl" title="${memberOfGroup?`Set by group "${escAttr(group)}" - select the group folder to change it`:(mode==="add"?"Where this combatant sits in the initiative order":"Local edit - Avrae round-trip pending")}">Initiative position</span>
-      <input type="number" class="inp nospin" id="cb-init" value="${escAttr(memberOfGroup?grpInitVal:initStr)}" min="-50" max="200"${mode==="add"?' placeholder="Enter or assign random"':""} ${memberOfGroup?"readonly":""} style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 6px${memberOfGroup?";opacity:.55;cursor:not-allowed":""}"></div>
+    <div style="flex:1;min-width:0"><span class="lbl" title="${memberOfGroup?`Set by group "${escAttr(group)}" - select the group folder to change it`:(mode==="add"?"Where this combatant sits in the initiative order":"Local edit - Avrae round-trip pending")}">Initiative Order</span>
+      ${spinNum("cb-init",memberOfGroup?grpInitVal:initStr,{min:-50,max:200,placeholder:mode==="add"?"Enter or assign random":undefined,readonly:memberOfGroup,istyle:memberOfGroup?"opacity:.55;cursor:not-allowed":""})}</div>
     <div style="flex:1;min-width:0"><span class="lbl" title="Type a new group name or pick one already in the encounter">Group</span>
       <input class="inp" id="cb-group" list="cb-grouplist" value="${escAttr(group)}" placeholder="none" maxlength="40" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 6px">
       <datalist id="cb-grouplist">${existingGroups.map(g=>`<option value="${escAttr(g)}"></option>`).join("")}</datalist></div>
@@ -3508,13 +3546,18 @@ function setup(){
       S.tokens.forEach(x=>{if(x.group===g)x.group="";});
       S.combatants.forEach(c=>{if(c.group===g)c.group="";});
       clearSel();renderAll();return;}
-    if(t.id==="cb-h-dec"||t.id==="cb-h-inc"){
-      const inp=document.getElementById("cb-height");if(!inp)return;
-      let nv=(parseInt(inp.value,10)||0)+(t.id==="cb-h-inc"?5:-5);
-      nv=Math.max(-995,Math.min(995,nv));
-      inp.value=nv;
-      if(!S.addingCombatant&&(S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
-        const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){pushU();tk.height=nv;renderSVG();renderCmd();}}
+    // Full-height number spinners (data-spin="<id>:<+/-step>"): clamp the target input to its
+    // min/max, then fire input+change so the field's existing handlers update state and preview.
+    const _sp=t.closest&&t.closest("[data-spin]");
+    if(_sp){
+      const parts=_sp.dataset.spin.split(":"),inp=document.getElementById(parts[0]);
+      if(inp&&!inp.readOnly){
+        const cur=parseInt(inp.value,10)||0,want=cur+parseInt(parts[1],10);
+        const mn=inp.min!==""?parseInt(inp.min,10):-Infinity,mx=inp.max!==""?parseInt(inp.max,10):Infinity;
+        inp.value=Math.max(mn,Math.min(mx,want));
+        inp.dispatchEvent(new Event("input",{bubbles:true}));
+        inp.dispatchEvent(new Event("change",{bubbles:true}));
+      }
       return;}
     if(t.id==="cb-submit"){
       const ac=S.addingCombatant;if(!ac)return;
