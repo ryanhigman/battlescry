@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.58                                       https://battlescry.com
+BattleScry v0.1.73                                       https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,112 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.73 - Overlay aim/rotate handles moved onto the shape itself instead of floating outside.
+            Cone: two grab handles on the base corners (the apex is the origin/pivot, so it has
+            none). Square (aimed or not): grab handles on all four corners, keeping the cardinal-snap
+            aim. Line/arrow unchanged (the endpoint still sets both length and angle). Rotation
+            behavior is identical (same aimDrag, pivoting around the origin); handles use the standard
+            grab cursor (no custom cursor asset). The old floating rotate-icon (drawRotIcon) is no
+            longer used.
+  v0.1.72 - Token groups are now selectable. Clicking a group folder selects the group and opens a
+            group editor (rename the group, which cascades to all members; set one shared initiative
+            for the whole group; or "Ungroup all"). Clicking the folder's arrow caret collapses/expands
+            (bigger hit target, arrow flips). A group member's Initiative field is read-only and pinned
+            to the group's value (edit it via the group). Selected group folder is highlighted in the list.
+  v0.1.71 - Combatant UX batch: top button now always reads "Add New Combatant" and is disabled while
+            adding (no +/- glyph, no second cancel); in-form buttons reordered to Cancel (left) /
+            Add Combatant (right, primary); selected color swatch is now a thin white + thin yellow
+            ring (no scale); editing a token's color updates its list dot immediately; Height uses
+            -/+ stepper buttons (5 ft) and native spinners are hidden on HP/AC/Initiative (type-only);
+            Initiative field relabeled "Initiative position" with no placeholder; Revert now resets the
+            selected token across ALL fields to its loaded state and is enabled for any loaded token;
+            removed the "Ungrouped" list separator and the eye-visibility icons (rows are left-aligned
+            on the dot now); the Init sort option is labeled "Initiative"; DM defaults to initiative 50
+            on startup; and new combatant names keep their original casing (no forced lowercase).
+  v0.1.70 - Combatant-form polish: Height now steps by 5'; Hide HP/AC again hides the HP+AC fields
+            entirely (so a player using BS can't inadvertently see exact stats ... uncheck to reveal and
+            edit; a condition word stands in while hidden); "Cur HP" renamed to "Current HP"; number
+            fields are taller so the up/down spinners are easier to click; color swatches react on
+            hover (white border) and keep white+yellow when selected; new combatants now start in the
+            uncolored placeholder state (dashed grey ring, empty fill) like a selected Unplaced token;
+            in the preview, Tiny's scale marker spans the full 5' cell while the disc is half-width;
+            and the token-image edit button moved up to the disc's bottom-right (off the scale marker).
+  v0.1.69 - Tokens-tab combatant form redesign (UX pass). Name + Location/Height now sit to the right
+            of the preview; Size/Color share a row; Current/Max HP + AC + Hide collapse to one compact
+            numeric row (fields sized to content, not full-width); a new Initiative + Group row adds a
+            Group combobox (type a new group or pick one already in the encounter via datalist); Notes
+            spans the bottom. Hide HP/AC no longer hides the HP inputs ... they stay editable and a
+            "Players see: <condition>" hint appears instead. Removed the verbose emitted-command hint.
+            Group is captured in state (new combatants and local edits); the Group/Initiative round-trip
+            to Avrae for existing combatants is still pending (consistent with HP/AC/Notes).
+  v0.1.68 - Combatant-preview polish: (1) scale-marker ticks now span the token disc edge-to-edge
+            instead of a fixed 60% bar; (2) label is far more legible at L/H/G sizes ... switched from
+            white-with-outline to OTFBM's contrast rule (dark text on light tokens, light on dark,
+            ported from pickTextColor), dropped the muddy text-shadow, and raised the min font to 9px;
+            (3) removed the black box behind the disc ... it now sits on the transparent form surface.
+  v0.1.67 - Combatant-preview thumbnail: replaced the grid overlay with a scale marker beneath the
+            disc (H-bar with end ticks + a feet label), matching the 5ft marker at the map's
+            bottom-right. The label shows the footprint width: 5ft for Tiny/Small/Medium, 10ft for
+            Large, 15ft for Huge, 20ft for Gargantuan. The disc itself is unchanged (Tiny half-size,
+            S/M/L/H/G fill the box; OTFBM-ratio label font clamped to fit). Thumbnail is now a touch
+            taller to fit the marker strip.
+  v0.1.66 - Fixed: typing a combatant name then clicking another field wiped the name. The name was
+            only mirrored to the preview, never to state, so the blur-triggered change event fell
+            through to the catch-all renderAll() and rebuilt the form from an empty name. Now cb-name
+            is persisted to S.addingCombatant on every keystroke, and its change (blur) event returns
+            early instead of falling through to renderAll(). Add mode only (other modes are readonly).
+  v0.1.65 - Combatant-preview thumbnail reworked to convey scale via grid density (disc-constant
+            layout): Tiny draws at half a cell, S/M/L/H/G all draw the disc at one box-width and the
+            grid (1x1 / 2x2 / 3x3 / 4x4) is now drawn OVER the disc to show the footprint, matching
+            how OTFBM lays the grid on top. Label font now follows OTFBM's own ratio
+            (discPx * 2.4 / (labelLen+4), from overlays/token/index.js) instead of a flat 0.36,
+            clamped (discPx * 1.30 / labelLen) so long L/H/G names shrink to stay inside the circle
+            rather than overflowing; Tiny gets an extra 0.80 so its 2-char label no longer dominates.
+            Font family stays system sans (size matched, not AzoSans itself).
+  v0.1.64 - Token label truncation now matches OTFBM exactly (otfbm tokens.md): Tiny shows 2 chars
+            from FIRST+LAST ("Pixie2" -> "P2"), Small/Medium up to 4 ("Goblin3" -> "Gobl"), Large 9,
+            Huge 14, Gargantuan 18. Replaces the old floor(c*5) formula that over-counted (M gave 5,
+            L 10, H 15, G 20) and sliced Tiny to the first two chars. Affects both the on-map label
+            and the combatant-form live preview, since both call tokLbl().
+  v0.1.63 - Unified combatant form. Add New Combatant and selected-token/unplaced properties now
+            share the same renderCombatantForm() template with identical layout: preview thumbnail
+            with 5'-grid background (1x1 for S/M, 2x2 for L, 3x3 for H, 4x4 for G; Tiny shown
+            half-size) on the left + large Name field on the right; then Location/Height, Size/Color
+            (2 rows of 6 swatches), Current HP / Max HP (auto-mirrors when one is blank), AC + Hide
+            HP/AC checkbox. When Hide is checked, HP fields swap to a Condition display (Healthy /
+            Injured / Bloodied / Critical / Dead per HP %). Live preview updates as you type a name
+            (OTFBM-style truncation), change size, or pick a color. Form IDs unified to cb-* prefix
+            (cb-name, cb-loc, cb-size, cb-hpcur, cb-hpmax, cb-ac, cb-hide, cb-note). Map-click coord
+            pick (cb mode) dispatches by mode: fills field (add), moves token (token), or places at
+            the picked coord (unplaced). NOTE: AC/HP/Notes edits on existing combatants are saved
+            locally but don't yet round-trip to Avrae (planned for v0.1.64).
+  v0.1.62 - Smart modal system: new `smartModal()` helper creates consistent backdrop + container
+            shells with header (title + close), scrollable body, optional footer. Size variants:
+            lg (70vw / 75vh) for galleries and libraries, md (max 600px) for forms, sm (max 420px)
+            for confirmations. All built-via-helper modals inherit ESC-to-close, backdrop-click-to-
+            close, and the same visual style. Refactored: Browse Saved Battlemaps (70vw now), Sample
+            Showcase (70vw), SRD token library (was 460px, now 70vw / 75vh), Welcome modal, Error
+            dialog. SRD modal now ESC-closes.
+  v0.1.61 - Splitter only appears on tabs that have a list (Tokens, Overlays, Other). Map tab gets
+            full sidebar height with no list. On Other tab, subtabs are sticky at top of props area
+            and content splits cleanly: Add New X button + selected-item properties stay in the
+            fixed upper area, only the list (Walls / Fog of War Revealed Regions / Placed Objects)
+            sits in the resizable lower area. Map Objects list is now always visible (even during
+            placement) so you can see existing objects while adding new ones.
+  v0.1.60 - Sidebar splitter flipped: LIST area (tokens, overlays, walls, etc) is now the small
+            resizable element (180px default); PROPS area grows to fill remaining space so forms
+            don't need to scroll. localStorage key changed from bscry_splitterPct to bscry_listHeight.
+  v0.1.59 - Add New X button spacing made consistent across all tabs (Map/Tokens/Overlays/Other);
+            sidebar splitter is now draggable to resize props vs list area (60/40 default, persisted);
+            Add Combatant: HP field renamed Max HP, strict numeric input (no letters/dashes accepted),
+            color swatches keyboard-accessible (tab to swatches, arrow keys to navigate, Enter to
+            select); selecting a different token/combatant from the list cancels the Add Combatant
+            form. Map click on Location field shows a confirmation popup with OK that returns focus
+            to the field. Tiny tokens now center in their grid cell. Token edit icon is always
+            visible (no longer hover-only) and uses an SVG pencil for clear visibility. FOW opacity
+            slider moved to Advanced Map Settings alongside grid opacity. Map Objects subtab always
+            shows the Placed Objects list (with empty state) matching Walls/FOW pattern. FOW list
+            renamed to "Fog of War Revealed Regions".
   v0.1.58 - Tab restructure: Structures renamed to "Other" with 3 subtabs (Walls, Fog of War,
             Map Objects); FOW moved off the Map tab. Every tab now has a yellow "Add New X"
             button at top for visual consistency (Map: Add New Map Background; Tokens: Add New
@@ -32,16 +138,9 @@ RECENT CHANGES
             moved from Overlays tab to Advanced Map Settings (under Diagonal Rule); AOE ring
             sits at fixed pixel offset from token edge (no longer scales with size); AOE
             excludes attach-to/origin token from affected list.
-  v0.1.56 - Preview Zoom (zoom/pan saved-map thumbnails); AOE 2D affected tokens with
-            3 rules (Touch / Cell-50%-DMG / Token-50%) and dotted ring on map; Add New
-            Combatant inline form on Tokens tab with full round-trip (emits !i add).
-  v0.1.55 - User-typed underscores in names survive end-to-end (%20 encoding everywhere).
-  v0.1.54 - slugifyName preserves spaces; conflict suffix uses " N" (space + number).
-  v0.1.53 - Save success modal; conflict tolerance for space-vs-underscore names.
-  v0.1.52 - Saved Battlemaps card grid + BS-logo fallback; token preview in props.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.58"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.73"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -64,11 +163,32 @@ input,select,textarea,button{font-family:inherit}
 .sec-title{font-size:11px;color:var(--fg2);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
 .row{display:flex;gap:4px;align-items:center}
 .colors{display:flex;gap:2px;flex-wrap:wrap}
-.cswatch{width:16px;height:16px;border-radius:3px;cursor:pointer;border:2px solid transparent}.cswatch.on{border-color:#fff;box-shadow:0 0 0 2px var(--accent);transform:scale(1.15)}
+.cswatch{width:16px;height:16px;border-radius:3px;cursor:pointer;border:1px solid transparent;transition:border-color .1s,box-shadow .1s,transform .1s}.cswatch:hover{border-color:#fff;transform:scale(1.1)}.cswatch.on{border-color:#fff;box-shadow:0 0 0 1px var(--accent)}.cswatch:focus{outline:none;box-shadow:0 0 0 1px var(--accent),0 0 0 3px var(--fg)}
+.nospin::-webkit-outer-spin-button,.nospin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.nospin{-moz-appearance:textfield}
+.stepbtn{width:22px;flex-shrink:0;background:#44403a;border:1px solid #55504a;border-radius:4px;color:var(--fg);cursor:pointer;font-size:14px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}.stepbtn:hover{background:#55504a;border-color:var(--accent)}.stepbtn:active{background:var(--accent);color:#1a1814}
+/* Color picker grid used inside the unified combatant form (renderCombatantForm).
+   2 rows of 6 swatches for a compact, predictable layout. */
+.cb-colors{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:2px 0;max-width:140px}
+.cb-colors .cswatch{width:18px;height:18px}
 .tok-edit-wrap{position:relative;display:inline-block}
-.tok-edit-icon{position:absolute;right:-4px;bottom:-4px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#1a1814;border:2px solid var(--bg2);cursor:pointer;font-size:11px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
-.tok-edit-wrap:hover .tok-edit-icon,.tok-edit-icon:focus{opacity:1}
-.tok-edit-icon:hover{background:#e5ab10}
+.tok-edit-icon{position:absolute;right:-4px;bottom:-4px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#1a1814;border:2px solid var(--bg2);cursor:pointer;font-size:0;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.5)}
+.tok-edit-icon::before{content:"";width:14px;height:14px;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.375 2.625 a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.375-9.375z"/></svg>');background-size:contain;background-repeat:no-repeat;background-position:center}
+.tok-edit-icon:hover{background:#e5ab10;transform:scale(1.08)}
+/* Smart modal system: consistent backdrop + container styling across all modals.
+   Large modals (Browse Maps, Sample Showcase, SRD library) use 70vw / 75vh for ample space.
+   Medium modals (load/save confirmations) cap at 600px. Small modals (errors) cap at 420px.
+   All inherit the same border/shadow/header/body/footer structure so they feel like one app. */
+.smart-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px}
+.smart-modal{background:var(--bg2);border:2px solid var(--accent);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:flex;flex-direction:column;overflow:hidden}
+.smart-modal-lg{width:70vw;max-width:1100px;height:75vh;max-height:80vh}
+.smart-modal-md{width:60vw;max-width:600px;max-height:75vh}
+.smart-modal-sm{width:90vw;max-width:420px;max-height:75vh}
+.smart-modal-header{padding:12px 18px;border-bottom:1px solid var(--bg3);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.smart-modal-title{flex:1;font-weight:700;font-size:14px;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.smart-modal-close{background:transparent;border:none;color:var(--fg3);font-size:18px;cursor:pointer;padding:0 4px;line-height:1}
+.smart-modal-close:hover{color:var(--fg)}
+.smart-modal-body{padding:14px 18px;overflow-y:auto;flex:1;color:var(--fg)}
+.smart-modal-footer{padding:10px 18px;border-top:1px solid var(--bg3);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
 #toolbar{border-bottom:1px solid var(--border);padding:5px 8px;display:flex;gap:5px;align-items:center;flex-wrap:wrap;background:var(--bg2);flex-shrink:0}
 .logo{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:1px;white-space:nowrap}
 .sep{border-left:1px solid var(--border);height:20px;margin:0 1px}
@@ -80,11 +200,16 @@ input,select,textarea,button{font-family:inherit}
 #sidebar{width:300px;border-left:1px solid var(--border);background:var(--bg3);display:flex;flex-direction:column;flex-shrink:0}
 #tabs{display:flex;border-bottom:1px solid var(--border)}
 #tabs button{flex:1;padding:7px 2px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;background:transparent;color:var(--fg3);border:none;border-bottom:2px solid transparent;cursor:pointer}
-.subtabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2)}.subtabs button{flex:1;padding:5px 2px;font-size:9px;font-weight:500;background:transparent;color:var(--fg3);border:none;border-bottom:2px solid transparent;cursor:pointer}.subtabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
+.subtabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:-8px;z-index:5;margin:-8px -8px 8px;padding-top:0}.subtabs button{flex:1;padding:5px 2px;font-size:9px;font-weight:500;background:transparent;color:var(--fg3);border:none;border-bottom:2px solid transparent;cursor:pointer}.subtabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
 #tabs button.active{background:var(--bg4);color:var(--accent);border-bottom-color:var(--accent)}
 #tab-content{flex:1;overflow:hidden;display:flex;flex-direction:column}
-#props-area{flex-shrink:0;padding:8px;overflow:auto;max-height:45%}
-#list-area{flex:1;overflow:auto;padding:0 8px 8px;display:flex;flex-direction:column;gap:4px}
+#props-area{flex:1;padding:8px;overflow:auto;min-height:200px}
+#sidebar-splitter{height:8px;background:var(--bg3);cursor:row-resize;flex-shrink:0;border-top:1px solid var(--bg2);border-bottom:1px solid var(--bg2);position:relative;transition:background .1s}
+#sidebar-splitter::before{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:2px;background:var(--fg3);border-radius:1px}
+#sidebar-splitter:hover{background:var(--accent)}
+#sidebar-splitter:hover::before{background:#000}
+#sidebar-splitter.dragging{background:var(--accent)}
+#list-area{flex-basis:180px;flex-shrink:0;overflow:auto;padding:0 8px 8px;display:flex;flex-direction:column;gap:4px;min-height:80px}
 .obj-item{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:4px;cursor:pointer;border:1px solid transparent;font-size:11px}
 .obj-item.sel{background:#33302a;border-color:var(--accent)}
 .obj-item .dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.3)}
@@ -165,7 +290,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.58</span>
+  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.73</span>
   <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Revert all changes to original state">⟲ Revert</button>
   <button id="btn-undo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Undo last change (Ctrl+Z)">↩ Undo</button>
   <button id="btn-redo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
@@ -207,11 +332,11 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
     <hr style="border:0;border-top:1px solid rgba(255,255,255,0.2);margin:2px 0;width:100%">
     <button id="btn-ruler" class="btn btn-s" style="padding:2px 0;width:28px;height:24px;display:inline-flex;align-items:center;justify-content:center" onmousedown="event.preventDefault()" title="Ruler - measure distances between points or tokens"><svg viewBox="0 0 122.88 122.88" width="16" height="16" fill="currentColor"><path d="M0.92,32.82l31.9-31.9C33.44,0.3,34.24,0,35.05,0c0.8,0,1.61,0.3,2.22,0.92l84.69,84.69c0.61,0.61,0.92,1.42,0.92,2.23c0,0.8-0.31,1.6-0.92,2.21l-0.01,0.01l0.01,0.01l-31.9,31.9c-0.62,0.62-1.42,0.92-2.23,0.92c-0.8,0-1.61-0.3-2.23-0.92L0.92,37.27C0.3,36.65,0,35.84,0,35.05C0,34.24,0.3,33.44,0.92,32.82L0.92,32.82z M105.32,77.15L90.84,91.63c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l14.48-14.48L90.12,61.94l-6.86,6.85c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l6.86-6.86L75.88,47.71L61.4,62.19c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l14.48-14.48L61.09,32.91l-6.86,6.85c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l6.86-6.86L46.43,18.26L31.95,32.74c-1.13,1.13-2.83,1.25-3.8,0.29c-0.97-0.97-0.84-2.67,0.29-3.8l14.48-14.48l-7.87-7.87L6.87,35.05l80.96,80.96l28.17-28.17C102.8,74.62,118.53,90.36,105.32,77.15L105.32,77.15z"/></svg></button>
   </div></div>
-  <div id="sidebar"><div id="tabs"><button class="active" data-tab="map">Map</button><button data-tab="tokens">Tokens</button><button data-tab="overlays">Overlays</button><button data-tab="other">Other</button></div><div id="tab-content"><div id="props-area"></div><div id="list-area"></div></div><div id="cmd-bar"><div style="font-size:10px;color:var(--fg3);margin-bottom:3px">Pending changes:</div><div class="cmd" id="cmd-text" style="color:var(--fg4);font-size:10px;line-height:1.4">None - make edits to enable Export Updated Map</div></div></div>
+  <div id="sidebar"><div id="tabs"><button class="active" data-tab="map">Map</button><button data-tab="tokens">Tokens</button><button data-tab="overlays">Overlays</button><button data-tab="other">Other</button></div><div id="tab-content"><div id="props-area"></div><div id="sidebar-splitter" title="Drag to resize"></div><div id="list-area"></div></div><div id="cmd-bar"><div style="font-size:10px;color:var(--fg3);margin-bottom:3px">Pending changes:</div><div class="cmd" id="cmd-text" style="color:var(--fg4);font-size:10px;line-height:1.4">None - make edits to enable Export Updated Map</div></div></div>
 </div>
 <div id="tooltip"></div><div id="popup"></div>
-<div id="welcome-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;padding:20px">
-  <div style="background:var(--bg2);border:1px solid var(--bg3);border-radius:8px;padding:24px;max-width:480px;width:100%;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,0.6)">
+<div id="welcome-modal" class="smart-modal-backdrop" style="display:none;z-index:9999">
+  <div class="smart-modal smart-modal-sm" style="max-width:480px;text-align:center;padding:24px">
     <div style="margin-bottom:8px"><svg width="40" height="40" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg></div>
     <div style="font-size:20px;font-weight:bold;color:var(--accent);margin-bottom:14px">Welcome to BattleScry!</div>
     <div style="font-size:13px;color:var(--fg2);line-height:1.6;margin-bottom:18px;text-align:left">BattleScry is a free interactive battlemap tool for D&amp;D, designed to work seamlessly with <b>Discord</b>, <b>Avrae</b>, and <b>OTFBM</b>.<br><br><b>To load a battlemap:</b> run <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">!bscry</code> in your Discord game during combat and click the link.<br><br><span style="color:var(--fg3);font-style:italic">This is the default empty grid. Need a starting point? <a href="#" id="welcome-sample" style="color:var(--accent);text-decoration:underline">Browse sample backgrounds from featured creators</a>.</span></div>
@@ -308,8 +433,8 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   <div>• Run <code style="background:var(--bg3);padding:1px 4px;border-radius:2px">!bscry</code> again anytime to refresh</div>
   </div>
 </div></div>
-<div id="srd-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.7);justify-content:center;align-items:center">
-<div style="background:var(--bg);border:1px solid var(--bg3);border-radius:8px;width:460px;max-width:92vw;max-height:85vh;display:flex;flex-direction:column;padding:12px">
+<div id="srd-modal" class="smart-modal-backdrop" style="display:none;z-index:9998">
+<div class="smart-modal smart-modal-lg" style="padding:12px;border-color:var(--bg3);border-width:1px">
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-weight:bold;color:var(--fg);font-size:14px">🎨 Manage Token Image</span><span style="margin-left:auto;cursor:pointer;font-size:18px;color:var(--fg3)" id="srd-close">✕</span></div>
   <div id="srd-current" style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg2);border-radius:4px;margin-bottom:10px">
     <img id="srd-cur-img" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--fg3)">
@@ -749,6 +874,13 @@ function showDistPopup(origin){
 function closeDistPopup(){$("dist-popup").style.display="none";S.rulerStart=null;S.rulerEnd=null;S.rulerDist=null;S.rulerLabel=null;renderSVG();}
 // Natural sort for names with numbers (1v before 10v)
 function natSort(a,b){return a.localeCompare(b,undefined,{numeric:true,sensitivity:"base"});}
+// Shared initiative for a named group: the max init among its members (placed tokens + combatants).
+// Members of a group share one initiative slot, so the group's value drives each member's readonly field.
+function groupInit(name){
+  if(!name)return"";
+  const vals=[...S.tokens.filter(t=>t.group===name&&!t.hidden),...S.combatants.filter(c=>c.group===name)]
+    .map(x=>x.init).filter(v=>v!==undefined&&v!==null&&v!=="");
+  return vals.length?Math.max(...vals.map(Number)):"";}
 // Scroll viewport to center on a grid position
 function scrollTo(col,row){const vp=$("map-vp"),g=S.grid;
   const px=(g.offsetX+col*g.cellSize+g.cellSize/2+PAD)*S.zoom;
@@ -866,14 +998,25 @@ function getOvDisplayName(ov){
   const sizeStr=isLine?(ov.width||1)+"'w":ov.size?ov.size+"'":"";
   const tgtStr=ov.target?" → "+ov.target:"";
   return n.label+": "+ov.type+(sizeStr?" "+sizeStr:"")+tgtStr+((ov.locked||ov.locked2)?" 🔗":"");}
-function tokLbl(t,mx){const c=SIZES[t.size]?.c||1;const m=mx||Math.max(2,Math.floor(c*5));return t.name.slice(0,m);}
+// OTFBM label truncation (authoritative: otfbm_reference/tokens.md line 255).
+// OTFBM, not Croebh's alias, does the truncation at render time; the alias stores
+// the full name. Per-size caps: Tiny shows 2 chars taken from FIRST+LAST (so
+// "Pixie2" -> "P2"), Small/Medium up to 4 ("Goblin3" -> "Gobl"), Large up to 9,
+// Huge up to 14, Gargantuan up to 18. (Old BS formula floor(c*5) was wrong:
+// gave M=5, L=10, H=15, G=20 and sliced Tiny to the first 2 chars.)
+// `mx`, if explicitly passed, still acts as a plain first-N cap for callers.
+function tokLbl(t,mx){const nm=t.name||"";if(mx)return nm.slice(0,mx);const sz=t.size;if(sz==="T")return nm.length<=2?nm:nm[0]+nm[nm.length-1];const cap=({S:4,M:4,L:9,H:14,G:18})[sz]||4;return nm.slice(0,cap);}
 // Token display info for lists/popups: Name, Name (30'H), Name (S), Name (-10'H, S)
 function tokInfo(t){const parts=[];if(t.height)parts.push(t.height+"'H");if(t.size!=="M")parts.push(t.size);return parts.length?t.name+" ("+parts.join(", ")+")":t.name;}
 function groupToks(){const g={};S.tokens.filter(t=>!t.hidden&&!t.mapHidden).forEach(t=>{const k=`${t.col},${t.row},${t.size}`;(g[k]=g[k]||[]).push(t);});return g;}
 function tokensAt(col,row){return S.tokens.filter(t=>{if(t.hidden||t.mapHidden)return false;const c=Math.ceil(SIZES[t.size]?.c||1);return col>=t.col&&col<t.col+c&&row>=t.row&&row<t.row+c;});}
 function overlaysAt(col,row){return S.overlays.filter(ov=>{if(!ov.coord)return false;return ov.coord.col===col&&ov.coord.row===row;});}
 // Center of token in SVG coords
-function tokCenter(t){const g=S.grid,cp=SIZES[t.size]?.c||1;return{x:g.offsetX+t.col*g.cellSize+(cp*g.cellSize)/2,y:g.offsetY+t.row*g.cellSize+(cp*g.cellSize)/2};}
+function tokCenter(t){const g=S.grid,cp=SIZES[t.size]?.c||1;
+  // Tiny tokens occupy a half-cell but visually center in the grid cell they're placed on.
+  // (OTFBM auto-arranges multiple Tinies into 2x2 quadrants; BS shows a single Tiny centered for clarity.)
+  if(t.size==="T")return{x:g.offsetX+t.col*g.cellSize+g.cellSize/2,y:g.offsetY+t.row*g.cellSize+g.cellSize/2};
+  return{x:g.offsetX+t.col*g.cellSize+(cp*g.cellSize)/2,y:g.offsetY+t.row*g.cellSize+(cp*g.cellSize)/2};}
 function ovCenter(ov){const g=S.grid;if(!ov.coord)return null;return{x:g.offsetX+ov.coord.col*g.cellSize+g.cellSize/2,y:g.offsetY+ov.coord.row*g.cellSize+g.cellSize/2};}
 
 // SVG
@@ -1161,9 +1304,9 @@ function rOv(svg,ov){
         [[p.x+sz/2,p.y],[p.x+sz,p.y+sz/2],[p.x+sz/2,p.y+sz],[p.x,p.y+sz/2]].forEach(([hx,hy])=>{
           wrap.appendChild(sEl("circle",{cx:hx,cy:hy,r:hrsz,fill:"#fbbf24",stroke:"#000","stroke-width":1,style:"cursor:nwse-resize","data-rsz":ov.id}));});
         const _fs=Math.max(10,cs*0.32),_sw=Math.max(1,cs*0.04),_off=cs*0.12;const rl=sEl("text",{x:p.x+sz+_off,y:p.y+sz-_off,"font-size":_fs,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":_sw,"paint-order":"stroke"});rl.textContent=ov.size+"'";wrap.appendChild(rl);
-        // Show rotate handle at default (east) direction
-        const ahx=p.x+sz+cs*.8,ahy=p.y+sz/2,hr=Math.max(8,cs*.1);
-        drawRotIcon(wrap,ahx,ahy,hr,ov.id);}
+        // Aim/rotate handles on all four corners - grab any to aim the square (cardinal-snap).
+        [[p.x,p.y],[p.x+sz,p.y],[p.x,p.y+sz],[p.x+sz,p.y+sz]].forEach(([hx,hy])=>{
+          wrap.appendChild(sEl("circle",{cx:hx,cy:hy,r:hrsz,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));});}
     } else {
       // Aimed square - edge midpoint snaps to cell boundary
       const sc=cc(coord.col,coord.row),ac=cc(_c2.col,_c2.row);
@@ -1191,10 +1334,10 @@ function rOv(svg,ov){
         // Size label at far edge center
         const farMid={x:sp.x+sz*dx,y:sp.y+sz*dy};
         const _fs=Math.max(10,cs*0.32),_sw=Math.max(1,cs*0.04),_off=cs*0.12;const rl=sEl("text",{x:farMid.x+_off,y:farMid.y-_off,"font-size":_fs,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":_sw,"paint-order":"stroke"});rl.textContent=ov.size+"'";wrap.appendChild(rl);
-        // Rotate handle beyond far edge
-        const ahx=farMid.x+cs*.6*dx,ahy=farMid.y+cs*.6*dy,hr=Math.max(8,cs*.1);
-        drawRotIcon(wrap,ahx,ahy,hr,ov.id);
-        const al=sEl("text",{x:ahx+hr+4,y:ahy+5,"font-size":24,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});al.textContent="→"+fmtU(_c2.col,_c2.row);wrap.appendChild(al);}}}
+        // Aim/rotate handles on all four corners (the origin is the cell anchor, not a corner) -
+        // grab any to re-aim with the existing cardinal-snap behavior.
+        [nl,nr,fl,fr].forEach(v=>{wrap.appendChild(sEl("circle",{cx:v.x,cy:v.y,r:hrsz,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));});
+        const al=sEl("text",{x:farMid.x+cs*.2,y:farMid.y,"font-size":24,fill:"#ff6600","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});al.textContent="→"+fmtU(_c2.col,_c2.row);wrap.appendChild(al);}}}
   else if(ov.type==="arrow"){const _c2=getOvCoord2(ov);if(!_c2)return;const p1=cc(coord.col,coord.row);
     // End point snaps to nearest corner of end cell
     const ec=_c2,crn=[{x:ox+ec.col*cs,y:oy+ec.row*cs},{x:ox+(ec.col+1)*cs,y:oy+ec.row*cs},{x:ox+ec.col*cs,y:oy+(ec.row+1)*cs},{x:ox+(ec.col+1)*cs,y:oy+(ec.row+1)*cs}];
@@ -1250,11 +1393,11 @@ function rOv(svg,ov){
     if(sel)cnA["stroke-dasharray"]="6 3";
     wrap.appendChild(sEl("polygon",cnA));
     if(sel){
-      // Resize handle at cone tip (end of center line)
+      // Resize handle at cone base center (end of center line)
       wrap.appendChild(sEl("circle",{cx:bx,cy:by,r:cs*0.12,fill:"#fbbf24",stroke:"#000","stroke-width":1,style:"cursor:nwse-resize","data-rsz":ov.id}));
-      // Aim/rotate handle with rotation icon
-      const aimX=bx+cs*.6*Math.cos(a),aimY=by+cs*.6*Math.sin(a),hr=Math.max(8,cs*.1);
-      drawRotIcon(wrap,aimX,aimY,hr,ov.id);
+      // Aim/rotate handles on the two base corners (apex p1 is the origin/pivot, so it gets none).
+      [[bx+hw*px,by+hw*py],[bx-hw*px,by-hw*py]].forEach(([hx,hy])=>{
+        wrap.appendChild(sEl("circle",{cx:hx,cy:hy,r:cs*0.12,fill:"#ff6600",stroke:"#000","stroke-width":1,style:"cursor:grab","data-aim":ov.id,"pointer-events":"all"}));});
       // Size label
       const _fs=Math.max(10,cs*0.32),_sw=Math.max(1,cs*0.04),_off=cs*0.12;const rl=sEl("text",{x:bx+_off,y:by-_off,"font-size":_fs,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":_sw,"paint-order":"stroke"});rl.textContent=ov.size+"'";wrap.appendChild(rl);
       // Aim coordinate label
@@ -1390,15 +1533,203 @@ function rWall(svg,w){const g=S.grid,cs=g.cellSize,x1=g.offsetX+w.start.col*cs,y
   svg.appendChild(gr);}
 
 // SIDEBAR
-function cSw(sel,pfx){return COLORS.map(c=>`<div class="cswatch${c.hex===sel?" on":""}" style="background:${c.hex}" data-color="${c.hex}" data-prefix="${pfx}" title="${c.n}"></div>`).join("");}
+function cSw(sel,pfx){return COLORS.map(c=>`<div class="cswatch${c.hex===sel?" on":""}" style="background:${c.hex}" data-color="${c.hex}" data-prefix="${pfx}" title="${c.n}" tabindex="0" role="button" aria-label="Color ${c.n}"></div>`).join("");}
+// Escape a string for safe inclusion in an HTML attribute value (`value="..."`).
+function escAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
+// Map (currentHP, maxHP) → {label, color} per the agreed thresholds. Shown when the user has
+// checked "Hide HP/AC from players" so non-DM views see only narrative state, not numbers.
+//   100%   Healthy   (green)
+//   <100%  Injured   (yellow)
+//   <=50%  Bloodied  (orange)
+//   <=15%  Critical  (red)
+//   <=0    Dead      (grey) - negative allowed
+function computeCondition(hpCur,hpMax){
+  const cur=parseInt(hpCur,10),max=parseInt(hpMax,10);
+  if(isNaN(cur)||isNaN(max)||max<=0)return{label:"Unknown",color:"var(--fg3)"};
+  if(cur<=0)return{label:"Dead",color:"#777"};
+  const pct=(cur/max)*100;
+  if(pct<=15)return{label:"Critical",color:"#e74c3c"};
+  if(pct<=50)return{label:"Bloodied",color:"#f08237"};
+  if(pct<100)return{label:"Injured",color:"#fbd46e"};
+  return{label:"Healthy",color:"#01c178"};
+}
+// Unified combatant form. Renders the SAME layout for three modes:
+//   "add"      - new combatant being created (data = S.addingCombatant)
+//   "token"    - existing placed token (opts.token + opts.combatant)
+//   "unplaced" - unplaced combatant from initiative (opts.combatant)
+// All three share: preview thumbnail + name (row 1), location + height (row 2),
+// size + color picker (row 3), HP fields or condition (row 4), AC + hide checkbox (row 5),
+// notes, mode-specific buttons. IDs are stable across modes (cb-name, cb-loc, cb-size, etc).
+//
+// IMPORTANT: For mode="token" and mode="unplaced", AC/HP/Hide/Notes/Initiative edits are stored
+// locally on the token but do NOT yet round-trip to Avrae (that's deferred to v0.1.64+ alias work).
+// The form shows a small "*" annotation for these fields so the user knows.
+// Re-render only the preview thumbnail without re-rendering the whole sidebar (preserves input
+// focus and avoids flicker). Reads name/size from the form inputs and color/image from state.
+// Called when user types name, changes size, picks color, or sets a custom token image.
+function refreshCombatantPreview(){
+  const container=document.getElementById("cb-prev-container");
+  if(!container)return;
+  const v=id=>document.getElementById(id)?.value||"";
+  const name=v("cb-name");
+  const size=v("cb-size")||"M";
+  let color="",tokenImage="",placeholder=false;
+  if(S.addingCombatant){color=S.addingCombatant.color||"";tokenImage="";placeholder=!color;}
+  else if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
+    const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){color=tk.color;tokenImage=tk.tokenImage||"";}}
+  else if(S.sel.type==="unplaced"){
+    const cmb=S.combatants.find(c=>c.name===S.sel.name);
+    if(cmb&&cmb.savedTok){color=cmb.savedTok.color||"";tokenImage=cmb.savedTok.tokenImage||"";}
+    placeholder=!color;}
+  const editIcon=!S.addingCombatant;
+  container.innerHTML=renderCombatantPreview({name,size,color,tokenImage},{totalPx:100,placeholder,editIcon});
+}
+// Recompute and update the Condition label text/color in place (when Hide HP/AC is checked).
+// Triggered by HP field input. Skipped if condition field isn't visible.
+function updateConditionDisplay(){
+  const el=document.getElementById("cb-condition");
+  if(!el)return;
+  const v=id=>document.getElementById(id)?.value||"";
+  const cond=computeCondition(v("cb-hpcur"),v("cb-hpmax"));
+  el.textContent=cond.label;
+  el.style.color=cond.color;
+}
+function renderCombatantForm(opts){
+  const mode=opts.mode;
+  let name="",initStr="",size="M",color="",tokenImage="",hpCur="",hpMax="",ac="",hideStats=false,note="",location="",height=0,group="";
+  let placeholder=false,canRevert=false,isMoved=false,headerTitle="",headerColor="var(--fg)";
+  if(mode==="add"){
+    const d=opts.data;
+    name=d.name||"";initStr=d.initStr||"";size=d.size||"M";color=d.color||"";
+    hpCur=d.hpCur||"";hpMax=d.hpMax||d.hp||"";ac=d.ac||"";
+    hideStats=!!d.hideStats;note=d.note||"";location=d.location||"";height=0;group=d.group||"";
+    // Placeholder preview (grey dashed) until user picks a color or types a name
+    placeholder=!color;
+    headerTitle="➕ New Combatant";headerColor="var(--accent)";
+  }else if(mode==="token"){
+    const t=opts.token,cb=opts.combatant||{};
+    name=t.name;initStr=cb.initStr||cb.init||"";size=t.size;color=t.color;tokenImage=t.tokenImage||"";
+    // Token AC/HP/hide are stored on the token if present, else fall back to combatant fields
+    hpCur=t.hpCur!=null?t.hpCur:(cb.hpCur||"");
+    hpMax=t.hpMax!=null?t.hpMax:(cb.hp||"");
+    ac=t.ac!=null?t.ac:(cb.ac||"");
+    hideStats=t.hideStats!=null?!!t.hideStats:!!cb.hideStats;
+    note=t.note!=null?t.note:(cb.note||"");
+    location=fmtU(t.col,t.row);height=t.height||0;group=t.group||cb.group||"";
+    isMoved=t.originalCol!==t.col||t.originalRow!==t.row;
+    canRevert=!!(origState&&origState.tokens.find(x=>x.id===t.id));
+    headerTitle=t.name;
+  }else if(mode==="unplaced"){
+    const cb=opts.combatant,sv=cb.savedTok||{};
+    name=cb.name;initStr=cb.initStr||cb.init||"";size=sv.size||"M";color=sv.color||"";tokenImage=sv.tokenImage||"";
+    hpCur=cb.hpCur||"";hpMax=cb.hp||"";ac=cb.ac||"";
+    hideStats=!!cb.hideStats;note=cb.note||"";location="";height=0;group=cb.group||"";
+    placeholder=!color;
+    headerTitle="Unplaced: "+cb.name;headerColor="var(--fg3)";
+  }
+  const previewToken={name,size,color,tokenImage};
+  const condition=computeCondition(hpCur,hpMax);
+  // For mode "token" the edit icon is part of the preview (clicks open the SRD modal).
+  // For modes "add" and "unplaced" no edit icon (image isn't relevant yet/uses saved).
+  const editIcon=(mode==="token"||mode==="unplaced");
+  // Existing init groups for the Group combobox datalist: unique non-empty group names across placed
+  // tokens and combatants, so the user can pick an existing group or type a new one.
+  const existingGroups=[...new Set([...S.tokens.map(t=>t.group),...S.combatants.map(c=>c.group)].filter(Boolean))].sort((a,b)=>natSort(a,b));
+  // When an existing combatant belongs to a group, its initiative is owned by the group and shown read-only.
+  const memberOfGroup=(mode==="token"||mode==="unplaced")&&!!group;
+  const grpInitVal=memberOfGroup?groupInit(group):"";
+  // Header section wraps the whole form so Add Combatant gets the accent border highlight
+  let h=mode==="add"?`<div class="sec" style="border:1px solid var(--accent);background:var(--bg)">`:`<div class="sec">`;
+  if(mode==="add"){h+=`<div class="sec-title" style="color:${headerColor};margin-bottom:6px">${headerTitle}</div>`;}
+  // ROW 1: preview (left) + Name, then Location + Height (right)
+  h+=`<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+    <div id="cb-prev-container">${renderCombatantPreview(previewToken,{totalPx:100,placeholder,editIcon})}</div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+      <div><span class="lbl">${mode==="add"?"Name *":"Name"}</span>
+        <input class="inp" id="cb-name" value="${escAttr(name)}" maxlength="50" placeholder="${mode==="add"?"e.g. Goblin Boss":""}" style="width:100%;box-sizing:border-box;font-size:14px;font-weight:600;padding:6px 8px"${mode!=="add"?" readonly title=\"Renaming existing combatants requires Avrae - use the rename command\"":""}>
+        ${isMoved?`<div style="font-size:9px;color:var(--accent);font-family:monospace;margin-top:2px">Moved: ${fmtU(opts.token.originalCol,opts.token.originalRow)} → ${fmtU(opts.token.col,opts.token.row)}</div>`:""}
+      </div>
+      <div style="display:flex;gap:6px;align-items:flex-end">
+        <div style="flex:1;min-width:0"><span class="lbl" title="Type a coord (e.g. F5) or click here then click the map">Location</span>
+          <input class="inp" id="cb-loc" value="${escAttr(location)}" placeholder="${mode==="add"?"Unplaced":"-"}" style="width:100%;box-sizing:border-box;font-family:monospace;font-size:11px;padding:6px 6px"></div>
+        <div style="width:104px;flex-shrink:0"><span class="lbl">Height</span>
+          <div style="display:flex;align-items:stretch;gap:2px"><button type="button" class="stepbtn" id="cb-h-dec" title="-5 ft">&minus;</button><input type="number" class="inp nospin" id="cb-height" value="${height}" step="5" min="-995" max="995" style="width:38px;text-align:center;font-size:11px;padding:6px 2px"><button type="button" class="stepbtn" id="cb-h-inc" title="+5 ft">+</button><span style="font-size:10px;color:var(--fg3);align-self:center;margin-left:1px">ft</span></div></div>
+      </div>
+    </div>
+  </div>`;
+  // ROW 2: Size + Color
+  h+=`<div class="row" style="align-items:flex-start;gap:8px">
+    <div style="width:104px;flex-shrink:0"><span class="lbl">Size</span>
+      <select class="inp" id="cb-size" style="width:100%;font-size:11px">${Object.entries(SIZES).map(([k,v])=>`<option value="${k}"${size===k?" selected":""}>${k} - ${v.l}</option>`).join("")}</select></div>
+    <div style="flex:1;min-width:0"><span class="lbl">Color</span>
+      <div class="cb-colors">${COLORS.map(c=>`<div class="cswatch${c.hex===color?" on":""}" style="background:${c.hex}" data-color="${c.hex}" data-prefix="cb" title="${c.n}" tabindex="0" role="button" aria-label="Color ${c.n}"></div>`).join("")}</div></div>
+  </div>`;
+  // ROW 3: Current/Max HP + AC, with a Hide HP/AC toggle. When Hide is checked the HP and AC inputs
+  // are hidden entirely so a player using BattleScry can't inadvertently see a creature's exact
+  // numbers; the DM unchecks to reveal and edit them. A condition word stands in while hidden.
+  h+=`<div class="row" style="align-items:flex-end;gap:6px">
+    <div id="cb-stats-wrap" style="${hideStats?"display:none":"display:flex"};gap:6px;align-items:flex-end">
+      <div style="width:62px"><span class="lbl">Current HP</span>
+        <input type="number" class="inp nospin" id="cb-hpcur" value="${escAttr(hpCur)}" min="-9999" max="9999" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 4px"></div>
+      <div style="font-size:14px;color:var(--fg3);padding-bottom:7px">/</div>
+      <div style="width:54px"><span class="lbl">Max HP</span>
+        <input type="number" class="inp nospin" id="cb-hpmax" value="${escAttr(hpMax)}" min="0" max="9999" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 4px"></div>
+      <div style="width:48px"><span class="lbl">AC</span>
+        <input type="number" class="inp nospin" id="cb-ac" value="${escAttr(ac)}" min="0" max="50" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 4px"></div>
+    </div>
+    <div id="cb-cond-wrap" style="${hideStats?"":"display:none;"}flex:1;min-width:0"><span class="lbl">Hidden from players</span>
+      <div style="font-size:11px;font-weight:600;color:${condition.color}" id="cb-condition">${condition.label}</div></div>
+    <label style="margin-left:auto;flex-shrink:0;display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer;padding-bottom:7px" title="When checked, the HP and AC fields are hidden so players using BattleScry don't see a creature's exact numbers; uncheck to reveal and edit. On the map, players see only a condition word (Healthy/Injured/Bloodied/Critical/Dead). Applied via !i opt -h on apply."><input type="checkbox" id="cb-hide" ${hideStats?"checked":""} style="accent-color:var(--accent)"><span>Hide HP/AC</span></label>
+  </div>`;
+  // ROW 4: Initiative + Group (combobox: type a new group or pick one already in the encounter)
+  h+=`<div class="row" style="gap:8px;align-items:flex-end">
+    <div style="width:96px;flex-shrink:0"><span class="lbl" title="${memberOfGroup?`Set by group "${escAttr(group)}" - select the group folder to change it`:(mode==="add"?"Where this combatant sits in the initiative order":"Local edit - Avrae round-trip pending")}">Initiative position</span>
+      <input type="number" class="inp nospin" id="cb-init" value="${escAttr(memberOfGroup?grpInitVal:initStr)}" min="-50" max="200" ${memberOfGroup?"readonly":""} style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 6px${memberOfGroup?";opacity:.55;cursor:not-allowed":""}"></div>
+    <div style="flex:1;min-width:0"><span class="lbl" title="Type a new group name or pick one already in the encounter">Group</span>
+      <input class="inp" id="cb-group" list="cb-grouplist" value="${escAttr(group)}" placeholder="none" maxlength="40" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 6px">
+      <datalist id="cb-grouplist">${existingGroups.map(g=>`<option value="${escAttr(g)}"></option>`).join("")}</datalist></div>
+  </div>`;
+  // ROW 5: Notes (full width)
+  h+=`<div class="row"><div style="flex:1"><span class="lbl">Notes</span>
+    <input class="inp" id="cb-note" value="${escAttr(note)}" placeholder="hostile, immune to fire, destructible..." maxlength="100" style="width:100%;box-sizing:border-box;font-size:11px"></div></div>`;
+  // Mode-specific buttons
+  if(mode==="add"){
+    h+=`<div class="row" style="gap:4px;margin-top:8px"><button class="btn btn-s" id="cb-cancel" style="flex:1;font-size:11px;padding:6px">Cancel</button><button class="btn btn-p" id="cb-submit" style="flex:1;font-size:11px;padding:6px">Add Combatant</button></div>`;
+  }else if(mode==="token"){
+    h+=`<div class="row" style="gap:4px;margin-top:8px">
+      <button class="btn btn-s" id="p-revert" ${canRevert?"":"disabled"} style="flex:1;font-size:11px;padding:5px${canRevert?"":";opacity:.4;cursor:default"}" title="Reset this token to its original loaded state">Revert</button>
+      <button class="btn btn-s" id="p-unplace" style="flex:1;font-size:11px;padding:5px;color:#e74c3c" title="Remove from map - moves to Unplaced (stays in initiative)">Unplace from Map</button>
+    </div>`;
+    // Stacked / attached overlay hints
+    const stacked=opts.token?tokensAt(opts.token.col,opts.token.row).filter(x=>x.id!==opts.token.id):[];
+    if(stacked.length)h+=`<div style="font-size:10px;color:var(--fg2);margin-top:6px">Stacked with: ${stacked.map(x=>`<a href="#" class="cyc" data-cyc="${x.id}" style="color:var(--accent)">${x.name}</a>`).join(", ")}</div>`;
+    const attached=S.overlays.filter(o=>o.target===name);
+    if(attached.length)h+=`<div style="font-size:10px;color:var(--fg2);margin-top:4px">Attached Overlays: ${attached.map(o=>{const n=getOvNum(o);return`<a href="#" class="ovlink" data-ovid="${o.id}" style="color:var(--accent)">${n.label}: ${o.type}${o.locked?" 🔗":""}</a>`;}).join(", ")}</div>`;
+    h+=`<div style="font-size:9px;color:var(--fg4);margin-top:6px;font-style:italic;line-height:1.3">* HP/AC/Initiative/Group/Notes edits to existing combatants are saved locally but don't yet round-trip to Avrae.</div>`;
+  }else if(mode==="unplaced"){
+    h+=`<div style="margin-top:8px"><button class="btn btn-p" id="p-npplace" style="width:100%;font-size:11px;padding:6px">Place on Map</button></div>`;
+    const npAttached=S.overlays.filter(o=>o.target===name);
+    if(npAttached.length)h+=`<div style="font-size:10px;color:var(--fg2);margin-top:6px">Attached Overlays: ${npAttached.map(o=>{const n=getOvNum(o);return`<a href="#" class="ovlink" data-ovid="${o.id}" style="color:var(--accent)">${n.label}: ${o.type}${o.locked?" 🔗":""}</a>`;}).join(", ")}</div>`;
+  }
+  h+=`</div>`;
+  return h;
+}
+// Show/hide the splitter and list area. Only tabs that have an actual list (tokens, overlays, walls,
+// fow regions, map objects) need the resizable lower area. The Map tab is purely controls/forms so
+// it gets the full sidebar height with no splitter.
+function setSidebarLayout(hasList){
+  const sp=$("sidebar-splitter"),la=$("list-area");
+  if(sp)sp.style.display=hasList?"":"none";
+  if(la)la.style.display=hasList?"":"none";
+}
 function renderSB(){
   const pa=$("props-area"),la=$("list-area");
   switch(S.tab){
-    case"map":pa.innerHTML="";rMapTab(la);break;
-    case"tokens":rTokenProps(pa);rTokenList(la);break;
-    case"overlays":rOverlayProps(pa);rOverlayList(la);break;
-    case"other":pa.innerHTML="";rOtherTab(la);break;
-    default:pa.innerHTML="";la.innerHTML="";}
+    case"map":rMapTab(pa);la.innerHTML="";setSidebarLayout(false);break;
+    case"tokens":rTokenProps(pa);rTokenList(la);setSidebarLayout(true);break;
+    case"overlays":rOverlayProps(pa);rOverlayList(la);setSidebarLayout(true);break;
+    case"other":rOtherTab(pa,la);setSidebarLayout(true);break;
+    default:pa.innerHTML="";la.innerHTML="";setSidebarLayout(true);}
   document.querySelectorAll("#tabs button").forEach(b=>{b.classList.toggle("active",b.dataset.tab===S.tab);});
   requestAnimationFrame(()=>{const el=document.querySelector('.obj-item.sel');if(el)el.scrollIntoView({block:"nearest",behavior:"smooth"});});}
 
@@ -1498,50 +1829,50 @@ function rTokenProps(el){
   // For non-PC, non-monster combatants (NPCs, destructible objects, environmental hazards).
   // PCs and monsters must be added in Avrae via the usual !i add / cset workflow.
   const isAdding=!!S.addingCombatant;
-  h+=`<button class="btn btn-p" id="btn-add-cb" style="width:100%;font-size:11px;padding:5px;margin-bottom:4px" title="Add a non-PC, non-monster combatant to initiative (e.g. brazier, NPC, destructible object). PCs and monsters must be added in Avrae.">${isAdding?"− Cancel New Combatant":"➕ Add New Combatant"}</button>`;
+  h+=`<button class="btn btn-p" id="btn-add-cb" ${isAdding?"disabled":""} style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0${isAdding?";opacity:.5;cursor:default":""}" title="Add a non-PC, non-monster combatant to initiative (e.g. brazier, NPC, destructible object). PCs and monsters must be added in Avrae.">Add New Combatant</button>`;
   if(isAdding){
-    const ac=S.addingCombatant;
-    h+=`<div class="sec" style="border:1px solid var(--accent);background:var(--bg)"><div class="sec-title" style="color:var(--accent)">➕ New Combatant</div>
-    <div style="font-size:9px;color:var(--fg3);margin-bottom:6px;line-height:1.4">Equivalent to: <code style="font-size:9px;background:var(--bg3);padding:1px 4px;border-radius:2px">!i add 0 name -p init -ac N -hp N -note "..."</code></div>
-    <div class="row"><div style="flex:1"><span class="lbl">Name *</span><input class="inp" id="ac-name" value="${ac.name||""}" maxlength="50" placeholder="e.g. Brazier" style="font-size:11px"></div></div>
-    <div class="row"><div style="flex:1"><span class="lbl">Initiative</span><input type="number" class="inp" id="ac-init" value="${ac.initStr||""}" placeholder="50" min="-50" max="200" style="font-size:11px"></div>
-    <div style="flex:1"><span class="lbl">Size</span><select class="inp" id="ac-size" style="font-size:11px">${Object.entries(SIZES).map(([k,v])=>`<option value="${k}"${(ac.size||"M")===k?" selected":""}>${k} - ${v.l}</option>`).join("")}</select></div></div>
-    <div class="row"><div style="flex:1"><span class="lbl">AC</span><input type="number" class="inp" id="ac-ac" value="${ac.ac||""}" placeholder="15" min="0" max="50" style="font-size:11px"></div>
-    <div style="flex:1"><span class="lbl">HP (sets max too)</span><input type="number" class="inp" id="ac-hp" value="${ac.hp||""}" placeholder="30" min="0" max="9999" style="font-size:11px"></div></div>
-    <div class="row"><div style="flex:1"><span class="lbl">Color</span><div class="colors">${cSw(ac.color||"#888888","ac")}</div></div></div>
-    <div class="row"><div style="flex:1"><span class="lbl">Note</span><input class="inp" id="ac-note" value="${(ac.note||"").replace(/"/g,"&quot;")}" placeholder="destructible, immune to fire..." maxlength="100" style="font-size:10px"></div></div>
-    <label style="display:flex;align-items:flex-start;gap:6px;font-size:11px;margin-top:6px;cursor:pointer" title="When hidden, players see only condition labels (Healthy/Injured/Bloodied/Critical/Dead) instead of HP numbers. Applied via !i opt -h on apply."><input type="checkbox" id="ac-hide" ${ac.hideStats?"checked":""} style="accent-color:var(--accent);margin-top:2px"><span>Hide AC/HP from players</span></label>
-    <div class="row" style="margin-top:6px"><div style="flex:1"><span class="lbl" title="Where to place this combatant on the map - type a coord (e.g. F5) or click here then click the map">Location</span><input class="inp" id="ac-loc" value="${ac.location||""}" placeholder="Unplaced (or click and pick on map)" style="font-family:monospace;font-size:11px" title="Type a coordinate or click here, then click anywhere on the map"></div></div>
-    <div class="row" style="gap:4px;margin-top:8px"><button class="btn btn-p" id="ac-submit" style="flex:1;font-size:11px;padding:6px">Add Combatant</button><button class="btn btn-s" id="ac-cancel" style="flex:1;font-size:11px;padding:6px">Cancel</button></div>
-    </div>`;
+    // Unified form (mode "add") - same layout as selected-token props for consistency.
+    h+=renderCombatantForm({mode:"add",data:S.addingCombatant});
     el.innerHTML=h;return;
   }
-  // Token image is customized via a small edit icon overlaid on the preview thumbnail (appears on hover).
-  // Saves a full-width button and is more discoverable: the user sees the token, then sees the edit affordance.
+  // Selected placed token - unified form (mode "token")
   const sc=S.sel.ids.size;
-  if(sc===1&&(S.sel.type==="token"||S.sel.type==="mixed")){const t=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(t){const mv=t.originalCol!==t.col||t.originalRow!==t.row;const st=tokensAt(t.col,t.row).filter(x=>x.id!==t.id);const canRev=tokChanged(t);
-    h+=`<div class="sec"><div class="sec-title" style="display:flex;align-items:center;gap:10px"><div class="tok-edit-wrap">${renderTokenPreview(t,60)}<button class="tok-edit-icon" id="p-srd-browse" title="${t.tokenImage?"Manage custom token image (browse SRD, upload, or enter shortcode)":"Customize token image (browse 1400+ SRD monsters, upload, or enter shortcode)"}">✏️</button></div><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.name}">${t.name}</span></div>
-      ${mv?`<div style="font-size:10px;color:var(--accent);font-family:monospace;margin-bottom:4px">Moved: ${fmtU(t.originalCol,t.originalRow)} → ${fmtU(t.col,t.row)}</div>`:""}
-      <div class="row"><div style="flex:1"><span class="lbl">Position</span><input class="inp" id="p-pos" value="${fmtU(t.col,t.row)}" style="font-family:monospace" title="Type a grid coordinate (e.g. F5) or click here, then click anywhere on the map"></div>
-      <div style="flex:1"><span class="lbl">Height</span><div class="row" style="gap:2px"><input type="number" class="inp" id="p-ht" value="${t.height}" style="width:50px" title="Height above ground in feet (0 = ground level)"><span style="font-size:10px;color:var(--fg3)">ft</span></div></div></div>
-      <div class="row"><div style="flex:1"><span class="lbl">Size</span><select class="inp" id="p-size" title="Token size - affects grid footprint">${Object.entries(SIZES).map(([k,v])=>`<option value="${k}"${t.size===k?" selected":""}>${k} - ${v.l}</option>`).join("")}</select></div><div style="flex:1"><span class="lbl">Color</span><div class="colors">${cSw(t.color,"prop")}</div></div></div>
-      <div class="row" style="align-items:center"><div style="flex:1"><span class="lbl">Custom Token Shortcode</span><input class="inp" id="p-tokcode" value="${(t.tokenImage||'').replace(/~$/,'')}" style="font-family:monospace;font-size:10px" readonly placeholder="none" title="OTFBM token shortcode - use the button above to change"></div></div>
-      ${st.length?`<div style="font-size:10px;color:var(--fg2);margin-top:4px">Stacked with: ${st.map(x=>`<a href="#" class="cyc" data-cyc="${x.id}" style="color:var(--accent)">${x.name}</a>`).join(", ")}</div>`:""}
-      ${(()=>{const attached=S.overlays.filter(o=>o.target===t.name);return attached.length?`<div style="font-size:10px;color:var(--fg2);margin-top:4px">Attached Overlays: ${attached.map(o=>{const n=getOvNum(o);return`<a href="#" class="ovlink" data-ovid="${o.id}" style="color:var(--accent)">${n.label}: ${o.type}${o.locked?" 🔗":""}</a>`;}).join(", ")}</div>`:"";})()}
-      <div class="row" style="gap:4px;margin-top:4px"><button class="btn btn-s" style="flex:1${canRev?"":";opacity:.4;cursor:default"}" id="p-revert" ${canRev?"":"disabled"} title="Reset this token to its original loaded state">Revert to Original</button><button class="btn btn-s" style="flex:1;color:#e74c3c" id="p-unplace" title="Remove from map - moves to Unplaced Objects (stays in initiative)">Unplace from Map</button></div></div>`;}}
-  // Unplaced combatant properties
-  if(S.sel.type==="unplaced"){const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb){
-    const sv=cmb.savedTok||{};
-    // Construct a token-shaped object so renderTokenPreview can handle unplaced combatants
-    // identically to placed tokens (same color/image/letter logic)
-    const previewToken={name:cmb.name,color:sv.color||"#3498db",tokenImage:sv.tokenImage||""};
-    h+=`<div class="sec"><div class="sec-title" style="display:flex;align-items:center;gap:10px;color:var(--fg3)"><div class="tok-edit-wrap">${renderTokenPreview(previewToken,60)}<button class="tok-edit-icon" id="p-srd-browse" title="${sv.tokenImage?"Manage custom token image":"Customize token image (browse SRD, upload, or enter shortcode)"}">✏️</button></div><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${cmb.name}">Unplaced: ${cmb.name}</span></div>
-      <div class="row"><div style="flex:1"><span class="lbl">Size</span><select class="inp" id="p-npsize">${Object.entries(SIZES).map(([k,v])=>`<option value="${k}"${(sv.size||"M")===k?" selected":""}>${k} - ${v.l}</option>`).join("")}</select></div><div style="flex:1"><span class="lbl">Color</span><div class="colors">${cSw(sv.color||"#3498db","prop")}</div></div></div>
-      <div class="row" style="align-items:center"><div style="flex:1"><span class="lbl">Token Shortcode</span><input class="inp" id="p-nptokcode" value="${sv.tokenImage||""}" style="font-family:monospace" readonly placeholder="none"></div></div>`;
-    const npAttached=S.overlays.filter(o=>o.target===cmb.name);
-    if(npAttached.length){h+=`<div style="font-size:10px;color:var(--fg2);margin-top:4px">Attached Overlays: ${npAttached.map(o=>{const n=getOvNum(o);return`<a href="#" class="ovlink" data-ovid="${o.id}" style="color:var(--accent)">${n.label}: ${o.type}${o.locked?" 🔗":""}</a>`;}).join(", ")}</div>`;}
-    h+=`<button class="btn btn-p" style="width:100%;margin-top:6px" id="p-npplace">Place on Map</button></div>`;}}
-  el.innerHTML=h;}
+  if(sc===1&&(S.sel.type==="token"||S.sel.type==="mixed")){
+    const t=S.tokens.find(x=>x.id===[...S.sel.ids][0]);
+    if(t){
+      const cb=S.combatants.find(c=>c.name===t.name);
+      h+=renderCombatantForm({mode:"token",token:t,combatant:cb});
+    }
+  }
+  // Selected unplaced combatant - unified form (mode "unplaced")
+  if(S.sel.type==="unplaced"){
+    const cmb=S.combatants.find(c=>c.name===S.sel.name);
+    if(cmb){h+=renderCombatantForm({mode:"unplaced",combatant:cmb});}
+  }
+  // Selected group (the folder) - edit name + initiative only
+  if(S.sel.type==="group"){
+    h+=renderGroupForm(S.sel.group);
+  }
+  el.innerHTML=h;
+}
+// Group-edit form: rename the group (cascades to all members) and set the shared initiative.
+function renderGroupForm(name){
+  const memTok=S.tokens.filter(t=>t.group===name&&!t.hidden);
+  const memCmb=S.combatants.filter(c=>c.group===name&&!c.placed);
+  const members=[...memTok.map(t=>t.name),...memCmb.map(c=>c.name)];
+  const gi=groupInit(name);
+  return `<div class="sec" style="border:1px solid var(--accent);border-radius:6px;padding:10px;margin-top:4px">
+    <div class="sec-title" style="color:var(--accent);display:flex;align-items:center;gap:6px;margin-bottom:8px">📁 Group</div>
+    <div class="row" style="gap:8px;align-items:flex-end">
+      <div style="flex:1;min-width:0"><span class="lbl">Group name</span>
+        <input class="inp" id="cb-grp-name" value="${escAttr(name)}" maxlength="40" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 6px"></div>
+      <div style="width:96px;flex-shrink:0"><span class="lbl" title="Sets the initiative for every member of this group">Initiative position</span>
+        <input type="number" class="inp nospin" id="cb-grp-init" value="${escAttr(gi)}" min="-50" max="200" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 6px"></div>
+    </div>
+    <div style="font-size:10px;color:var(--fg3);margin-top:8px">${members.length} member${members.length===1?"":"s"}: ${members.map(escAttr).join(", ")||"(none)"}</div>
+    <div class="row" style="margin-top:10px"><button class="btn btn-s" id="cb-grp-ungroup" style="flex:1;font-size:11px;padding:6px" title="Remove every member from this group (the tokens stay on the map)">Ungroup all</button></div>
+  </div>`;
+}
 function rTokenList(el){let h="";
   const colorName=hex=>{const n=h2c(hex);const names={r:"red",b:"blue",g:"green",y:"yellow",pk:"pink",p:"purple",c:"cyan",bn:"brown",o:"orange",w:"white",bk:"black"};return names[n]||n||"unknown";};
   // Unified Tokens list - placed (including map-hidden) + unplaced combatants, sorted together.
@@ -1558,7 +1889,7 @@ function rTokenList(el){let h="";
     if(S.tokSort==="group"){const ga=a.group||"\uffff",gb=b.group||"\uffff";if(ga!==gb)return natSort(ga,gb);return natSort(a.name,b.name);}
     return natSort(a.name,b.name);});
   const total=rows.length;
-  h+=`<div class="grp-hdr" data-grp="tok">${total?`<span class="vis-eye${S.showTokens?'':' off'}" data-vis="tokens" style="cursor:pointer;font-size:11px;margin-right:2px;position:relative" title="${S.showTokens?'Hide all tokens':'Show all tokens'}">👁</span><span class="arrow${S.tokCol?" closed":""}">▼</span>`:""}<span class="sec-title">Tokens (${total})</span>${total?`<button class="btn btn-s" data-selall="tok" style="font-size:8px;padding:1px 5px;margin-left:4px" title="${allSel('tok')?'Unselect all tokens':'Select all tokens'}">${allSel("tok")?"Unselect All":"Select All"}</button><select class="inp" data-sort="tok" style="font-size:9px;padding:1px 2px;margin-left:auto;min-width:60px;width:60px;box-sizing:border-box"><option value="init"${S.tokSort==="init"?" selected":""}>Init ⚔</option><option value="name"${S.tokSort==="name"?" selected":""}>A-Z</option><option value="color"${S.tokSort==="color"?" selected":""}>Color</option><option value="group"${S.tokSort==="group"?" selected":""}>Group</option></select>`:""}</div>`;
+  h+=`<div class="grp-hdr" data-grp="tok">${total?`<span class="arrow${S.tokCol?" closed":""}">▼</span>`:""}<span class="sec-title">Tokens (${total})</span>${total?`<button class="btn btn-s" data-selall="tok" style="font-size:8px;padding:1px 5px;margin-left:4px" title="${allSel('tok')?'Unselect all tokens':'Select all tokens'}">${allSel("tok")?"Unselect All":"Select All"}</button><select class="inp" data-sort="tok" style="font-size:9px;padding:1px 2px;margin-left:auto;min-width:60px;width:60px;box-sizing:border-box"><option value="init"${S.tokSort==="init"?" selected":""}>Initiative</option><option value="name"${S.tokSort==="name"?" selected":""}>A-Z</option><option value="color"${S.tokSort==="color"?" selected":""}>Color</option><option value="group"${S.tokSort==="group"?" selected":""}>Group</option></select>`:""}</div>`;
   if(!S.tokCol){
     const useGrpHdrs=S.tokSort==="init"||S.tokSort==="group";
     let lastGrp=null;
@@ -1573,9 +1904,9 @@ function rTokenList(el){let h="";
             const members=sortedRows.filter(x=>x.group===g);
             const grpInit=members.length?Math.max(...members.map(x=>x.init||0)):"";
             const collapsed=S._grpCol[g];
-            h+=`<div class="grp-subhdr" data-grpsel="${g}" style="display:flex;align-items:center;gap:4px;padding:3px 6px;margin-top:2px;background:var(--bg3);border-radius:3px;cursor:pointer;font-size:10px;color:var(--fg2)" title="Click to select all in group"><span class="arrow${collapsed?" closed":""}" data-grptoggle="${g}" style="font-size:9px">▼</span><span style="font-size:11px">📁</span><span style="font-weight:bold;flex:1">${g}</span><span style="color:var(--fg3)">(${members.length})</span>${grpInit!==""?`<span style="font-family:monospace;font-size:9px;color:var(--fg3)">⚔${grpInit}</span>`:""}</div>`;
-          }else if(lastGrp!==null){
-            h+=`<div style="padding:2px 4px;margin-top:4px;font-size:9px;color:var(--fg3);border-top:1px solid var(--bg3)">Ungrouped</div>`;}
+            const grpSel=S.sel.type==="group"&&S.sel.group===g;
+            h+=`<div class="grp-subhdr${grpSel?" sel":""}" data-grpsel="${g}" style="display:flex;align-items:center;gap:4px;padding:3px 6px;margin-top:2px;background:${grpSel?"var(--accent)":"var(--bg3)"};color:${grpSel?"#1a1814":"var(--fg2)"};border-radius:3px;cursor:pointer;font-size:10px" title="Click to select this group (edit name + initiative); click the arrow to collapse"><span class="arrow${collapsed?" closed":""}" data-grptoggle="${g}" style="font-size:11px;padding:1px 4px;margin:-2px -2px;cursor:pointer" title="Collapse / expand">▼</span><span style="font-size:11px">📁</span><span style="font-weight:bold;flex:1">${g}</span><span style="color:${grpSel?"#1a1814":"var(--fg3)"}">(${members.length})</span>${grpInit!==""?`<span style="font-family:monospace;font-size:9px;color:${grpSel?"#1a1814":"var(--fg3)"}">⚔${grpInit}</span>`:""}</div>`;
+          }
           lastGrp=g;}}
       // Skip if group is collapsed
       if(inGroup&&S._grpCol[row.group])return;
@@ -1583,10 +1914,8 @@ function rTokenList(el){let h="";
       const isDim=row.kind==="unplaced"||row.mapHidden;
       const sel=row.kind==="placed"?isSel("token",row.id):(S.sel.type==="unplaced"&&S.sel.name===row.name);
       const ch=row.kind==="placed"&&tokChanged(row.tok);
-      // Eye icon - shown for placed (toggleable), empty spacer for unplaced
-      const eyeHTML=row.kind==="placed"
-        ?`<span class="tok-eye" data-tokhide="${row.id}" style="cursor:pointer;font-size:10px;width:16px;text-align:center;flex-shrink:0;opacity:${row.mapHidden?0.95:0.5};color:${row.mapHidden?"#e74c3c":"inherit"}" title="${row.mapHidden?"Show on BattleScry map view - combat state unchanged":"Hide from BattleScry map view - combat state unchanged"}">👁</span>`
-        :`<span style="display:inline-block;width:16px;flex-shrink:0"></span>`;
+      // Eye icons removed (v0.1.71) - dots are now the left-most element.
+      const eyeHTML="";
       // Dot - filled circle for visible placed, outline ring for unplaced or map-hidden
       const dotColor=row.color||"var(--fg3)";
       const dotHTML=isDim
@@ -1613,7 +1942,7 @@ function rOverlayProps(el){
   let h="";
   // Add New Overlay button always at top
   const ovFull=S.overlays.length>=10;
-  h+=`<button class="btn btn-p" id="btn-add-ov" style="width:100%;font-size:11px;padding:5px;margin-bottom:4px${ovFull?";opacity:.4;cursor:default":""}" ${ovFull?"disabled":""} title="${ovFull?"OTFBM limit: 10 overlays max - delete one to add another":"Create a new overlay with default settings"}">➕ Add New Overlay</button>`;
+  h+=`<button class="btn btn-p" id="btn-add-ov" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0${ovFull?";opacity:.4;cursor:default":""}" ${ovFull?"disabled":""} title="${ovFull?"OTFBM limit: 10 overlays max - delete one to add another":"Create a new overlay with default settings"}">➕ Add New Overlay</button>`;
   if(ovFull)h+=`<div style="font-size:9px;color:#e74c3c;margin:-2px 0 4px;text-align:center">OTFBM limit reached (10/10) - remove an overlay to add more</div>`;
   // Add New Overlay form
   if(S.addingOverlay){
@@ -1682,15 +2011,18 @@ function rMapTab(el){
   // Order: primary controls (Background, Layout), commit actions (Save/Load), then power-user knobs.
   // Walls, Fog of War, and Map Objects all live on the Other tab.
   el.innerHTML=rMapTabContent()+rSaveLoadSections()+rAdvancedMapSection()+rAdvancedImportSection();}
-function rOtherTab(el){
+function rOtherTab(pa,la){
   // "Other" tab consolidates the secondary map elements: walls, fog of war, map objects.
-  // Each subtab renders its own list and has its own yellow "Add New X" button at the top,
-  // matching the visual pattern of the primary tabs (Map / Tokens / Overlays).
+  // Subtabs live at the top of the props area (always visible). The Add New X button and any
+  // selected-item properties go in the props area; the actual list goes in the list area (resizable).
+  // Content is split by a <!--SPLIT--> marker inserted by rObjectsTabContent / rFowSection.
   const st=S.structSubTab||"walls";
-  let h=`<div class="subtabs"><button class="subtab${st==="walls"?" active":""}" data-structsub="walls">Walls</button><button class="subtab${st==="fow"?" active":""}" data-structsub="fow">Fog of War</button><button class="subtab${st==="mapobj"?" active":""}" data-structsub="mapobj">Map Objects</button></div>`;
-  if(st==="fow"){h+=rFowSection();}
-  else{h+=rObjectsTabContent(st);}
-  el.innerHTML=h;}
+  const subtabsHtml=`<div class="subtabs"><button class="subtab${st==="walls"?" active":""}" data-structsub="walls">Walls</button><button class="subtab${st==="fow"?" active":""}" data-structsub="fow">Fog of War</button><button class="subtab${st==="mapobj"?" active":""}" data-structsub="mapobj">Map Objects</button></div>`;
+  const raw=(st==="fow")?rFowSection():rObjectsTabContent(st);
+  const parts=raw.split("<!--SPLIT-->");
+  pa.innerHTML=subtabsHtml+(parts[0]||"");
+  la.innerHTML=parts[1]||"";
+}
 function rMapTabContent(){
   // Slimmed Map tab: primary controls visible, advanced tweaks collapsed.
   // Layout dropdown does the heavy lifting now - user picks a scale ("zoom into the battle"),
@@ -1701,7 +2033,7 @@ function rMapTabContent(){
   const mapFt=S.grid.cols*5+"ft × "+S.grid.rows*5+"ft";
   // Yellow "Add New X" button at top - visual consistency across tabs (Map/Tokens/Overlays/Other all have one).
   // Clicking focuses the URL input below; when a bg is already loaded, label switches to "Change".
-  h+=`<button class="btn btn-p" id="btn-add-bg" style="width:100%;font-size:11px;padding:5px;margin-bottom:8px" title="Add or change the battlemap background image - paste a URL, upload a file, or browse samples/saved maps below">${bgUrl?"✏️ Change Map Background":"➕ Add New Map Background"}</button>`;
+  h+=`<button class="btn btn-p" id="btn-add-bg" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0" title="Add or change the battlemap background image - paste a URL, upload a file, or browse samples/saved maps below">${bgUrl?"✏️ Change Map Background":"➕ Add New Map Background"}</button>`;
   // Background section
   h+=`<div class="sec"><div class="sec-title" style="display:flex;align-items:center;gap:4px"><span class="vis-eye${S.showBg?'':' off'}" data-vis="bg" style="cursor:pointer;font-size:11px;position:relative" title="${S.showBg?'Hide background':'Show background'}">👁</span>Background</div>
   <div id="m-bginfo" style="font-size:11px;color:var(--fg2);margin-bottom:8px;padding:4px 6px;background:var(--bg);border-radius:3px;min-height:18px">${bgUrl?'<span style="color:var(--fg3);font-style:italic">Image loading...</span>':'<span style="color:var(--fg3);font-style:italic">📐 No background image loaded</span>'}</div>
@@ -1732,6 +2064,7 @@ function rAdvancedMapSection(){
   <div style="margin-top:8px">
   <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="m-dark" ${S.darkMode?"checked":""} style="accent-color:var(--accent)">Dark mode (d)</label>
   <div style="margin:8px 0"><span class="lbl">Grid line opacity (${Math.min(99,Math.round(S.gridOpacity*100))}%)</span><input type="range" id="m-opacity" min="0" max="99" value="${Math.min(99,Math.round(S.gridOpacity*100))}" style="width:100%;accent-color:var(--accent)"></div>
+  <div style="margin:8px 0"><span class="lbl">Fog of War opacity (${100-(S.fowOpacity||0)}%)</span><input type="range" id="m-fowopacity" min="0" max="100" value="${100-(S.fowOpacity||0)}" style="width:100%;accent-color:var(--accent)"></div>
   <div style="margin:8px 0"><span class="lbl">Gridline/Axis Label Color</span><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;padding:3px 0">${COLORS.map(c=>`<div class="cswatch${(S.gridColor===c.code||(!S.gridColor&&c.code==="bk"))?" on":""}" style="background:${c.hex}" data-color="${c.code}" data-prefix="gcol" title="${c.n}"></div>`).join("")}</div></div>
   <div class="row" style="align-items:center;gap:6px;margin:8px 0"><span class="lbl" style="font-size:11px">Diagonal Rule</span><select class="inp" id="m-diagrule" style="font-size:11px"><option value="5105"${S.diagRule==="5105"?" selected":""}>5-10-5 (DMG Optional)</option><option value="simple"${S.diagRule==="simple"?" selected":""}>Simple 5' per square (PHB)</option></select></div>
   <div style="font-size:9px;color:var(--fg3);margin:4px 0 8px 0;line-height:1.4">${S.diagRule==="5105"?"Diagonal movement alternates between 5' and 10' per square. More realistic.":"Every square costs 5' of movement, including diagonals. Faster but less accurate."}</div>
@@ -1751,7 +2084,9 @@ function rFowSection(){
     const tl=fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2)),br=fmtU(Math.max(r.c1,r.c2),Math.max(r.r1,r.r2));
     h+=`<div class="sec"><div class="sec-title">Region Properties</div>
     <div style="font-size:11px;color:var(--fg);padding:2px 0">${tl} → ${br} (${Math.abs(r.c2-r.c1)+1}×${Math.abs(r.r2-r.r1)+1} cells)</div></div>`;}}
-  h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:4px">${S.fowRegions.length?`<span class="vis-eye${S.showFow?'':' off'}" data-vis="fow" style="cursor:pointer;font-size:11px;position:relative" title="${S.showFow?'Hide fog':'Show fog'}">👁</span>`:""}Fog of War Regions (${S.fowRegions.length})</span><span style="display:flex;gap:4px">${S.fowRegions.length?'<button class="btn btn-s" data-selall="fow" style="font-size:8px;padding:1px 5px">'+(allSel("fow")?"Unselect All":"Select All")+'</button><button class="btn btn-s" id="m-fowclear" style="font-size:8px;padding:1px 5px;color:#e74c3c" title="Remove all regions">🗑 Clear</button>':""}</span></div>`;
+  // Boundary: Add button + draw hint + region properties go in props area; region list goes in list area.
+  h+="<!--SPLIT-->";
+  h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:4px">${S.fowRegions.length?`<span class="vis-eye${S.showFow?'':' off'}" data-vis="fow" style="cursor:pointer;font-size:11px;position:relative" title="${S.showFow?'Hide fog':'Show fog'}">👁</span>`:""}Fog of War Revealed Regions (${S.fowRegions.length})</span><span style="display:flex;gap:4px">${S.fowRegions.length?'<button class="btn btn-s" data-selall="fow" style="font-size:8px;padding:1px 5px">'+(allSel("fow")?"Unselect All":"Select All")+'</button><button class="btn btn-s" id="m-fowclear" style="font-size:8px;padding:1px 5px;color:#e74c3c" title="Remove all regions">🗑 Clear</button>':""}</span></div>`;
   if(S.fowRegions.length){
     S.fowRegions.forEach(r=>{const sel=isSel("fow",r.id);
       const tl=fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2));
@@ -1762,9 +2097,8 @@ function rFowSection(){
       <span style="flex:1;color:var(--fg)">${tl}:${br} <span style="color:var(--fg3)">(${rw}×${rh})</span></span>
       <button class="btn btn-s m-fowdel" data-delfow="${r.id}" style="font-size:9px;padding:1px 5px;color:#e74c3c" title="Delete">✕</button></div>`;});}
   else h+=`<div style="font-size:10px;color:var(--fg3);font-style:italic;padding:4px 0">No revealed regions - add new region to enable Fog of War</div>`;
-  h+=`</div><div class="sec"><div class="sec-title">FOW Settings</div>
-  <div><span class="lbl">Fog of War opacity (${100-(S.fowOpacity||0)}%)</span><input type="range" id="m-fowopacity" min="0" max="100" value="${100-(S.fowOpacity||0)}" style="width:100%;accent-color:var(--accent)"></div>
-  </div>`;
+  h+=`</div>`;
+  // FOW opacity slider lives in Advanced Map Settings (under Map tab) for global visibility/scene controls.
   return h;
 }
 // Save / Load sections at bottom of Map tab.
@@ -1811,13 +2145,16 @@ function rObjectsTabContent(st){
   let h="";
   if(st==="walls"){
     const doorLabels={null:"Wall",open:"Open Door",closed:"Closed Door",secret:"Secret Door",double:"Double Door"};
-    h+=`<button class="btn btn-p" id="m-walladd" style="width:100%;font-size:11px;padding:5px;margin-bottom:8px">${S.wallDraw?"🔴 Cancel Drawing":"➕ Add New Wall"}</button>`;
+    h+=`<button class="btn btn-p" id="m-walladd" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0">${S.wallDraw?"🔴 Cancel Drawing":"➕ Add New Wall"}</button>`;
     if(S.wallDraw)h+=`<div style="font-size:10px;color:var(--accent);margin-bottom:6px;padding:0 2px">${S.wallDraw.start?"Click second vertex to complete wall • Hold Shift to chain":"Click a grid vertex (corner) to start"}</div>`;
     if(S.sel.type==="wall"&&S.sel.ids.size===1){const w=S.walls.find(x=>x.id===[...S.sel.ids][0]);if(w){
       h+=`<div class="sec"><div class="sec-title">Wall Properties</div>
       <div class="row"><span class="lbl" style="width:50px">Coords</span><span style="font-family:monospace;font-size:11px;color:var(--fg)">${fmtU(w.start.col,w.start.row)} → ${fmtU(w.end.col,w.end.row)}</span></div>
       <div class="row"><span class="lbl" style="width:50px">Type</span><select class="inp" id="m-walltype"><option value=""${!w.door?" selected":""}>Wall</option><option value="open"${w.door==="open"?" selected":""}>Open Door</option><option value="closed"${w.door==="closed"?" selected":""}>Closed Door</option><option value="secret"${w.door==="secret"?" selected":""}>Secret Door</option><option value="double"${w.door==="double"?" selected":""}>Double Door</option></select></div>
       <div style="margin-top:6px"><span class="lbl">Color</span><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center">${COLORS.map(c=>'<div class="cswatch'+(w.color===c.hex||(!w.color&&c.code==="bk")?' on':'')+'" style="background:'+c.hex+'" data-color="'+c.hex+'" data-prefix="wcol" title="'+c.n+'"></div>').join("")}</div></div></div>`;}}
+    // Boundary: everything above this goes into the props area (Add button + draw hint + properties).
+    // Everything below this goes into the list area (the Walls list section).
+    h+="<!--SPLIT-->";
     h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:4px">${S.walls.length?`<span class="vis-eye${S.showWalls?'':' off'}" data-vis="walls" style="cursor:pointer;font-size:11px;position:relative" title="${S.showWalls?'Hide walls':'Show walls'}">👁</span>`:""}Walls (${S.walls.length})</span><span style="display:flex;gap:4px">${S.walls.length?'<button class="btn btn-s" data-selall="wall" style="font-size:8px;padding:1px 5px">'+(allSel("wall")?"Unselect All":"Select All")+'</button><button class="btn btn-s" id="m-wallclear" style="font-size:8px;padding:1px 5px;color:#e74c3c" title="Remove all walls">🗑 Clear</button>':""}</span></div>`;
     if(S.walls.length){
       S.walls.forEach(w=>{const sel=isSel("wall",w.id);const s=fmtU(w.start.col,w.start.row),e2=fmtU(w.end.col,w.end.row);
@@ -1861,7 +2198,7 @@ function rObjectsTabContent(st){
         </div></div>`;
       }
     }
-    h+=`<button class="btn btn-p" id="m-objadd" style="width:100%;font-size:11px;padding:5px;margin-bottom:8px">${isPlacing?"🔴 Cancel Placement":"➕ Add New Map Object"}</button>`;
+    h+=`<button class="btn btn-p" id="m-objadd" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0">${isPlacing?"🔴 Cancel Placement":"➕ Add New Map Object"}</button>`;
     if(isPlacing){
       const objName=OBJ_META[placeType]?.name||placeType;
       h+=`<div style="font-size:10px;color:var(--accent);margin-bottom:6px;padding:0 2px">Click a cell to place <b>${objName}</b>, or click-drag to size it across multiple cells.</div>
@@ -1873,29 +2210,30 @@ function rObjectsTabContent(st){
         h+=`<div class="obj-pickitem${isOn?" on":""}" data-objpick="${code}" title="${meta.name}" style="aspect-ratio:1;border:2px solid ${isOn?"var(--accent)":"var(--bg3)"};border-radius:4px;padding:3px;cursor:pointer;background:var(--bg2);display:flex;align-items:center;justify-content:center;color:var(--fg)"><svg viewBox="0 0 398 398" style="width:100%;height:100%;display:block">${OBJ_SVG[code]}</svg></div>`;
       });
       h+=`</div></div>`;
+    }
+    // Boundary: everything above this goes into the props area (properties + Add button + placement controls).
+    // The Placed Objects list always renders below, even during placement, so users can see existing objects.
+    h+="<!--SPLIT-->";
+    h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:4px">${S.objects.length?`<span class="vis-eye${S.showObjects?'':' off'}" data-vis="objects" style="cursor:pointer;font-size:11px;position:relative" title="${S.showObjects?'Hide objects':'Show objects'}">👁</span>`:""}Placed Objects (${S.objects.length})</span>${S.objects.length?'<button class="btn btn-s" data-selall="object" style="font-size:8px;padding:1px 5px">'+(allSel("object")?"Unselect All":"Select All")+'</button>':""}</div>`;
+    if(!S.objects.length){
+      h+=`<div style="font-size:10px;color:var(--fg3);font-style:italic;padding:4px 0">No objects placed - use Add New Map Object above to place chests, traps, fire, stairs, columns, and more (32 types available).</div>`;
     } else {
-      // Not placing - show list of placed objects + intro
-      if(!S.objects.length){
-        h+=`<div style="font-size:11px;color:var(--fg3);line-height:1.5;padding:8px 0">Place OTFBM object icons (traps, chests, fire, stairs, columns, etc.) on the grid. <b>32 types available.</b></div>
-          <div style="font-size:10px;color:var(--fg4);padding:0 2px;line-height:1.5">Click <b>Add New Map Object</b> above, choose an icon, then click a cell to place or click-drag for multi-cell.</div>`;
-      } else {
-        h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:4px"><span class="vis-eye${S.showObjects?'':' off'}" data-vis="objects" style="cursor:pointer;font-size:11px;position:relative" title="${S.showObjects?'Hide objects':'Show objects'}">👁</span>Placed Objects (${S.objects.length})</span></div>`;
-        S.objects.forEach(o=>{
-          const meta=OBJ_META[o.type]||{name:o.type,full:o.type};
-          const c1=fmtU(Math.min(o.col,o.col2),Math.min(o.row,o.row2));
-          const c2=(o.col===o.col2&&o.row===o.row2)?"":fmtU(Math.max(o.col,o.col2),Math.max(o.row,o.row2));
-          const coordStr=c1+(c2?"–"+c2:"");
-          const isOn=isSel("object",o.id);
-          h+=`<div class="obj-listitem${isOn?" on":""}" data-objlistitem="${o.id}" style="display:flex;align-items:center;gap:6px;padding:4px 6px;cursor:pointer;border-radius:3px;${isOn?"background:var(--bg3)":""};margin-bottom:2px">
-            <svg viewBox="0 0 398 398" style="width:22px;height:22px;flex-shrink:0;color:${o.color||"var(--fg)"}">${OBJ_SVG[o.type]}</svg>
-            <span style="flex:1;font-size:10px;color:var(--fg)">${meta.name}</span>
-            <span style="font-size:9px;color:var(--fg3);font-family:monospace">${coordStr}</span>
-            <button class="btn btn-s m-objdel" data-objdel="${o.id}" style="font-size:10px;padding:1px 5px;color:#e74c3c" title="Delete this object">×</button>
-          </div>`;
-        });
-        h+=`</div>`;
-      }
-    }}
+      S.objects.forEach(o=>{
+        const meta=OBJ_META[o.type]||{name:o.type,full:o.type};
+        const c1=fmtU(Math.min(o.col,o.col2),Math.min(o.row,o.row2));
+        const c2=(o.col===o.col2&&o.row===o.row2)?"":fmtU(Math.max(o.col,o.col2),Math.max(o.row,o.row2));
+        const coordStr=c1+(c2?"–"+c2:"");
+        const isOn=isSel("object",o.id);
+        h+=`<div class="obj-listitem${isOn?" on":""}" data-objlistitem="${o.id}" style="display:flex;align-items:center;gap:6px;padding:4px 6px;cursor:pointer;border-radius:3px;${isOn?"background:var(--bg3)":""};margin-bottom:2px">
+          <svg viewBox="0 0 398 398" style="width:22px;height:22px;flex-shrink:0;color:${o.color||"var(--fg)"}">${OBJ_SVG[o.type]}</svg>
+          <span style="flex:1;font-size:10px;color:var(--fg)">${meta.name}</span>
+          <span style="font-size:9px;color:var(--fg3);font-family:monospace">${coordStr}</span>
+          <button class="btn btn-s m-objdel" data-objdel="${o.id}" style="font-size:10px;padding:1px 5px;color:#e74c3c" title="Delete this object">×</button>
+        </div>`;
+      });
+    }
+    h+=`</div>`;
+  }
   return h;
 }
 window.doImportLoad=function(){const inp=$("m-import-str");const val=inp?inp.value.trim():"";
@@ -1969,9 +2307,9 @@ function normalizeNameForCompare(name){
 // SPACES ARE PRESERVED. Croebh and BS both accept multi-word names. The space ↔ underscore
 // dance happens transparently at the transport layer (BS encodes space→underscore in apply commands,
 // alias decoder undoes it; alias serializes space→underscore in URL, BS parser undoes it).
-function slugifyName(raw){
+function slugifyName(raw,keepCase){
   if(!raw)return"";
-  let s=raw.toLowerCase();
+  let s=keepCase?raw:raw.toLowerCase();
   s=s.replace(/[;&=|%]/g," ");
   s=s.replace(/\s+/g," ");
   s=s.trim();
@@ -2004,6 +2342,100 @@ function renderTokenPreview(token,size){
     </div>`;}
   // Default token: colored circle with first letter (matches OTFBM default rendering)
   return `<div style="width:${size}px;height:${size}px;flex-shrink:0;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.45)}px;font-weight:bold;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4);box-sizing:border-box">${letter}</div>`;
+}
+// Combatant preview with a scale marker. Disc-constant layout: Tiny renders at half a cell,
+// S/M/L/H/G all draw the disc at one box-width; size/scale is conveyed by an H-bar scale marker
+// beneath the disc labeled in feet (T/S/M=5ft, L=10ft, H=15ft, G=20ft), matching the map's 5ft
+// marker. Label font follows OTFBM's ratio, clamped so long names stay inside the disc (see fontPx
+// below). Used in the unified combatant form.
+//
+// opts:
+//   totalPx:     total square size in pixels (default 100)
+//   placeholder: true = grey dashed circle, empty/no color (used in Add Combatant when no name/color yet)
+//   showName:    overlay the OTFBM-style truncated label on the token (default true)
+//   showGrid:    draw the scale-marker strip below the disc (default true; name kept for callers)
+//   editIcon:    add the hover/visible edit pencil (default false; only for the form)
+// Pick a label color that contrasts with the token fill, ported from OTFBM's pickTextColor
+// (overlays/token/index.js): dark text on light/medium tokens, light text on dark tokens. This is
+// far more legible at small sizes than white-with-outline, and matches the real OTFBM render.
+function tokTextColor(hex){
+  if(!hex||hex[0]!=="#"||hex.length<7)return "#f4f6ff";
+  const r=parseInt(hex.slice(1,3),16)/255,g=parseInt(hex.slice(3,5),16)/255,b=parseInt(hex.slice(5,7),16)/255;
+  const f=v=>v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);
+  const L2=0.2126*f(r)+0.7152*f(g)+0.0722*f(b),L1=0.9236;
+  if(L1<L2)return "#07031a";
+  return (L1+0.05)/(L2+0.05)<3?"#07031a":"#f4f6ff";
+}
+function renderCombatantPreview(token,opts){
+  opts=opts||{};
+  const totalPx=opts.totalPx||100;
+  const placeholder=opts.placeholder||false;
+  const showName=opts.showName!==false;
+  const showGrid=opts.showGrid!==false;
+  const editIcon=opts.editIcon||false;
+  const sizeKey=(token&&token.size)||"M";
+  const sizeSpec=SIZES[sizeKey]||SIZES.M;
+  // Grid cell count along one edge (T renders inside a single 1x1 cell, just smaller)
+  const cellCount=sizeKey==="T"?1:Math.max(1,Math.floor(sizeSpec.c));
+  // Token visual size as fraction of total. Tiny = 50% of single cell, others fill their footprint.
+  const tokenFrac=sizeKey==="T"?0.5:1;
+  const tokenPx=Math.round(totalPx*tokenFrac);
+  const tokenOffset=Math.round((totalPx-tokenPx)/2);
+  // Footprint in feet for the scale marker (5' per cell): T/S/M=5, L=10, H=15, G=20.
+  const footFt=cellCount*5;
+  // Height of the scale-marker strip drawn below the disc box (showGrid gates it; name kept
+  // for existing callers that pass showGrid:false to suppress the size indicator).
+  const markerH=showGrid?24:0;
+  const color=placeholder||!token||!token.color?"transparent":token.color;
+  const borderColor=placeholder||!token||!token.color?"#666":color;
+  const ringStyle=placeholder?"2px dashed #777":"2px solid "+borderColor;
+  const textColor=placeholder?"#888":tokTextColor(color);
+  // OTFBM-style truncated label (using same tokLbl that BS renders on the map).
+  // For placeholder mode with no name typed yet, show "?" hint.
+  const label=showName?(token&&token.name?tokLbl(token):(placeholder?"?":"")):"";
+  // Label font size. Mirrors OTFBM's own ratio (overlays/token/index.js):
+  //   fontsize = discPx * 2.4 / (labelLen + 4)
+  // but clamped so a long label can't overflow the drawn disc. In OTFBM the disc is
+  // physically wider for L/H/G (2/3/4 cells) so 9/14/18 chars fit; here the disc is held
+  // at one box-width (disc-constant layout), so we cap the font to the chord that fits:
+  //   fitPx = discPx * 1.30 / labelLen
+  // and take the smaller. Short names keep the full OTFBM size; long names shrink to fit.
+  // Tiny gets an extra 0.80 so its 2-char label doesn't dominate the small disc.
+  const _ln=Math.max(1,label.length);
+  const _fOtfbm=tokenPx*2.4/(_ln+4);
+  const _fFit=tokenPx*1.35/_ln;
+  let fontPx=Math.min(_fOtfbm,_fFit);
+  if(sizeKey==="T")fontPx*=0.80;
+  fontPx=Math.max(9,Math.round(fontPx));
+  // Container is the disc box (totalPx square) plus a scale-marker strip beneath it.
+  let html=`<div class="${editIcon?"tok-edit-wrap":""}" style="position:relative;width:${totalPx}px;height:${totalPx+markerH}px;flex-shrink:0">`;
+  // No box background - the disc sits on the transparent form surface (no black box look).
+  // Token disc
+  if(token&&token.tokenImage&&!placeholder){
+    const code=token.tokenImage.replace(/~$/,"");
+    const url="https://token.otfbm.io/img/"+code;
+    html+=`<div style="position:absolute;left:${tokenOffset}px;top:${tokenOffset}px;width:${tokenPx}px;height:${tokenPx}px;border-radius:50%;overflow:hidden;border:${ringStyle};box-sizing:border-box;background:${color}">
+      <img src="${url}" style="width:100%;height:100%;object-fit:cover;display:block"/></div>`;
+  }else{
+    html+=`<div class="cb-prev-disc" style="position:absolute;left:${tokenOffset}px;top:${tokenOffset}px;width:${tokenPx}px;height:${tokenPx}px;border-radius:50%;background:${color};border:${ringStyle};display:flex;align-items:center;justify-content:center;color:${textColor};font-weight:bold;font-size:${fontPx}px;box-sizing:border-box"><span class="cb-prev-label">${label}</span></div>`;
+  }
+  // Scale marker below the disc: H-bar (two end ticks + connecting line) + footprint label in feet,
+  // matching the 5ft marker at the bottom-right of the map grid. Conveys size/scale instead of a
+  // grid overlay. (v0.1.67)
+  if(markerH){
+    // Ticks span the token disc edge-to-edge, EXCEPT Tiny: it spans the full 5' cell (the box) so
+    // the half-width tiny disc reads as a small creature sitting inside a 5' square.
+    const barW=sizeKey==="T"?totalPx:tokenPx,barX=sizeKey==="T"?0:tokenOffset;
+    html+=`<svg viewBox="0 0 ${totalPx} ${markerH}" width="${totalPx}" height="${markerH}" style="position:absolute;left:0;top:${totalPx}px;pointer-events:none">`
+      +`<line x1="${barX}" y1="4" x2="${barX}" y2="12" stroke="var(--fg2)" stroke-width="1"/>`
+      +`<line x1="${barX}" y1="8" x2="${barX+barW}" y2="8" stroke="var(--fg2)" stroke-width="1"/>`
+      +`<line x1="${barX+barW}" y1="4" x2="${barX+barW}" y2="12" stroke="var(--fg2)" stroke-width="1"/>`
+      +`<text x="${totalPx/2}" y="22" text-anchor="middle" font-size="11" font-weight="600" fill="var(--fg2)">${footFt}ft</text>`
+      +`</svg>`;
+  }
+  if(editIcon)html+=`<button class="tok-edit-icon" id="p-srd-browse" title="Customize token image" style="bottom:${markerH-4}px"></button>`;
+  html+=`</div>`;
+  return html;
 }
 // AOE -> Affected Tokens computation.
 // Given an overlay, returns array of token IDs that are inside the AOE shape per the current rule.
@@ -2994,35 +3426,59 @@ function setup(){
     // Toggle Add New Combatant form on Tokens tab
     if(t.id==="btn-add-cb"){
       if(S.addingCombatant){S.addingCombatant=null;}
-      else S.addingCombatant={name:"",initStr:"",ac:"",hp:"",size:"M",color:"#888888",hideStats:false,note:"",location:""};
+      else S.addingCombatant={name:"",initStr:"",ac:"",hp:"",size:"M",color:"",hideStats:false,note:"",location:"",group:""};
       renderSB();return;}
-    if(t.id==="ac-cancel"){S.addingCombatant=null;renderSB();return;}
-    if(t.id==="ac-submit"){
+    if(t.id==="cb-cancel"){S.addingCombatant=null;renderSB();return;}
+    if(t.id==="cb-grp-ungroup"){
+      if(S.sel.type!=="group")return;
+      const g=S.sel.group;pushU();
+      S.tokens.forEach(x=>{if(x.group===g)x.group="";});
+      S.combatants.forEach(c=>{if(c.group===g)c.group="";});
+      clearSel();renderAll();return;}
+    if(t.id==="cb-h-dec"||t.id==="cb-h-inc"){
+      const inp=document.getElementById("cb-height");if(!inp)return;
+      let nv=(parseInt(inp.value,10)||0)+(t.id==="cb-h-inc"?5:-5);
+      nv=Math.max(-995,Math.min(995,nv));
+      inp.value=nv;
+      if(!S.addingCombatant&&(S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
+        const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){pushU();tk.height=nv;renderSVG();renderCmd();}}
+      return;}
+    if(t.id==="cb-submit"){
       const ac=S.addingCombatant;if(!ac)return;
       const v=id=>document.getElementById(id)?.value||"";
-      const name=slugifyName(v("ac-name"));
+      const name=slugifyName(v("cb-name"),true);
       if(!name){setStatus("⚠ Name required");return;}
       // Check name conflicts (token + combatant lists)
       if(S.tokens.find(t=>normalizeNameForCompare(t.name)===normalizeNameForCompare(name))
         ||S.combatants.find(c=>normalizeNameForCompare(c.name)===normalizeNameForCompare(name))){
         setStatus(`⚠ Combatant "${name}" already exists`);return;}
-      const init=parseInt(v("ac-init"))||0;
-      const acVal=v("ac-ac")?parseInt(v("ac-ac")):undefined;
-      const hpVal=v("ac-hp")?parseInt(v("ac-hp")):undefined;
-      const note=v("ac-note").trim();
-      const size=v("ac-size")||"M";
-      const hideStats=document.getElementById("ac-hide")?.checked||false;
-      const loc=v("ac-loc").trim();
+      const init=parseInt(v("cb-init"))||0;
+      const acVal=v("cb-ac")?parseInt(v("cb-ac")):undefined;
+      // HP auto-mirror: setting one but leaving the other blank defaults blank to the same value.
+      // Both blank = no HP (Avrae picks up monster default later).
+      let hpCurRaw=v("cb-hpcur"),hpMaxRaw=v("cb-hpmax");
+      let hpCurVal=hpCurRaw?parseInt(hpCurRaw):undefined,hpMaxVal=hpMaxRaw?parseInt(hpMaxRaw):undefined;
+      if(hpCurVal!=null&&hpMaxVal==null)hpMaxVal=hpCurVal;
+      else if(hpMaxVal!=null&&hpCurVal==null)hpCurVal=hpMaxVal;
+      const note=v("cb-note").trim();
+      const size=v("cb-size")||"M";
+      const hideStats=document.getElementById("cb-hide")?.checked||false;
+      const loc=v("cb-loc").trim();
+      const group=v("cb-group").trim();
+      const color=ac.color||"#888888";
       pushU();
       // Add to combatants list with full metadata; isNew flag triggers !i add on apply.
-      const cb={name,placed:false,init,ac:acVal,hp:hpVal,hpMax:hpVal,note,hideStats,group:"",isNew:true,
-        savedTok:{color:ac.color||"#888888",size,tokenImage:""}};
+      // hp = current HP, hpMax = max HP (Avrae uses -hp for current and -max for max separately).
+      const cb={name,placed:false,init,ac:acVal,hp:hpCurVal,hpMax:hpMaxVal,note,hideStats,group,isNew:true,
+        savedTok:{color,size,tokenImage:""}};
       S.combatants.push(cb);
       // Parse location: empty/unplaced -> stay unplaced; valid coord -> place at that coord.
       let placed=false,newTokId=null,placedCoord=null;
       if(loc){const coord=parseC(loc);if(coord){
         newTokId=uid();
-        S.tokens.push({id:newTokId,name,col:coord.col,row:coord.row,size,color:ac.color||"#888888",height:0,tokenImage:"",originalCol:coord.col,originalRow:coord.row});
+        S.tokens.push({id:newTokId,name,col:coord.col,row:coord.row,size,color,height:0,tokenImage:"",originalCol:coord.col,originalRow:coord.row,group,
+          // Store new combatant fields directly on the token too so the unified form picks them up when selected.
+          hpCur:hpCurVal,hpMax:hpMaxVal,ac:acVal,hideStats,note});
         cb.placed=true;placed=true;placedCoord=coord;}}
       S.addingCombatant=null;
       // Auto-select the new token (or unplaced combatant) so user sees its properties immediately.
@@ -3232,12 +3688,12 @@ function setup(){
     if(t.dataset.tokhide){e.stopPropagation();const tid=+t.dataset.tokhide;
       const tok=S.tokens.find(x=>x.id===tid);if(tok){pushU();tok.mapHidden=!tok.mapHidden;renderAll();}return;}
     if(t.closest("[data-grpsel]")){const grpName=t.closest("[data-grpsel]").dataset.grpsel;
-      const members=S.tokens.filter(x=>x.group===grpName&&!x.hidden);
-      S.sel={type:"token",ids:new Set(members.map(x=>x.id))};S.tab="tokens";renderAll();return;}
-    const ti=t.closest("[data-tid]");if(ti){const id=+ti.dataset.tid;if(e.ctrlKey||e.metaKey){ctrlToggle(id);S._lastClick={type:"token",id};}else if(e.shiftKey){shiftRange("data-tid",id,"token");}else{S.sel={type:"token",ids:new Set([id])};S._lastClick={type:"token",id};S.tab="tokens";const tk=S.tokens.find(x=>x.id===id);if(tk)scrollTo(tk.col,tk.row);}renderAll();return;}
+      if(S.addingCombatant)S.addingCombatant=null;
+      S.sel={type:"group",group:grpName,ids:new Set()};S.tab="tokens";renderAll();return;}
+    const ti=t.closest("[data-tid]");if(ti){const id=+ti.dataset.tid;if(e.ctrlKey||e.metaKey){ctrlToggle(id);S._lastClick={type:"token",id};}else if(e.shiftKey){shiftRange("data-tid",id,"token");}else{S.sel={type:"token",ids:new Set([id])};S._lastClick={type:"token",id};S.tab="tokens";if(S.addingCombatant)S.addingCombatant=null;const tk=S.tokens.find(x=>x.id===id);if(tk)scrollTo(tk.col,tk.row);}renderAll();return;}
     const oi=t.closest("[data-oid]");if(oi){const id=+oi.dataset.oid;if(e.ctrlKey||e.metaKey){ctrlToggle(id);S._lastClick={type:"overlay",id};}else if(e.shiftKey){shiftRange("data-oid",id,"overlay");}else{S.sel={type:"overlay",ids:new Set([id])};S._lastClick={type:"overlay",id};S.tab="overlays";const ov=S.overlays.find(x=>x.id===id);if(ov){const coord=getOvCoord(ov);if(coord)scrollTo(coord.col,coord.row);}}renderAll();return;}
-    // Select unplaced combatant
-    const npi=t.closest("[data-npname]");if(npi){S.sel={type:"unplaced",ids:new Set(),name:npi.dataset.npname};renderAll();return;}
+    // Select unplaced combatant - also cancels Add Combatant form
+    const npi=t.closest("[data-npname]");if(npi){if(S.addingCombatant)S.addingCombatant=null;S.sel={type:"unplaced",ids:new Set(),name:npi.dataset.npname};renderAll();return;}
     // Place unassigned combatant - button only (from properties or list)
     const placeBtn=t.closest("[data-placebtn]")||t.id==="p-npplace"?t:null;
     if(placeBtn||t.id==="p-npplace"){const name=placeBtn?.dataset?.placebtn||(S.sel.type==="unplaced"?S.sel.name:"");
@@ -3266,20 +3722,26 @@ function setup(){
       if(pfx==="wcol"){const w=S.sel.type==="wall"?S.walls.find(x=>x.id===[...S.sel.ids][0]):null;if(w){pushU();w.color=hex;renderAll();}return;}
       if(pfx==="ocol"){const o=S.sel.type==="object"?S.objects.find(x=>x.id===[...S.sel.ids][0]):null;if(o){pushU();o.color=hex;renderAll();}return;}
       if(pfx==="ao"&&S.addingOverlay){S.addingOverlay.color=hex;renderSB();return;}
-      if(pfx==="ac"&&S.addingCombatant){
-        // Capture other form fields before re-render so user doesn't lose what they typed
-        const v=id=>document.getElementById(id)?.value||"";
-        const ac=S.addingCombatant;
-        ac.name=v("ac-name");ac.initStr=v("ac-init");ac.ac=v("ac-ac");ac.hp=v("ac-hp");
-        ac.size=v("ac-size")||"M";ac.note=v("ac-note");ac.location=v("ac-loc");
-        ac.hideStats=document.getElementById("ac-hide")?.checked||false;
-        ac.color=hex;
-        renderSB();return;}
+      // Unified combatant color picker (data-prefix="cb") - dispatches by current mode.
+      // Updates the preview thumbnail in place (no full re-render) so input focus is preserved.
+      if(pfx==="cb"){
+        if(S.addingCombatant){S.addingCombatant.color=hex;}
+        else if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
+          const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){pushU();tk.color=hex;renderSVG();renderCmd();}}
+        else if(S.sel.type==="unplaced"){
+          const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb){if(!cmb.savedTok)cmb.savedTok={};cmb.savedTok.color=hex;}}
+        // Update visual swatch "on" state without re-rendering
+        t.parentElement.querySelectorAll(".cswatch").forEach(s=>s.classList.remove("on"));
+        t.classList.add("on");
+        refreshCombatantPreview();
+        // Update the little color dot in the token list right away (don't wait for click-out)
+        if(!S.addingCombatant){const la=$("list-area");if(la)rTokenList(la);}
+        return;}
       if(pfx==="prop"&&S.sel.ids.size===1){pushU();if(S.sel.type==="token"||S.sel.type==="mixed"){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk)tk.color=hex;}if(S.sel.type==="overlay"){const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);if(ov)ov.color=hex;}renderAll();}
       if(pfx==="prop"&&S.sel.type==="unplaced"){const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb){if(!cmb.savedTok)cmb.savedTok={};cmb.savedTok.color=hex;renderAll();}}
       if(pfx==="aov"){t.closest(".colors").querySelectorAll(".cswatch").forEach(s=>s.classList.remove("on"));t.classList.add("on");}return;}
     if(t.id==="p-revert"){if(!origState)return;pushU();
-      if(S.sel.type==="token"||S.sel.type==="mixed"){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);const orig=origState.tokens.find(x=>x.id===tk?.id);if(tk&&orig){tk.col=orig.col;tk.row=orig.row;tk.size=orig.size;tk.color=orig.color;tk.height=orig.height;}}
+      if(S.sel.type==="token"||S.sel.type==="mixed"){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);const orig=origState.tokens.find(x=>x.id===tk?.id);if(tk&&orig){tk.col=orig.col;tk.row=orig.row;tk.size=orig.size;tk.color=orig.color;tk.height=orig.height;tk.tokenImage=orig.tokenImage;tk.hpCur=orig.hpCur;tk.hpMax=orig.hpMax;tk.ac=orig.ac;tk.note=orig.note;tk.hideStats=orig.hideStats;tk.group=orig.group;tk.init=orig.init;tk.mapHidden=orig.mapHidden;}}
       if(S.sel.type==="overlay"){const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);const orig=origState.overlays.find(x=>x.id===ov?.id);if(ov&&orig){ov.size=orig.size;ov.color=orig.color;ov.type=orig.type;ov.coord={...orig.coord};ov.coord2=orig.coord2?{...orig.coord2}:null;ov.under=orig.under;}}
       renderAll();return;}
     if(t.id==="p-unplace"){pushU();
@@ -3411,14 +3873,105 @@ function setup(){
       if(!r.error){S.grid.cols=r.gridW;S.grid.rows=r.gridH;S.grid.cellSize=r.cellSize;
         S.grid.offsetX=r.offsetX;S.grid.offsetY=r.offsetY;
         S.grid.fullCols=r.gridW;S.grid.fullRows=r.gridH;renderAll();}}
-    if(S.sel.type==="token"&&S.sel.ids.size===1){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){if(e.target.id==="p-ht"){pushU();tk.height=+e.target.value||0;}if(e.target.id==="p-size"){pushU();tk.size=e.target.value;}
-      if(e.target.id==="p-pos"){const c=parseC(e.target.value);if(c){pushU();tk.col=c.col;tk.row=c.row;}else{e.target.style.borderColor="#e74c3c";setTimeout(()=>e.target.style.borderColor="",1500);return;}}
-      }}    if(S.sel.type==="mixed"&&S.sel.ids.size===1){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){if(e.target.id==="p-ht"){pushU();tk.height=+e.target.value||0;}if(e.target.id==="p-size"){pushU();tk.size=e.target.value;}
-      if(e.target.id==="p-pos"){const c=parseC(e.target.value);if(c){pushU();tk.col=c.col;tk.row=c.row;}else{e.target.style.borderColor="#e74c3c";setTimeout(()=>e.target.style.borderColor="",1500);return;}}}}
+    // Unified combatant form change handlers - cb-* IDs replace the old ac-*/p-*/p-np* split.
+    // Dispatch by current mode: add (S.addingCombatant), token (S.sel.type==="token"), or unplaced.
+    // cb-name handled in the input event listener (live preview refresh). On blur (change) just
+    // persist and STOP - falling through to the catch-all renderAll() below would rebuild the form
+    // and drop the field / focus. (Fixes name vanishing when clicking another field. v0.1.66)
+    if(e.target.id==="cb-name"){if(S.addingCombatant)S.addingCombatant.name=e.target.value;return;}
+    if(e.target.id==="cb-size"){
+      if(S.addingCombatant){S.addingCombatant.size=e.target.value;}
+      else if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
+        const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){pushU();tk.size=e.target.value;renderSVG();renderCmd();}}
+      else if(S.sel.type==="unplaced"){
+        const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb){if(!cmb.savedTok)cmb.savedTok={};cmb.savedTok.size=e.target.value;}}
+      refreshCombatantPreview();return;}
+    if(e.target.id==="cb-height"){
+      if(S.addingCombatant){/* not used in add mode */}
+      else if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
+        const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){pushU();tk.height=+e.target.value||0;renderSVG();renderCmd();}}
+      return;}
+    if(e.target.id==="cb-grp-name"){
+      // Rename the group across all members (placed tokens + combatants). Empty = keep current.
+      const oldName=S.sel.group,newName=e.target.value.trim();
+      if(!newName||newName===oldName){e.target.value=oldName;return;}
+      pushU();
+      S.tokens.forEach(x=>{if(x.group===oldName)x.group=newName;});
+      S.combatants.forEach(c=>{if(c.group===oldName)c.group=newName;});
+      S.sel.group=newName;renderAll();return;}
+    if(e.target.id==="cb-grp-init"){
+      // Set the shared initiative for every member of the selected group.
+      const iv=e.target.value===""?undefined:parseInt(e.target.value,10);
+      pushU();
+      S.tokens.forEach(x=>{if(x.group===S.sel.group)x.init=iv;});
+      S.combatants.forEach(c=>{if(c.group===S.sel.group)c.init=iv;});
+      renderAll();return;}
+    if(e.target.id==="cb-loc"){
+      if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
+        const c=parseC(e.target.value);
+        if(c){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){pushU();tk.col=c.col;tk.row=c.row;renderSVG();renderCmd();}}
+        else{e.target.style.borderColor="#e74c3c";setTimeout(()=>e.target.style.borderColor="",1500);}
+        return;}}
+    if(e.target.id==="cb-hide"){
+      // Hide the HP+AC inputs entirely when checked (so players don't see exact numbers); show a
+      // condition word instead. Unchecking reveals and re-enables editing.
+      const checked=e.target.checked;
+      const statsWrap=document.getElementById("cb-stats-wrap");
+      const condWrap=document.getElementById("cb-cond-wrap");
+      if(statsWrap)statsWrap.style.display=checked?"none":"flex";
+      if(condWrap)condWrap.style.display=checked?"":"none";
+      if(checked)updateConditionDisplay();
+      // Persist to state
+      if(S.addingCombatant){S.addingCombatant.hideStats=checked;}
+      else if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
+        const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){tk.hideStats=checked;}}
+      else if(S.sel.type==="unplaced"){
+        const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb)cmb.hideStats=checked;}
+      return;}
+    // Group (combobox): persist on change. New combatants store on S.addingCombatant; existing
+    // combatants store locally on the token/combatant (Avrae round-trip pending). cb-init mirrors
+    // the same pattern for existing combatants (add mode reads cb-init at submit).
+    if(e.target.id==="cb-group"){
+      const gv2=e.target.value.trim();
+      if(S.addingCombatant){S.addingCombatant.group=gv2;}
+      else if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
+        const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk)tk.group=gv2;
+        const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb)cmb.group=gv2;}
+      else if(S.sel.type==="unplaced"){
+        const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb)cmb.group=gv2;}
+      return;}
+    if(e.target.id==="cb-init"){
+      // Add mode reads cb-init at submit; here we persist init edits for EXISTING combatants locally.
+      if(!S.addingCombatant){
+        const iv=e.target.value===""?undefined:parseInt(e.target.value,10);
+        if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
+          const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk)tk.init=iv;
+          const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb)cmb.init=iv;}
+        else if(S.sel.type==="unplaced"){
+          const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb)cmb.init=iv;}}
+      return;}
+    // Persist HP/AC/note edits to state. For token/unplaced modes these are LOCAL-ONLY changes
+    // (no Avrae round-trip yet); for add mode the values are read from DOM at submit time, so we
+    // don't need to mirror them here (they're picked up at the cb-submit handler).
+    if(e.target.id==="cb-hpcur"||e.target.id==="cb-hpmax"||e.target.id==="cb-ac"||e.target.id==="cb-note"){
+      const parseOrUndef=v=>v===""?undefined:parseInt(v,10);
+      if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
+        const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);
+        if(tk){
+          if(e.target.id==="cb-hpcur")tk.hpCur=parseOrUndef(e.target.value);
+          else if(e.target.id==="cb-hpmax")tk.hpMax=parseOrUndef(e.target.value);
+          else if(e.target.id==="cb-ac")tk.ac=parseOrUndef(e.target.value);
+          else if(e.target.id==="cb-note")tk.note=e.target.value;}}
+      else if(S.sel.type==="unplaced"){
+        const cmb=S.combatants.find(c=>c.name===S.sel.name);
+        if(cmb){
+          if(e.target.id==="cb-hpcur")cmb.hpCur=parseOrUndef(e.target.value);
+          else if(e.target.id==="cb-hpmax")cmb.hp=parseOrUndef(e.target.value);
+          else if(e.target.id==="cb-ac")cmb.ac=parseOrUndef(e.target.value);
+          else if(e.target.id==="cb-note")cmb.note=e.target.value;}}
+      return;}
     // Sort dropdowns
     if(e.target.dataset.sort){const g=e.target.dataset.sort;if(g==="tok")S.tokSort=e.target.value;if(g==="ov")S.ovSort=e.target.value;renderSB();return;}
-    // Unplaced size change
-    if(S.sel.type==="unplaced"&&e.target.id==="p-npsize"){const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb){if(!cmb.savedTok)cmb.savedTok={};cmb.savedTok.size=e.target.value;renderAll();return;}}
     // Live overlay property changes
     if(S.sel.type==="overlay"&&S.sel.ids.size===1){const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);if(ov){
       if(e.target.id==="p-ovtype"){pushU();ov.type=e.target.value;renderAll();return;}
@@ -3506,7 +4059,26 @@ function setup(){
         d.remove();renderAll();};
       return;}
   },{capture:false});
-  tc.addEventListener("input",e=>{if(e.target.dataset.objplaceHex&&S.placingObject){S.placingObject.color=e.target.value;renderSB();return;}
+  tc.addEventListener("input",e=>{
+    // Unified combatant form numeric fields: strict positive integers for AC/HP (no - or other chars).
+    // Initiative allows a leading minus only. type="number" alone doesn't block typing.
+    if(e.target.id==="cb-ac"||e.target.id==="cb-hpcur"||e.target.id==="cb-hpmax"){
+      // hpcur allows negative (Dead state) - hp can go below zero per the Condition table.
+      const allowNeg=e.target.id==="cb-hpcur";
+      const cleaned=allowNeg?e.target.value.replace(/[^-\d]/g,"").replace(/(?!^)-/g,""):e.target.value.replace(/[^\d]/g,"");
+      if(e.target.value!==cleaned)e.target.value=cleaned;
+      // Recompute condition display if HP/AC are hidden (Condition field is showing instead)
+      if(e.target.id==="cb-hpcur"||e.target.id==="cb-hpmax"){updateConditionDisplay();}
+      return;}
+    if(e.target.id==="cb-init"){
+      const cleaned=e.target.value.replace(/[^-\d]/g,"").replace(/(?!^)-/g,"");
+      if(e.target.value!==cleaned)e.target.value=cleaned;return;}
+    // Live preview update when name field is typed (matches OTFBM-style truncation per token size).
+    // Persist on every keystroke so any later re-render (color pick, size change, blur) keeps the
+    // typed name. Only add mode has an editable name (token/unplaced fields are readonly).
+    if(e.target.id==="cb-name"){if(S.addingCombatant)S.addingCombatant.name=e.target.value;refreshCombatantPreview();return;}
+    if(e.target.id==="cb-group"){if(S.addingCombatant)S.addingCombatant.group=e.target.value;return;}
+    if(e.target.dataset.objplaceHex&&S.placingObject){S.placingObject.color=e.target.value;renderSB();return;}
     if(e.target.dataset.objhex){const o=S.objects.find(x=>x.id===+e.target.dataset.objhex);if(o){o.color=e.target.value;renderSVG();renderCmd();return;}}
     if(e.target.id==="m-opacity"){S.gridOpacity=e.target.value/100;renderSVG();}if(e.target.id==="m-fowopacity"){S.fowOpacity=100-e.target.value;renderSVG();renderCmd();}
     // Live slug preview - shows the user what their map/battle name will become before they save.
@@ -3519,12 +4091,12 @@ function setup(){
   document.addEventListener("focusin",e=>{
     if(e.target.id==="ao-c1"||e.target.id==="p-ovc1"&&!e.target.disabled){S.coordPick="c1";$("map-svg").style.cursor="crosshair";}
     else if(e.target.id==="ao-c2"||e.target.id==="p-ovc2"&&!e.target.disabled){S.coordPick="c2";$("map-svg").style.cursor="crosshair";}
-    else if(e.target.id==="p-pos"){S.coordPick="pos";$("map-svg").style.cursor="crosshair";}
-    // Add Combatant Location field - same focus-to-pick UX as the circle overlay Origin field
-    else if(e.target.id==="ac-loc"){S.coordPick="ac";$("map-svg").style.cursor="crosshair";}
+    // Unified combatant Location field - dispatches by mode in the map click handler
+    // (add mode = fill field; token mode = move token; unplaced mode = place token here)
+    else if(e.target.id==="cb-loc"){S.coordPick="cb";$("map-svg").style.cursor="crosshair";}
     else if(S.coordPick){S.coordPick=null;$("map-svg").style.cursor="";}});
   document.addEventListener("focusout",e=>{
-    if((e.target.id==="p-ovc1"||e.target.id==="p-ovc2"||e.target.id==="p-pos"||e.target.id==="ao-c1"||e.target.id==="ao-c2"||e.target.id==="ac-loc")&&S.coordPick){
+    if((e.target.id==="p-ovc1"||e.target.id==="p-ovc2"||e.target.id==="cb-loc"||e.target.id==="ao-c1"||e.target.id==="ao-c2")&&S.coordPick){
       setTimeout(()=>{if(S.coordPick){S.coordPick=null;$("map-svg").style.cursor="";}},200);}});
 
   // SVG MOUSE EVENTS
@@ -3645,18 +4217,47 @@ function setup(){
     // Coord pick mode - click to place coordinate (skip vw1/vw2; those use crop drag handlers)
     if(S.coordPick&&S.coordPick!=="vw1"&&S.coordPick!=="vw2"){const pt=svgPt(e),gp=pt2g(pt.x,pt.y);
       if(gp.col>=0&&gp.col<S.grid.cols&&gp.row>=0&&gp.row<S.grid.rows){
-        if(S.coordPick==="pos"){
-          // Token position
-          const tk=S.sel.type==="token"&&S.sel.ids.size===1?S.tokens.find(x=>x.id===[...S.sel.ids][0]):null;
-          if(tk){pushU();tk.col=gp.col;tk.row=gp.row;const field=$("p-pos");if(field)field.value=fmtU(gp.col,gp.row);}
-        }else if(S.coordPick==="ac"){
-          // Add Combatant Location field - fill the input AND mirror to S.addingCombatant so the
-          // subsequent renderAll() doesn't wipe it. Also save other typed fields for the same reason.
-          const field=$("ac-loc");if(field)field.value=fmtU(gp.col,gp.row);
-          if(S.addingCombatant){const ac=S.addingCombatant,gv=id=>document.getElementById(id)?.value||"";
-            ac.name=gv("ac-name");ac.initStr=gv("ac-init");ac.ac=gv("ac-ac");ac.hp=gv("ac-hp");
-            ac.size=gv("ac-size")||"M";ac.note=gv("ac-note");ac.location=fmtU(gp.col,gp.row);
-            ac.hideStats=document.getElementById("ac-hide")?.checked||false;}
+        if(S.coordPick==="cb"){
+          // Unified combatant Location pick. Dispatch by current mode:
+          //   add mode      → fill the input + mirror to S.addingCombatant
+          //   token mode    → move the selected token (was old "pos" behavior)
+          //   unplaced mode → place the token at the picked coord (was old "place" button)
+          const coordStr=fmtU(gp.col,gp.row);
+          const field=$("cb-loc");if(field)field.value=coordStr;
+          if(S.addingCombatant){
+            // Mirror all form fields so the impending render doesn't wipe what user typed
+            const ac=S.addingCombatant,gv=id=>document.getElementById(id)?.value||"";
+            ac.name=gv("cb-name");ac.initStr=gv("cb-init");ac.ac=gv("cb-ac");
+            ac.hpCur=gv("cb-hpcur");ac.hpMax=gv("cb-hpmax");ac.hp=ac.hpMax;
+            ac.size=gv("cb-size")||"M";ac.note=gv("cb-note");ac.location=coordStr;
+            ac.hideStats=document.getElementById("cb-hide")?.checked||false;
+          }else if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
+            const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);
+            if(tk){pushU();tk.col=gp.col;tk.row=gp.row;}
+          }else if(S.sel.type==="unplaced"){
+            // Place the unplaced combatant at this coord (creates a new token)
+            const cmb=S.combatants.find(c=>c.name===S.sel.name);
+            if(cmb){
+              pushU();const sv=cmb.savedTok||{};
+              const newTok={id:uid(),name:cmb.name,col:gp.col,row:gp.row,
+                size:sv.size||"M",color:sv.color||"#3498db",height:0,
+                tokenImage:sv.tokenImage||"",originalCol:gp.col,originalRow:gp.row,
+                hpCur:cmb.hpCur,hpMax:cmb.hp,ac:cmb.ac,hideStats:cmb.hideStats,note:cmb.note};
+              S.tokens.push(newTok);cmb.placed=true;
+              S.sel={type:"token",ids:new Set([newTok.id])};
+            }
+          }
+          // Confirmation popup near the click - lightweight, dismisses on OK click or 2.5s timeout.
+          // After dismiss, focus returns to the Location field so user can verify/edit or Tab on.
+          setTimeout(()=>{
+            const pop=document.createElement("div");pop.id="cb-loc-confirm";
+            pop.style.cssText=`position:fixed;left:${e.clientX-80}px;top:${e.clientY+20}px;background:var(--bg2);border:2px solid var(--accent);border-radius:6px;padding:8px 12px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.4);font-size:12px;display:flex;align-items:center;gap:8px`;
+            pop.innerHTML=`<span style="color:var(--accent)">📍</span><span style="color:var(--fg)">Location <b style="font-family:monospace">${coordStr}</b> selected</span><button class="btn btn-p" style="font-size:10px;padding:3px 10px;margin-left:4px">OK</button>`;
+            document.body.appendChild(pop);
+            const close=()=>{pop.remove();const f=$("cb-loc");if(f){f.focus();f.select();}};
+            pop.querySelector("button").onclick=close;
+            setTimeout(()=>{if(document.body.contains(pop))close();},2500);
+          },10);
         }else{
           const field=$(S.coordPick==="c1"?($("ao-c1")?"ao-c1":"p-ovc1"):($("ao-c2")?"ao-c2":"p-ovc2"));
           if(field){field.value=fmtU(gp.col,gp.row);field.dispatchEvent(new Event("change",{bubbles:true}));}
@@ -4172,6 +4773,8 @@ function setup(){
   // Modal events
   $("srd-close").onclick=closeSrdModal;
   $("srd-modal").onclick=e=>{if(e.target===$("srd-modal"))closeSrdModal();};
+  // ESC closes the SRD modal when it's open
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("srd-modal").style.display!=="none")closeSrdModal();});
   $("srd-search").oninput=e=>renderSrdList(e.target.value);
   $("srd-list").onclick=e=>{const row=e.target.closest(".srd-row");if(row)applySrdCode(row.dataset.code);};
   $("srd-code-apply").onclick=()=>{const v=$("srd-code-input").value.trim().replace(/[^a-zA-Z0-9]/g,"").slice(0,6);
@@ -4704,8 +5307,18 @@ function setup(){
     if(lastW){S.sel={type:"wall",ids:new Set([lastW.id])};S.tab="other";S.structSubTab="walls";}
     else if(lastF){S.sel={type:"fow",ids:new Set([lastF.id])};S.tab="other";S.structSubTab="fow";}
     renderAll();return;}
-    // Arrow keys - move selected objects one grid cell
-    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)&&S.sel.ids.size&&!["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName)){
+    // Color swatch keyboard nav (arrow keys move focus between swatches in the same container,
+    // Enter/Space activates). Runs before the global token-move arrow handler so swatches don't fight.
+    if(e.target.classList&&e.target.classList.contains("cswatch")){
+      if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)){
+        e.preventDefault();
+        const swatches=[...e.target.parentElement.querySelectorAll(".cswatch")];
+        const idx=swatches.indexOf(e.target);
+        const next=e.key==="ArrowLeft"||e.key==="ArrowUp"?(idx-1+swatches.length)%swatches.length:(idx+1)%swatches.length;
+        swatches[next].focus();return;}
+      if(e.key==="Enter"||e.key===" "){e.preventDefault();e.target.click();return;}}
+    // Arrow keys - move selected objects one grid cell (skip if a swatch has focus - handled above)
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)&&S.sel.ids.size&&!["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName)&&!(e.target.classList&&e.target.classList.contains("cswatch"))){
       e.preventDefault();const dc=e.key==="ArrowLeft"?-1:e.key==="ArrowRight"?1:0;
       const dr=e.key==="ArrowUp"?-1:e.key==="ArrowDown"?1:0;
       pushU();
@@ -4748,9 +5361,12 @@ function setup(){
 function svgPt(e){const r=$("map-svg").getBoundingClientRect();return{x:(e.clientX-r.left)/S.zoom,y:(e.clientY-r.top)/S.zoom};}
 function pt2g(x,y){const g=S.grid,px=x-PAD,py=y-PAD;return{col:Math.max(0,Math.min(Math.floor((px-g.offsetX)/g.cellSize),g.cols-1)),row:Math.max(0,Math.min(Math.floor((py-g.offsetY)/g.cellSize),g.rows-1))};}
 function showError(msg){
-  const d=document.createElement("div");d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:2px solid #e74c3c;border-radius:8px;padding:20px 28px;z-index:9999;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.5)";
-  d.innerHTML=`<div style="color:#e74c3c;font-weight:700;font-size:14px;margin-bottom:8px">⚠ Error</div><div style="color:var(--fg);font-size:12px;margin-bottom:12px">${msg}</div><button style="background:var(--accent);color:#000;border:none;padding:6px 16px;border-radius:4px;cursor:pointer;font-weight:600" onclick="this.parentElement.remove()">OK</button>`;
-  document.body.appendChild(d);}
+  // Uses smartModal so errors share the same visual style as other dialogs (border, shadow, ESC,
+  // backdrop-to-dismiss). The red title text and warning glyph still signal it's an error.
+  const M=smartModal({title:`<span style="color:#e74c3c">⚠ Error</span>`,size:"sm"});
+  M.body.innerHTML=`<div style="color:var(--fg);font-size:12px;margin-bottom:14px;line-height:1.5">${msg}</div><button class="btn btn-p" style="padding:6px 18px;font-size:12px">OK</button>`;
+  M.body.querySelector("button").onclick=M.close;
+}
 function showFormatError(){
   showError(`Input doesn't look like a URL or data string.<br><br><span style="color:var(--fg3);font-size:11px">Accepted formats:<br>• <b>OTFBM URL</b> - https://otfbm.io/...<br>• <b>Image URL</b> - https://example.com/map.jpg<br>• <b>Data string</b> - g=22x33&t=Name|K18|M|b|0&...</span>`);}
 // Grid Auto-Detection
@@ -5120,7 +5736,7 @@ function loadFromHashStr(hash){
   // Parse channel ID for tab scoping
   if(params.ch)S.channelId=params.ch;
   // Always ensure DM is in combatants
-  if(!S.combatants.find(c=>c.name==="DM"))S.combatants.push({name:"DM",placed:false});
+  if(!S.combatants.find(c=>c.name==="DM"))S.combatants.push({name:"DM",placed:false,init:50});
   origState=snap();origBgUrl=S.loadedUrl||"";undoStack=[];redoStack=[];$("zoom-slider").value=Math.round(S.zoom*100);
   // Auto-select first visible token (sorted by color then name)
   const _cn=hex=>{const n=h2c(hex);const names={r:"red",b:"blue",g:"green",y:"yellow",pk:"pink",p:"purple",c:"cyan",bn:"brown",o:"orange",w:"white",bk:"black"};return names[n]||n||"zzz";};
@@ -5253,15 +5869,11 @@ function showBrowseMapsModal(){
   if(!all.length){setStatus("No saved maps yet - save one first");return;}
   // Sort A-Z (case-insensitive, though all names should already be lowercase per slugifyName)
   all.sort((a,b)=>a.localeCompare(b));
-  const bd=document.createElement("div");bd.id="bm-bd";bd.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px";
-  const d=document.createElement("div");d.style.cssText="background:var(--bg2);border:2px solid var(--accent);border-radius:8px;padding:0;max-width:720px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.6)";
-  d.innerHTML=`<div style="padding:14px 20px;border-bottom:1px solid var(--bg3);display:flex;align-items:center;gap:12px">
-    <div style="font-weight:700;font-size:15px;color:var(--accent);flex:1">🗂 Saved Battlemaps <span style="font-size:10px;color:var(--fg3);font-weight:400">(${all.length})</span></div>
-    <button class="btn btn-s" id="bm-close" style="font-size:11px;padding:4px 10px">✕ Close</button></div>
-  <div id="bm-grid" style="overflow-y:auto;padding:14px 20px;flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px"></div>
-  <div style="padding:8px 20px;border-top:1px solid var(--bg3);font-size:10px;color:var(--fg4);font-style:italic;line-height:1.4">Thumbnails are only available for maps saved in BattleScry. Older saves (or maps saved via <code>!map -savemap</code> in Discord) show the BattleScry logo as a placeholder.</div>`;
-  bd.appendChild(d);document.body.appendChild(bd);
-  const grid=d.querySelector("#bm-grid");
+  // Smart modal with large size (70vw / 75vh) - the gallery grid needs room to breathe.
+  const M=smartModal({title:`🗂 Saved Battlemaps <span style="font-size:10px;color:var(--fg3);font-weight:400;margin-left:6px">(${all.length})</span>`,size:"lg"});
+  M.body.innerHTML=`<div id="bm-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px"></div>
+  <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--bg3);font-size:10px;color:var(--fg4);font-style:italic;line-height:1.4">Thumbnails are only available for maps saved in BattleScry. Older saves (or maps saved via <code>!map -savemap</code> in Discord) show the BattleScry logo as a placeholder.</div>`;
+  const grid=M.body.querySelector("#bm-grid");
   all.forEach(name=>{
     const isPending=!!S.mapSaves.find(s=>s.name===name);
     // Prefer pending save's thumb (most recent state), fall back to alias-supplied thumb
@@ -5287,14 +5899,9 @@ function showBrowseMapsModal(){
         <button class="btn btn-p bm-load" data-mapname="${name}" style="font-size:11px;padding:5px;width:100%">Load</button>
       </div>`;
     grid.appendChild(card);});
-  const close=()=>{bd.remove();document.removeEventListener("keydown",esc);};
-  const esc=(e)=>{if(e.key==="Escape")close();};
-  document.addEventListener("keydown",esc);
-  d.querySelector("#bm-close").onclick=close;
-  bd.onclick=(e)=>{if(e.target===bd)close();};
-  d.querySelectorAll(".bm-thumb").forEach(img=>{img.onclick=(e)=>{e.stopPropagation();showFullscreenThumb(img.dataset.thumb);};});
-  d.querySelectorAll(".bm-load").forEach(btn=>{
-    btn.onclick=(e)=>{e.stopPropagation();const name=btn.dataset.mapname;close();
+  M.body.querySelectorAll(".bm-thumb").forEach(img=>{img.onclick=(e)=>{e.stopPropagation();showFullscreenThumb(img.dataset.thumb);};});
+  M.body.querySelectorAll(".bm-load").forEach(btn=>{
+    btn.onclick=(e)=>{e.stopPropagation();const name=btn.dataset.mapname;M.close();
       setTimeout(()=>{
         showLoadModalStep1("Load Saved Map: \""+name+"\"","map","This replaces your current map state (background, walls, FOW, objects). Save your current map first if you want to keep it.").then(ok=>{
           if(!ok)return;
@@ -5302,7 +5909,7 @@ function showBrowseMapsModal(){
           navigator.clipboard.writeText(cmd).then(()=>showLoadModalStep2(name,cmd,"map"))
             .catch(()=>setStatus("⚠ Copy failed - manually paste: "+cmd));});
       },50);};});
-  d.querySelectorAll(".bm-del").forEach(btn=>{
+  M.body.querySelectorAll(".bm-del").forEach(btn=>{
     btn.onclick=(e)=>{e.stopPropagation();const name=btn.dataset.mapname;
       if(!confirm("Delete saved map '"+name+"'?"))return;
       const wasLoaded=S.savedMaps.includes(name);
@@ -5310,7 +5917,7 @@ function showBrowseMapsModal(){
       S.savedMaps=S.savedMaps.filter(n=>n!==name);
       S.mapSaves=S.mapSaves.filter(s=>s.name!==name);
       if(wasLoaded&&!wasPending)S.mapDeletes.push(name);
-      close();renderAll();
+      M.close();renderAll();
       const remaining=[...S.savedMaps,...S.mapSaves.map(s=>s.name).filter(n=>!S.savedMaps.includes(n))].filter(n=>!S.mapDeletes.includes(n));
       if(remaining.length)setTimeout(showBrowseMapsModal,50);};});}
 // Zoomable, pannable fullscreen preview for saved-map thumbnails.
@@ -5319,6 +5926,35 @@ function showBrowseMapsModal(){
 // - +/- buttons + Fit + 100% buttons in toolbar
 // - ESC or close button exits
 // Useful for giant maps where the default fit-to-window view doesn't show details.
+// Smart-modal helper. Creates a consistent backdrop + container shell with header (title + close
+// button), scrollable body, optional footer. All modals built via this share ESC closing,
+// click-outside-to-close, and the same visual style. Returns {backdrop, body, footer, close}
+// so callers can populate the body/footer with their own content and bind handlers.
+//
+// Size variants:
+//   "lg" (default for browse/library modals): 70vw, 75vh - lots of room for grids/lists
+//   "md" (load/save dialogs): 60vw max 600px - confirmation/form dialogs
+//   "sm" (errors, brief confirmations): 90vw max 420px - tight content
+function smartModal(opts){
+  const size=opts.size||"md";
+  const bd=document.createElement("div");
+  bd.className="smart-modal-backdrop";
+  bd.innerHTML=`<div class="smart-modal smart-modal-${size}">
+    <div class="smart-modal-header"><div class="smart-modal-title">${opts.title||""}</div>${opts.closeBtn===false?"":`<button class="smart-modal-close" title="Close (Esc)">✕</button>`}</div>
+    <div class="smart-modal-body"></div>
+    ${opts.footer?'<div class="smart-modal-footer"></div>':''}
+  </div>`;
+  document.body.appendChild(bd);
+  const body=bd.querySelector(".smart-modal-body");
+  const footer=bd.querySelector(".smart-modal-footer");
+  const closeBtn=bd.querySelector(".smart-modal-close");
+  const close=()=>{bd.remove();document.removeEventListener("keydown",esc);if(opts.onClose)opts.onClose();};
+  const esc=(e)=>{if(e.key==="Escape"){if(opts.onEsc)opts.onEsc(close);else close();}};
+  document.addEventListener("keydown",esc);
+  if(closeBtn)closeBtn.onclick=close;
+  if(opts.dismissOnBackdrop!==false){bd.addEventListener("click",e=>{if(e.target===bd)close();});}
+  return{backdrop:bd,body,footer,close};
+}
 function showFullscreenThumb(url){
   const bd=document.createElement("div");bd.id="fs-thumb-bd";bd.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;display:flex;flex-direction:column;padding:0;overflow:hidden";
   bd.innerHTML=`<div style="padding:8px 14px;display:flex;align-items:center;gap:8px;background:var(--bg2);border-bottom:1px solid var(--bg3);flex-shrink:0">
@@ -5412,6 +6048,23 @@ setup();
 // Restore session-scoped UI preferences from localStorage (not exported to Avrae).
 // AOE rule: how Area-of-Effect overlays decide which tokens are "affected" (touch / cell-50% / token-50%).
 try{const _ar=localStorage.getItem("bscry_aoeRule");if(_ar&&["touch","cell50","token50"].includes(_ar))S.aoeRule=_ar;}catch(e){}
+// Sidebar splitter: drag the bar to resize the LIST area (tokens/overlays/walls/etc).
+// The PROPS area always takes the remaining space - it grows to fit content so forms don't scroll.
+// Default list height is small (180px) so the form-heavy props area gets most of the space.
+try{const _lh=localStorage.getItem("bscry_listHeight");if(_lh){const v=parseInt(_lh);if(v>=80&&v<=600)$("list-area").style.flexBasis=v+"px";}}catch(e){}
+(()=>{const sp=$("sidebar-splitter");if(!sp)return;
+  let dragging=false;
+  sp.addEventListener("mousedown",e=>{dragging=true;sp.classList.add("dragging");document.body.style.cursor="row-resize";document.body.style.userSelect="none";e.preventDefault();});
+  document.addEventListener("mousemove",e=>{if(!dragging)return;
+    const tc=$("tab-content"),la=$("list-area");if(!tc||!la)return;
+    const rect=tc.getBoundingClientRect();
+    // List height = distance from cursor to bottom of tab-content (cursor higher = bigger list)
+    const newListHeight=rect.bottom-e.clientY;
+    // Clamp: list min 80px, max leaves at least 200px for props
+    const clamped=Math.max(80,Math.min(rect.height-200,newListHeight));
+    la.style.flexBasis=clamped+"px";
+    try{localStorage.setItem("bscry_listHeight",String(Math.round(clamped)));}catch(_){}});
+  document.addEventListener("mouseup",()=>{if(dragging){dragging=false;sp.classList.remove("dragging");document.body.style.cursor="";document.body.style.userSelect="";}});})();
 loadFromHash();
 // Populate Map tab's bginfo + layout dropdown if the hash loaded a background image.
 // Without this, an existing bg shows "Image loading..." forever because the analyze flow only fires on UI interaction.
@@ -5420,7 +6073,7 @@ if(S.loadedUrl)setTimeout(()=>window.analyzeBackgroundForLayout(S.loadedUrl),150
 if(!safeHash()||safeHash()==="#"){
   S.grid.cols=10;S.grid.rows=10;S.grid.fullCols=10;S.grid.fullRows=10;S.grid.cellSize=40;
   S.tokens=[{id:uid(),name:"DM",col:0,row:0,size:"M",color:"#000000",height:0,tokenImage:"",originalCol:0,originalRow:0,hidden:true}];
-  S.combatants=[{name:"DM",placed:false,note:""}];
+  S.combatants=[{name:"DM",placed:false,note:"",init:50}];
   origState=snap();origBgUrl="";undoStack=[];redoStack=[];
   $("placeholder").style.display="none";
   // Show welcome modal for first-time empty state (unless user has dismissed it)
@@ -5450,16 +6103,11 @@ function loadSample(){
 // Each creator gets their own branded section with Patreon support link. Clicking a map loads it
 // as the background for the current session - normal editable scene, exports enabled, no demo wrapper.
 function showSampleShowcaseModal(){
-  const bd=document.createElement("div");bd.id="ss-bd";bd.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px";
-  const d=document.createElement("div");d.style.cssText="background:var(--bg2);border:2px solid var(--accent);border-radius:8px;padding:0;max-width:720px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.6)";
-  // Header with beta badge so creators viewing the mockup understand this is a preview
-  d.innerHTML=`<div style="padding:14px 20px;border-bottom:1px solid var(--bg3);display:flex;align-items:center;gap:12px">
-    <div style="font-weight:700;font-size:15px;color:var(--accent);flex:1">🎨 Sample Backgrounds <span style="font-size:9px;background:#fbbf24;color:#1a1814;padding:2px 6px;border-radius:3px;font-weight:700;margin-left:6px;vertical-align:middle">BETA PREVIEW</span></div>
-    <button class="btn btn-s" id="ss-close" style="font-size:11px;padding:4px 10px">✕ Close</button></div>
-  <div style="padding:8px 20px 4px 20px;font-size:11px;color:var(--fg3);font-style:italic;line-height:1.5">A curated showcase from partnering map creators. All images used with permission, attribution preserved, and Patreon links go directly to each artist. Click any map to load it as the background for your scene.</div>
-  <div id="ss-list" style="overflow-y:auto;padding:12px 20px 20px 20px;flex:1"></div>`;
-  bd.appendChild(d);document.body.appendChild(bd);
-  const list=d.querySelector("#ss-list");
+  // Large smart modal with the curated map showcase. Big grid benefits from 70vw / 75vh.
+  const M=smartModal({title:`🎨 Sample Backgrounds <span style="font-size:9px;background:#fbbf24;color:#1a1814;padding:2px 6px;border-radius:3px;font-weight:700;margin-left:6px;vertical-align:middle">BETA PREVIEW</span>`,size:"lg"});
+  M.body.innerHTML=`<div style="font-size:11px;color:var(--fg3);font-style:italic;line-height:1.5;margin-bottom:14px">A curated showcase from partnering map creators. All images used with permission, attribution preserved, and Patreon links go directly to each artist. Click any map to load it as the background for your scene.</div>
+  <div id="ss-list"></div>`;
+  const list=M.body.querySelector("#ss-list");
   // Render each creator section
   SAMPLES.creators.forEach(creator=>{
     const sec=document.createElement("div");sec.style.cssText="margin-bottom:24px;border:1px solid var(--bg3);border-radius:6px;overflow:hidden";
@@ -5490,11 +6138,8 @@ function showSampleShowcaseModal(){
           <div style="font-size:12px;font-weight:600;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${map.name}</div>
           <div style="font-size:9px;color:var(--fg3);margin-top:2px">${map.cols}×${map.rows} cells</div>
         </div>`;
-      card.onclick=()=>{bd.remove();setTimeout(()=>loadSampleById(creator.id,map.id),50);};
-      grid.appendChild(card);});});
-  const close=()=>bd.remove();
-  d.querySelector("#ss-close").onclick=close;
-  bd.onclick=(e)=>{if(e.target===bd)close();};}
+      card.onclick=()=>{M.close();setTimeout(()=>loadSampleById(creator.id,map.id),50);};
+      grid.appendChild(card);});});}
 // Load a specific sample by creator + map id. Builds a BS URL hash from the map's metadata
 // and runs it through loadFromHashStr so all existing init paths fire correctly.
 function loadSampleById(creatorId, mapId){
