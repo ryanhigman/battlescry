@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.110                                      https://battlescry.com
+BattleScry v0.1.107                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -13,36 +13,40 @@ ARCHITECTURE
   - Tabs: Map | Tokens | Overlays | Structures (Structures subtabs: Walls | Map Objects).
 
 DATA CONTRACT (kept in sync with bscry_alias.py)
-  - Companion alias version: 0.2.37. Both files must be deployed together.
+  - Companion alias version: 0.2.30. Both files must be deployed together.
   - URL hash params: g, o, bg, vw, t, ip, np, w, fw, ob, fn, st, sm, sb, tl, ig, tm.
   - Name transport: spaces encoded as %20 (NOT underscore). User underscores survive.
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.110 - Changed: renamed the NMC "Damage Resistances" section to "Damage Modifiers", and the three
-            dropdown labels to "Resistant", "Immune", and "Vulnerable". Wording only; no data change.
-  v0.1.109 - Changed: the NMC damage-type picker now distinguishes magical from non-magical bludgeoning,
-            piercing, and slashing (six B/P/S entries plus the ten elemental/other types), since Avrae
-            treats them separately. Each on-screen label maps to the exact Avrae token ("nonmagical
-            slashing", one word), and the alias quotes multi-word types so they survive. Pairs with
-            alias v0.2.37.
-  v0.1.108 - Changed: the NMC damage-resistance picker is now three compact multi-select dropdowns
-            (Resistances / Immunities / Vulnerabilities) instead of 39 always-visible chips. Each opens
-            to an alphabetical checklist of the 13 damage types with Select all / Clear all, and the
-            collapsed field summarizes the current picks ("none", a type list, or "all"). Same payload
-            and Avrae "Defenses" effect; interface only.
-  v0.1.107 - Added: non-monster combatants can now carry damage resistances, immunities, and
-            vulnerabilities. The Add Non-Monster Combatant form gains an optional Damage Resistances
-            section (the 13 standard 5e types, multi-select across Resist / Immune / Vulnerable), shown
-            only for NMCs - never for SRD monsters or PCs, which Avrae owns. On apply, the alias creates
-            a persistent Avrae "Defenses" effect on the new combatant carrying the chosen types. Pairs
-            with alias v0.2.36.
+  v0.1.107 - Changed: tightened background image upload limits to better match what OTFBM can render
+            reliably. Max file size is now 5MB (was 10MB) and max dimensions are 8000x8000 (was
+            8192x8192), enforced on both the upload path and grid auto-detection. Keeps users from
+            loading maps too heavy or too large to render well over Discord.
   v0.1.106 - Added: a Credits section in the About panel attributing the default token art to its
             game-icons.net artists (Lorc, Delapouite, Skoll, and others) under the CC BY 3.0 license,
             with a link to the full per-icon ATTRIBUTIONS.md. Satisfies the icon set's attribution terms.
+  v0.1.105 - Changed: the token browser now shows SRD creatures only. Renamed the "Browse Creature
+            Tokens" tab to "Browse SRD Tokens" and rebuilt its list from the 334 SRD monsters paired
+            with their game-icons.net default art, replacing the old ~1400-entry third-party creature
+            pack (much of it specific commercial/setting IP). Cleaner licensing and a smaller file; a
+            monster with no unique icon shows its generic type icon.
+  v0.1.104 - Changed: default token art on the Add SRD Monster path is now opt-in. A new "Add default
+            token art" checkbox under the Stat Block picker is off by default, so picking a monster
+            leaves a plain colored token unless you tick it. Ticking it fills the matching generic icon
+            for the chosen stat block (and re-derives as you switch); unticking removes that auto art but
+            keeps any custom image you set yourself. v0.1.103 applied the art automatically; some DMs
+            prefer plain colored tokens, so it is now a choice.
+  v0.1.103 - Added: SRD monsters now come with default token art. Picking a stat block auto-applies a
+            matching black-on-white icon (game-icons.net, hosted at battlescry.com/tokens), so a fresh
+            Goblin or Owlbear shows up already wearing a token instead of a bare colored disc. Color is
+            still yours to set via the token ring. Tracked like the auto-name (_autoArt mirrors
+            _autoName): switching the stat block re-derives the art, but a custom image you pick yourself
+            always sticks. 334 monsters mapped to 139 icons (SRD_DEFAULT_ART). Icons are stored with a
+            trailing "~" (face-detect off) since they are already cropped circular tokens.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.110"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.107"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -210,7 +214,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.110</span>
+  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.107</span>
   <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Revert all changes to original state">⟲ Revert</button>
   <button id="btn-undo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Undo last change (Ctrl+Z)">↩ Undo</button>
   <button id="btn-redo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
@@ -384,7 +388,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   </div>
   <div id="srd-tab-upload" style="display:none;flex-direction:column;gap:8px;padding:4px 0">
     <div style="font-size:11px;color:var(--fg2)">Paste a direct image URL or upload your own token image.</div>
-    <div style="font-size:9px;color:var(--fg3)">Supported: .jpg, .jpeg, .gif, .png (max 10MB) - must be publicly accessible</div>
+    <div style="font-size:9px;color:var(--fg3)">Supported: .jpg, .jpeg, .gif, .png (max 5MB) - must be publicly accessible</div>
     <div style="display:flex;gap:4px"><input class="inp" id="srd-img-url" placeholder="https://example.com/my-token.png" style="flex:1;font-family:monospace;font-size:10px"><button class="btn btn-p" id="srd-img-go" style="font-size:10px;padding:3px 10px;white-space:nowrap">Get Shortcode</button></div>
     <div style="display:flex;gap:4px;align-items:center"><input type="file" id="srd-img-file" accept=".jpg,.jpeg,.png,.gif" style="display:none"><button class="btn btn-s" id="srd-img-filebtn" style="font-size:10px;padding:3px 8px;flex:1">📁 Upload Token Image</button></div>
     <div id="srd-img-status" style="font-size:10px;min-height:14px"></div>
@@ -662,32 +666,18 @@ const OBJ_SVG = {
 };
 
 const CC=COLORS.map(c=>c.code).sort((a,b)=>b.length-a.length);const OV_T=["circle","circletop","circlecorner","cone","line","arrow","square"];const MAX_MV=16;let PAD=40;// squaretop merged into square (OTFBM treats them identically)
-// Damage types for the NMC resistance dropdowns. {l} is the on-screen label; {v} is the exact token
-// sent to Avrae (Avrae uses "nonmagical", one word, no hyphen - confirmed against its source). Shared
-// by the dropdowns and their handler. Order groups the B/P/S magical/nonmagical/all variants together.
-const RIV_DTYPES=[
-  {l:"bludgeoning (non-magical)",v:"nonmagical bludgeoning"},
-  {l:"piercing (non-magical)",v:"nonmagical piercing"},
-  {l:"slashing (non-magical)",v:"nonmagical slashing"},
-  {l:"bludgeoning (all)",v:"bludgeoning"},
-  {l:"piercing (all)",v:"piercing"},
-  {l:"slashing (all)",v:"slashing"},
-  {l:"fire",v:"fire"},{l:"cold",v:"cold"},{l:"acid",v:"acid"},{l:"lightning",v:"lightning"},
-  {l:"thunder",v:"thunder"},{l:"poison",v:"poison"},{l:"necrotic",v:"necrotic"},
-  {l:"radiant",v:"radiant"},{l:"psychic",v:"psychic"},{l:"force",v:"force"}
-];
 const PROXY_URL="https://bscry-proxy.rhigman.workers.dev/?url=";
 const UPLOAD_URL="https://bscry-proxy.rhigman.workers.dev/?upload";
 function uploadImage(file,statusEl,onSuccess){
   const validExts=["jpg","jpeg","png","gif"];const ext=file.name.split(".").pop().toLowerCase();
   if(!validExts.includes(ext)){statusEl.innerHTML='<span style="color:#e74c3c">⚠ Only jpg, png, gif supported. No webp.</span>';return;}
-  if(file.size>10*1024*1024){statusEl.innerHTML='<span style="color:#e74c3c">⚠ File too large (max 10MB)</span>';return;}
+  if(file.size>5*1024*1024){statusEl.innerHTML='<span style="color:#e74c3c">⚠ File too large (max 5MB)</span>';return;}
   // Client-side dimension check
   const objUrl=URL.createObjectURL(file);const img=new Image();
   img.onload=()=>{
     const w=img.naturalWidth,h=img.naturalHeight;URL.revokeObjectURL(objUrl);
     if(w<100||h<100){statusEl.innerHTML='<span style="color:#e74c3c">⚠ Image too small ('+w+'×'+h+'). Min 100×100.</span>';return;}
-    if(w>8192||h>8192){statusEl.innerHTML='<span style="color:#e74c3c">⚠ Image too large ('+w+'×'+h+'). Max 8192×8192.</span>';return;}
+    if(w>8000||h>8000){statusEl.innerHTML='<span style="color:#e74c3c">⚠ Image too large ('+w+'×'+h+'). Max 8000×8000.</span>';return;}
     const kb=Math.round(file.size/1024);statusEl.innerHTML='<span style="color:var(--accent)">⏳ Uploading '+file.name+' ('+w+'×'+h+', '+(kb>1024?(kb/1024).toFixed(1)+'MB':kb+'KB')+')...</span>';
     const fd=new FormData();fd.append("file",file);
     fetch(UPLOAD_URL,{method:"POST",body:fd}).then(r=>r.json()).then(data=>{
@@ -1648,13 +1638,6 @@ function renderCombatantForm(opts){
   // A not-yet-applied (isNew) combatant can still be renamed locally; once it is live in Avrae the
   // Name is read-only (renaming there needs Avrae's own rename command, which doesn't round-trip).
   const isNewLocal=(mode!=="add")&&!!(opts.combatant&&opts.combatant.isNew);
-  // NMC damage RIV: shown only on the Add Non-Monster Combatant form (a new combatant with no stat
-  // block). Read from the staging object. Never for SRD monsters or PCs, which Avrae manages.
-  const isNmc=(mode==="add"&&!isMon);
-  const rivData=isNmc?opts.data:{};
-  const resist=Array.isArray(rivData.resist)?rivData.resist:[];
-  const immune=Array.isArray(rivData.immune)?rivData.immune:[];
-  const vuln=Array.isArray(rivData.vuln)?rivData.vuln:[];
   const condition=computeCondition(hpCur,hpMax);
   // The edit pencil on the preview opens the Manage Token Image modal in every mode, including
   // "add", so a new combatant can be given a custom token image before it is created.
@@ -1735,35 +1718,6 @@ function renderCombatantForm(opts){
   // ROW 5: Notes (full width)
   h+=`<div class="row"><div style="flex:1"><span class="lbl">Notes</span>
     <input class="inp" id="cb-note" value="${escAttr(note)}" placeholder="hostile, immune to fire, destructible..." maxlength="100" style="width:100%;box-sizing:border-box;font-size:11px"></div></div>`;
-  // ROW 6 (NMC only): optional damage Resistances / Immunities / Vulnerabilities, as three compact
-  // multi-select dropdowns. The collapsed field summarizes current picks; opening shows an alphabetical
-  // checklist with Select all / Clear all. Selections ride the apply payload and become a persistent
-  // Avrae "Defenses" effect on the new combatant. Hidden for monsters and PCs (managed in Avrae).
-  if(isNmc){
-    const rivOpen=S._rivOpen;
-    const rivDD=(cat,label,sel)=>{
-      const summary=sel.length===0?"none":(sel.length===RIV_DTYPES.length?"all":sel.join(", "));
-      const isOpen=rivOpen===cat;
-      let panel="";
-      if(isOpen){
-        panel=`<div style="position:absolute;left:0;right:0;top:100%;z-index:30;margin-top:2px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;box-shadow:0 6px 18px rgba(0,0,0,.45);padding:6px;max-height:240px;overflow:auto">
-          <div style="display:flex;gap:8px;font-size:9px;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--bg4)"><span class="riv-link" data-riv-all="${cat}" style="color:var(--accent);cursor:pointer">Select all</span><span style="color:var(--fg4)">|</span><span class="riv-link" data-riv-none="${cat}" style="color:var(--fg3);cursor:pointer">Clear all</span></div>
-          ${RIV_DTYPES.map(dt=>`<label class="riv-opt" data-riv-cat="${cat}" data-riv-type="${escAttr(dt.v)}" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:2px;cursor:pointer;color:var(--fg)"><input type="checkbox" ${sel.indexOf(dt.v)>=0?"checked":""} tabindex="-1" style="accent-color:var(--accent);pointer-events:none">${dt.l}</label>`).join("")}
-        </div>`;
-      }
-      return `<div style="position:relative;margin-top:4px">
-        <button type="button" class="riv-dd-btn" data-riv-open="${cat}" style="width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:6px;background:#44403a;border:1px solid ${isOpen?"var(--accent)":"#55504a"};border-radius:4px;padding:5px 8px;font-size:11px;color:var(--fg);cursor:pointer;text-align:left">
-          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0"><span style="color:var(--fg2)">${label}:</span> <span style="color:${sel.length?"var(--fg)":"var(--fg3)"}">${summary}</span></span>
-          <span style="color:var(--fg3);font-size:9px;flex-shrink:0;transform:${isOpen?"rotate(180deg)":"none"}">▾</span>
-        </button>${panel}</div>`;
-    };
-    h+=`<div class="row" style="flex-direction:column;align-items:stretch;gap:2px;margin-top:2px">
-      <span class="lbl" title="Damage types this object resists, is immune to, or is vulnerable to. Applied in Avrae as a persistent 'Defenses' effect. For objects and hazards; PCs and monsters are managed in Avrae.">Damage Modifiers (optional)</span>
-      ${rivDD("resist","Resistant",resist)}
-      ${rivDD("immune","Immune",immune)}
-      ${rivDD("vuln","Vulnerable",vuln)}
-    </div>`;
-  }
   // Mode-specific buttons
   if(mode==="add"){
     const needSrd=isMon&&!(mon&&mon.srd&&mon.srd.trim());
@@ -2973,14 +2927,12 @@ function renderCmd(){
   const ffShortcodes=S.overlays.filter(ov=>!ov.target).map(buildOvCode).filter(s=>s);
   const ffStr=ffShortcodes.join(";");
   // New combatants - users added via the Add Combatant form. Section 6 of apply payload.
-  // Format: name|init|ac|hp|hide|note|color|size|resist|immune|vuln;next;... (empty fields allowed).
-  // resist/immune/vuln are comma-separated 5e damage types (NMC only). Appended after size so older
-  // alias builds (which read fields 0-7) ignore them; alias v0.2.36+ reads them via len() guards.
-  // Alias runs `!i add 0 name -p init -ac N -hp N -note "..."` for each, plus `-h` and a Defenses effect.
+  // Format: name|init|ac|hp|hide|note|color|size;next;... (empty fields allowed for unset values)
+  // Alias runs `!i add 0 name -p init -ac N -hp N -note "..."` for each, plus `-h` toggle if hidden.
   const newCombatants=S.combatants.filter(c=>c.isNew);
   const ncStr=newCombatants.filter(c=>!c.mon).map(c=>{
     const st=c.savedTok||{};
-    return [c.name,c.init==null?"":c.init,c.ac==null?"":c.ac,c.hp==null?"":c.hp,c.hideStats?"1":"0",c.note||"",st.color||"",st.size||"M",(c.resist||[]).join(","),(c.immune||[]).join(","),(c.vuln||[]).join(",")]
+    return [c.name,c.init==null?"":c.init,c.ac==null?"":c.ac,c.hp==null?"":c.hp,c.hideStats?"1":"0",c.note||"",st.color||"",st.size||"M"]
       .map(v=>(v+"").replace(/ /g,"%20").replace(/[|;]/g,"")).join("|");
   }).join(";");
   // SRD monster-adds (apply section 7). Format: name|srdName|sourceCode|init|group|hp|ac.
@@ -3582,28 +3534,10 @@ function setup(){
     if(t.id==="btn-add-bg"){
       if(!S.loadedUrl){S._uiBgOpen=!S._uiBgOpen;renderSB();if(S._uiBgOpen)$("m-bgurl")?.focus();return;}
       const inp=$("m-bgurl");if(inp){inp.focus();inp.select();}return;}
-    // NMC damage-resistance dropdowns (Add Non-Monster Combatant form). Open/close a category,
-    // Select all / Clear all, or toggle one type; all mutate the staging object then re-render.
-    const _ddBtn=t.closest&&t.closest(".riv-dd-btn");
-    if(_ddBtn){const cat=_ddBtn.dataset.rivOpen;S._rivOpen=(S._rivOpen===cat)?null:cat;renderSB();return;}
-    const _ddAll=t.closest&&t.closest("[data-riv-all]");
-    if(_ddAll){const cat=_ddAll.dataset.rivAll,addc=S.addingCombatant;if(addc){addc[cat]=RIV_DTYPES.map(d=>d.v);renderSB();}return;}
-    const _ddNone=t.closest&&t.closest("[data-riv-none]");
-    if(_ddNone){const cat=_ddNone.dataset.rivNone,addc=S.addingCombatant;if(addc){addc[cat]=[];renderSB();}return;}
-    const _opt=t.closest&&t.closest(".riv-opt");
-    if(_opt){
-      const cat=_opt.dataset.rivCat,ty=_opt.dataset.rivType,addc=S.addingCombatant;
-      if(addc&&cat&&ty){
-        if(!Array.isArray(addc[cat]))addc[cat]=[];
-        const i=addc[cat].indexOf(ty);
-        if(i>=0)addc[cat].splice(i,1);else addc[cat].push(ty);
-        renderSB();
-      }
-      return;}
+    // Toggle Add New Combatant form on Tokens tab
     if(t.id==="btn-add-cb"){
       if(S.addingCombatant){S.addingCombatant=null;}
-      else S.addingCombatant={name:"",initStr:"",ac:"",hp:"",size:"M",color:"#e63c3c",hideStats:false,note:"",location:"",group:"",tokenImage:"",resist:[],immune:[],vuln:[]};
-      S._rivOpen=null;
+      else S.addingCombatant={name:"",initStr:"",ac:"",hp:"",size:"M",color:"#e63c3c",hideStats:false,note:"",location:"",group:"",tokenImage:""};
       renderSB();return;}
     // Add SRD Monster: same form as Add Combatant but tagged with a stat block (mon) so apply emits
     // `!i madd` instead of `!i add`. hideStats defaults on (Avrae loads the real HP/AC/attacks).
@@ -3672,13 +3606,6 @@ function setup(){
       const cb={name,placed:false,init,ac:acVal,hp:hpCurVal,hpMax:hpMaxVal,note,hideStats,group,isNew:true,
         savedTok:{color,size,tokenImage}};
       if(isMon)cb.mon={srd:(ac.mon.srd||"").trim(),src:ac.mon.src||"brlegacy"};
-      // NMC damage RIV (set on the Add Non-Monster form). Only carried for non-monsters; rides the
-      // apply payload and becomes a persistent Avrae "Defenses" effect on add.
-      else{
-        if(ac.resist&&ac.resist.length)cb.resist=ac.resist.slice();
-        if(ac.immune&&ac.immune.length)cb.immune=ac.immune.slice();
-        if(ac.vuln&&ac.vuln.length)cb.vuln=ac.vuln.slice();
-      }
       S.combatants.push(cb);
       // Parse location: empty/unplaced -> stay unplaced; valid coord -> place at that coord.
       let placed=false,newTokId=null,placedCoord=null;
@@ -5641,7 +5568,7 @@ function showFormatError(){
 function detectGrid(img){
   const w=img.naturalWidth,h=img.naturalHeight;
   if(!w||!h)return{error:"Image not loaded"};
-  if(w>8192||h>8192)return{error:"Image too large (max 8192px). Resize before uploading."};
+  if(w>8000||h>8000)return{error:"Image too large (max 8000px). Resize before uploading."};
   const result={cellSize:0,offsetX:0,offsetY:0,gridW:0,gridH:-1,confidence:0,method:""};
   // Step 1: Ratio check - test common cell sizes for clean division
   const testSizes=[60,50,70,40,80,100,48,56,64,72,90];
