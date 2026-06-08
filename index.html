@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.109                                      https://battlescry.com
+BattleScry v0.1.110                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,12 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.110 - Added: Sizes and a combined "More Filters" dropdown (Lighting, Weather & Time, Features)
+            to the Map Library, and moved the filters onto their own "Filters:" row below the search
+            box. Sizes (Tiny to Huge) is derived from each map's dimensions. Lighting is Bright/Dim/Dark;
+            Weather & Time is Day/Night/Snow/Rain/Storm/Blizzard; Features is Multi-Level/Multi-Area/
+            Multi-Phase. All facets share the same behavior: multi-select (OR within a facet, AND across
+            facets and the search), live per-option counts, an "All" toggle, and a hover "only" shortcut.
   v0.1.109 - Changed: the Map Library now has a multi-select Environments filter, replacing the old
             single-environment dropdown. Click "Environments" to open a checklist with live per-tag
             counts that update as you narrow, an "All environments" toggle, and a hover "only" shortcut
@@ -38,14 +44,9 @@ RECENT CHANGES
   v0.1.106 - Added: a Credits section in the About panel attributing the default token art to its
             game-icons.net artists (Lorc, Delapouite, Skoll, and others) under the CC BY 3.0 license,
             with a link to the full per-icon ATTRIBUTIONS.md. Satisfies the icon set's attribution terms.
-  v0.1.105 - Changed: the token browser now shows SRD creatures only. Renamed the "Browse Creature
-            Tokens" tab to "Browse SRD Tokens" and rebuilt its list from the 334 SRD monsters paired
-            with their game-icons.net default art, replacing the old ~1400-entry third-party creature
-            pack (much of it specific commercial/setting IP). Cleaner licensing and a smaller file; a
-            monster with no unique icon shows its generic type icon.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.109"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.110"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -218,7 +219,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.109</span>
+  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.110</span>
   <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Revert all changes to original state">⟲ Revert</button>
   <button id="btn-undo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Undo last change (Ctrl+Z)">↩ Undo</button>
   <button id="btn-redo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
@@ -6409,14 +6410,35 @@ function showTCLibraryModal(){
     M.body.innerHTML=`<div style="padding:30px;text-align:center;color:var(--fg3);font-size:12px;line-height:1.7">Couldn't load the map library.<br><span style="font-size:11px;color:var(--fg4)">${(err&&err.message)||err}</span><br><span style="font-size:10px;color:var(--fg4)">Check that tc_inventory.json is hosted and CORS allows this site.</span></div>`;});
 }
 // ===== Map Library faceted filtering =====
-// One reusable dropdown component drives each facet. Filtering is multi-select:
-// OR within a facet, AND across facets, AND with the free-text search. Per-option
-// counts are CONTEXTUAL ... computed against every other active facet + search, with
-// the facet's own selection excluded ... so options never zero out as you tick within
-// the panel you're editing. Live-apply: the grid updates on every change (no Apply/
-// Cancel). One panel open at a time; it closes on click-outside, Esc, scroll of the
-// modal body, window resize, or opening another facet.
-// Step 1 wires the Environments facet; Sizes / More Filters reuse this same machinery.
+// One reusable dropdown component drives every facet through a uniform model: each facet
+// maps a map to its "tokens" (the values it has for that facet) and is matched OR-within /
+// AND-across, plus AND with the free-text search. Per-option counts are CONTEXTUAL ...
+// computed against every OTHER active facet + search, with the facet's own selection
+// excluded ... so options never zero out as you tick within the panel you're editing.
+// Live-apply: the grid updates on every change (no Apply/Cancel). One panel open at a time;
+// it closes on click-outside, Esc, scroll of the modal body, window resize, or opening
+// another panel. A panel can host several facets as labelled sections (the More Filters
+// panel groups Lighting / Weather & Time / Features).
+//
+// Facets and their data sources:
+//   Environments -> m.env[]      Sizes -> derived from m.w/m.h (or m.size if present)
+//   Lighting     -> m.light[] (Bright/Dim/Dark)
+//   Weather&Time -> m.light[] (Day/Night/Snow/Rain/Storm/Blizzard ... Canopy intentionally
+//                   excluded; it is being reclassified to a Treetop environment in the data)
+//   Features     -> m.feat[] (Multi-Level/Multi-Area/Multi-Phase)
+const TC_SIZE_NAMES=["Tiny","Small","Medium","Large","Huge"];
+// Size bucket: prefer the authoritative m.size when the build emits it; otherwise mirror
+// build_csv12.py's dual-axis bucket() (area band vs longest-side band, larger wins). This
+// fallback is transitional ... keep it in sync with the build until size ships in the JSON.
+function tcSizeOf(m){
+  if(m.size)return m.size;
+  const w=m.w,h=m.h;
+  if(w==null||h==null)return null;
+  const area=w*h,longest=Math.max(w,h);
+  const a=area<=250?0:area<=360?1:area<=1300?2:area<=2400?3:4;
+  const l=longest<=16?0:longest<=21?1:longest<=38?2:longest<=60?3:4;
+  return TC_SIZE_NAMES[Math.max(a,l)];
+}
 let TC_POP=null, TC_FACET_OPEN=null, TC_POP_CLEANUP=null;
 function tcCloseFacet(){
   if(TC_POP){TC_POP.remove();TC_POP=null;}
@@ -6424,65 +6446,77 @@ function tcCloseFacet(){
   if(TC_FACET_OPEN){const b=document.querySelector(`.tclib-facet-btn[data-facet="${TC_FACET_OPEN}"]`);if(b)b.classList.remove("tclib-facet-open");}
   TC_FACET_OPEN=null;
 }
-// Filter a map list by every active facet EXCEPT `exceptKey` (so a facet can count itself
-// contextually). Add new facets here as they are introduced; keep this the single source
-// of truth for what "matches the current filters" means.
-function tcApplyFilters(maps,st,exceptKey){
-  let list=maps;
+// True if map m passes every active facet except `exceptKey`, plus the search. `facets` is
+// the full registry; this is the single source of truth for "matches the current filters".
+function tcMatch(m,st,facets,exceptKey){
   const q=(st.q||"").trim().toLowerCase();
-  if(q)list=list.filter(m=>((m.name||"")+" "+(m.set||"")+" "+(m.loc||"")).toLowerCase().includes(q));
-  if(exceptKey!=="env"&&st.env.length)list=list.filter(m=>(m.env||[]).some(v=>st.env.includes(v)));
-  return list;
+  if(q&&!(((m.name||"")+" "+(m.set||"")+" "+(m.loc||"")).toLowerCase().includes(q)))return false;
+  for(const f of facets){
+    if(f.key===exceptKey)continue;
+    const sel=f.selected();
+    if(sel.length){const tok=f.tokens(m);if(!sel.some(v=>tok.includes(v)))return false;}
+  }
+  return true;
 }
-// Build + open a facet dropdown anchored under its trigger button. `facet` describes the
-// data (key/field/title/allLabel/allValues) and how to read/write its selection on `st`.
-function tcOpenFacet(facet,btn,ctx){
-  const wasOpen=(TC_FACET_OPEN===facet.key);
+function tcApplyFilters(maps,st,facets,exceptKey){return maps.filter(m=>tcMatch(m,st,facets,exceptKey));}
+// Build + open a dropdown anchored under its trigger button. `panelId` matches the button's
+// data-facet; `panelFacets` is the list of facet descriptors to render as sections.
+function tcOpenFacet(panelId,panelFacets,btn,ctx){
+  const wasOpen=(TC_FACET_OPEN===panelId);
   tcCloseFacet();
-  if(wasOpen)return; // clicking the open facet toggles it closed
-  // Contextual counts: base = everything filtered EXCEPT this facet.
-  const base=tcApplyFilters(ctx.maps,ctx.st,facet.key);
-  const counts={};facet.allValues.forEach(v=>counts[v]=0);
-  base.forEach(m=>(m[facet.field]||[]).forEach(v=>{if(v in counts)counts[v]++;}));
+  if(wasOpen)return; // clicking the open panel toggles it closed
   const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
-  const rows=facet.allValues.map(v=>`
-    <label class="tclib-opt" data-val="${esc(v)}" style="display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:4px;cursor:pointer;font-size:11px;color:${counts[v]?"var(--fg)":"var(--fg4)"}">
-      <input type="checkbox" style="margin:0;cursor:pointer;accent-color:var(--accent)">
-      <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(v)}</span>
-      <span class="tclib-only" style="font-size:9px;color:var(--accent);opacity:0;cursor:pointer;padding:0 3px" title="Show only this">only</span>
-      <span style="font-size:9px;color:var(--fg3);min-width:22px;text-align:right">${counts[v]}</span>
-    </label>`).join("");
+  const sections=panelFacets.map((f,i)=>{
+    // Contextual counts for this facet: base = everything filtered EXCEPT this facet.
+    const base=tcApplyFilters(ctx.maps,ctx.st,ctx.facets,f.key);
+    const counts={};f.allValues.forEach(v=>counts[v]=0);
+    base.forEach(m=>f.tokens(m).forEach(v=>{if(v in counts)counts[v]++;}));
+    const rows=f.allValues.map(v=>`
+      <label class="tclib-opt" data-val="${esc(v)}" style="display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:4px;cursor:pointer;font-size:11px;color:${counts[v]?"var(--fg)":"var(--fg4)"}">
+        <input type="checkbox" style="margin:0;cursor:pointer;accent-color:var(--accent)">
+        <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(v)}</span>
+        <span class="tclib-only" style="font-size:9px;color:var(--accent);opacity:0;cursor:pointer;padding:0 3px" title="Show only this">only</span>
+        <span style="font-size:9px;color:var(--fg3);min-width:22px;text-align:right">${counts[v]}</span>
+      </label>`).join("");
+    return `<div class="tclib-section" data-fkey="${f.key}"${i>0?' style="margin-top:8px;border-top:1px solid var(--bg3);padding-top:8px"':''}>
+      <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:5px">${f.title}</div>
+      <label class="tclib-all" style="display:flex;align-items:center;gap:6px;padding:3px 4px;margin-bottom:4px;cursor:pointer;font-size:11px;font-weight:600;color:var(--fg)">
+        <input type="checkbox" style="margin:0;cursor:pointer;accent-color:var(--accent)"><span>${f.allLabel}</span>
+      </label>
+      <div class="tclib-opts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:1px 12px">${rows}</div>
+    </div>`;
+  }).join("");
   const pop=document.createElement("div");
   pop.className="tclib-pop";
-  pop.style.cssText="position:fixed;z-index:10001;background:var(--bg2);border:1px solid var(--accent);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.55);padding:10px 12px;min-width:210px;max-width:min(480px,92vw);max-height:60vh;overflow-y:auto";
-  pop.innerHTML=`
-    <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px">${facet.title}</div>
-    <label class="tclib-all" style="display:flex;align-items:center;gap:6px;padding:3px 4px;border-bottom:1px solid var(--bg3);margin-bottom:5px;cursor:pointer;font-size:11px;font-weight:600;color:var(--fg)">
-      <input type="checkbox" style="margin:0;cursor:pointer;accent-color:var(--accent)"><span>${facet.allLabel}</span>
-    </label>
-    <div class="tclib-opts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:1px 12px">${rows}</div>`;
+  pop.style.cssText="position:fixed;z-index:10001;background:var(--bg2);border:1px solid var(--accent);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.55);padding:10px 12px;width:min(460px,92vw);max-height:60vh;overflow-y:auto";
+  pop.innerHTML=sections;
   document.body.appendChild(pop);
   // Position under the button, nudged left if it would overflow the viewport.
   const r=btn.getBoundingClientRect(),pw=pop.offsetWidth;
   pop.style.top=(r.bottom+4)+"px";
   pop.style.left=Math.max(8,Math.min(r.left,window.innerWidth-pw-8))+"px";
-  const allCb=pop.querySelector(".tclib-all input");
-  const optLabels=[...pop.querySelectorAll(".tclib-opt")];
+  const facetByKey={};panelFacets.forEach(f=>facetByKey[f.key]=f);
+  const sectionEls=[...pop.querySelectorAll(".tclib-section")];
   const syncChecks=()=>{
-    const s=facet.selected();
-    optLabels.forEach(l=>{l.querySelector("input").checked=s.includes(l.dataset.val);});
-    allCb.checked=s.length===0;allCb.indeterminate=s.length>0;
+    sectionEls.forEach(sec=>{
+      const f=facetByKey[sec.dataset.fkey],s=f.selected();
+      [...sec.querySelectorAll(".tclib-opt")].forEach(l=>{l.querySelector("input").checked=s.includes(l.dataset.val);});
+      const all=sec.querySelector(".tclib-all input");all.checked=s.length===0;all.indeterminate=s.length>0;
+    });
   };
   syncChecks();
-  allCb.onchange=()=>{facet.setSelected([]);syncChecks();ctx.apply();};
-  optLabels.forEach(l=>{
-    const val=l.dataset.val,cb=l.querySelector("input"),only=l.querySelector(".tclib-only");
-    l.onmouseenter=()=>only.style.opacity="1";
-    l.onmouseleave=()=>only.style.opacity="0";
-    cb.onchange=()=>{const s=facet.selected().slice();if(cb.checked){if(!s.includes(val))s.push(val);}else{const i=s.indexOf(val);if(i>=0)s.splice(i,1);}facet.setSelected(s);syncChecks();ctx.apply();};
-    only.onclick=(e)=>{e.preventDefault();e.stopPropagation();facet.setSelected([val]);syncChecks();ctx.apply();};
+  sectionEls.forEach(sec=>{
+    const f=facetByKey[sec.dataset.fkey];
+    sec.querySelector(".tclib-all input").onchange=()=>{f.setSelected([]);syncChecks();ctx.apply();};
+    [...sec.querySelectorAll(".tclib-opt")].forEach(l=>{
+      const val=l.dataset.val,cb=l.querySelector("input"),only=l.querySelector(".tclib-only");
+      l.onmouseenter=()=>only.style.opacity="1";
+      l.onmouseleave=()=>only.style.opacity="0";
+      cb.onchange=()=>{const s=f.selected().slice();if(cb.checked){if(!s.includes(val))s.push(val);}else{const idx=s.indexOf(val);if(idx>=0)s.splice(idx,1);}f.setSelected(s);syncChecks();ctx.apply();};
+      only.onclick=(e)=>{e.preventDefault();e.stopPropagation();f.setSelected([val]);syncChecks();ctx.apply();};
+    });
   });
-  TC_POP=pop;TC_FACET_OPEN=facet.key;btn.classList.add("tclib-facet-open");
+  TC_POP=pop;TC_FACET_OPEN=panelId;btn.classList.add("tclib-facet-open");
   const onDocDown=(e)=>{if(!pop.contains(e.target)&&!btn.contains(e.target))tcCloseFacet();};
   const onScroll=()=>tcCloseFacet();
   setTimeout(()=>document.addEventListener("mousedown",onDocDown),0);
@@ -6491,21 +6525,37 @@ function tcOpenFacet(facet,btn,ctx){
   TC_POP_CLEANUP=()=>{document.removeEventListener("mousedown",onDocDown);ctx.body.removeEventListener("scroll",onScroll);window.removeEventListener("resize",onScroll);};
 }
 function renderTCLib(M,maps){
-  const st={q:"",env:[],group:null};
+  const st={q:"",env:[],size:[],light:[],weather:[],feat:[],group:null};
   const envValues=[...new Set(maps.flatMap(m=>m.env||[]))].sort((a,b)=>a.localeCompare(b));
   const gcount={};maps.forEach(m=>{if(m.group)gcount[m.group]=(gcount[m.group]||0)+1;});
   M.body.innerHTML=`
-    <div class="tclib-bar" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
-      <input id="tclib-q" class="inp" placeholder="Search name, set, or location..." style="flex:1;min-width:160px;font-size:11px">
+    <div style="margin-bottom:8px"><input id="tclib-q" class="inp" placeholder="Search name, set, or location..." style="width:100%;font-size:11px"></div>
+    <div class="tclib-bar" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:11px;color:var(--fg3);font-weight:600;margin-right:2px">Filters:</span>
       <button class="btn btn-s tclib-facet-btn" data-facet="env" style="font-size:11px">Environments<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>
+      <button class="btn btn-s tclib-facet-btn" data-facet="size" style="font-size:11px">Sizes<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>
+      <button class="btn btn-s tclib-facet-btn" data-facet="more" style="font-size:11px">More Filters<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>
     </div>
     <div id="tclib-groupbar" style="display:none;margin-bottom:10px;padding:6px 10px;background:var(--bg);border:1px solid var(--accent);border-radius:5px;font-size:11px;color:var(--fg2)"></div>
     <div id="tclib-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px"></div>
     <div id="tclib-empty" style="display:none;padding:30px;text-align:center;color:var(--fg4);font-size:12px;font-style:italic">No maps match your filters.</div>`;
   const grid=M.body.querySelector("#tclib-grid"),groupbar=M.body.querySelector("#tclib-groupbar"),empty=M.body.querySelector("#tclib-empty");
   const countEl=document.getElementById("tclib-count");
-  const envBadge=M.body.querySelector('[data-facet="env"] .tclib-facet-badge');
-  const envBtn=M.body.querySelector('[data-facet="env"]');
+  // Facet registry: the order here is irrelevant (facets AND together).
+  const facets=[
+    {key:"env",title:"Environments",allLabel:"All environments",allValues:envValues,tokens:m=>m.env||[],selected:()=>st.env,setSelected:a=>{st.env=a;}},
+    {key:"size",title:"Sizes",allLabel:"All sizes",allValues:TC_SIZE_NAMES.slice(),tokens:m=>{const s=tcSizeOf(m);return s?[s]:[];},selected:()=>st.size,setSelected:a=>{st.size=a;}},
+    {key:"light",title:"Lighting",allLabel:"All lighting",allValues:["Bright","Dim","Dark"],tokens:m=>m.light||[],selected:()=>st.light,setSelected:a=>{st.light=a;}},
+    {key:"weather",title:"Weather & Time",allLabel:"All weather",allValues:["Day","Night","Snow","Rain","Storm","Blizzard"],tokens:m=>m.light||[],selected:()=>st.weather,setSelected:a=>{st.weather=a;}},
+    {key:"feat",title:"Features",allLabel:"All features",allValues:["Multi-Level","Multi-Area","Multi-Phase"],tokens:m=>m.feat||[],selected:()=>st.feat,setSelected:a=>{st.feat=a;}}
+  ];
+  const fByKey={};facets.forEach(f=>fByKey[f.key]=f);
+  // Toolbar buttons -> which facets each one opens. "more" hosts three sections.
+  const panels=[
+    {id:"env",facets:[fByKey.env]},
+    {id:"size",facets:[fByKey.size]},
+    {id:"more",facets:[fByKey.light,fByKey.weather,fByKey.feat]}
+  ];
   const apply=()=>{
     let list;
     if(st.group){
@@ -6515,18 +6565,20 @@ function renderTCLib(M,maps){
       groupbar.querySelector("#tclib-ungroup").onclick=(e)=>{e.preventDefault();st.group=null;apply();};
     }else{
       groupbar.style.display="none";
-      list=tcApplyFilters(maps,st,null);
+      list=tcApplyFilters(maps,st,facets,null);
     }
-    // Keep the title count and facet badge/highlight in sync on every render.
+    // Keep the title count and every facet button's badge/highlight in sync on each render.
     if(countEl)countEl.textContent=`(${list.length}${list.length!==maps.length?" of "+maps.length:""})`;
-    if(envBadge)envBadge.textContent=st.env.length?` (${st.env.length})`:"";
-    if(envBtn)envBtn.classList.toggle("tclib-facet-active",st.env.length>0);
+    panels.forEach(p=>{
+      const n=p.facets.reduce((s,f)=>s+f.selected().length,0);
+      const badge=M.body.querySelector(`[data-facet="${p.id}"] .tclib-facet-badge`);if(badge)badge.textContent=n?` (${n})`:"";
+      const btnEl=M.body.querySelector(`[data-facet="${p.id}"]`);if(btnEl)btnEl.classList.toggle("tclib-facet-active",n>0);
+    });
     grid.innerHTML="";empty.style.display=list.length?"none":"block";
     list.forEach(m=>grid.appendChild(tcCard(m,M,st,apply,gcount)));
   };
-  const ctx={maps,st,body:M.body,apply};
-  const envFacet={key:"env",field:"env",title:"Filter by environment",allLabel:"All environments",allValues:envValues,selected:()=>st.env,setSelected:a=>{st.env=a;}};
-  envBtn.onclick=e=>{e.stopPropagation();tcOpenFacet(envFacet,e.currentTarget,ctx);};
+  const ctx={maps,st,body:M.body,facets,apply};
+  panels.forEach(p=>{const btn=M.body.querySelector(`[data-facet="${p.id}"]`);btn.onclick=e=>{e.stopPropagation();tcOpenFacet(p.id,p.facets,e.currentTarget,ctx);};});
   M.body.querySelector("#tclib-q").oninput=e=>{st.q=e.target.value;st.group=null;tcCloseFacet();apply();};
   apply();
 }
@@ -6546,7 +6598,7 @@ function tcCard(m,M,st,apply,gcount){
     </div>`;
   card.querySelector(".tclib-thumb").onclick=(e)=>{e.stopPropagation();showFullscreenThumb(tcImgUrl(m.img));};
   card.querySelector(".tclib-load").onclick=(e)=>{e.stopPropagation();M.close();setTimeout(()=>loadTCMap(m),50);};
-  const relBtn=card.querySelector(".tclib-rel");if(relBtn)relBtn.onclick=(e)=>{e.stopPropagation();tcCloseFacet();const qi=M.body.querySelector("#tclib-q");if(qi)qi.value="";st.group=m.group;st.q="";st.env=[];apply();};
+  const relBtn=card.querySelector(".tclib-rel");if(relBtn)relBtn.onclick=(e)=>{e.stopPropagation();tcCloseFacet();const qi=M.body.querySelector("#tclib-q");if(qi)qi.value="";st.group=m.group;st.q="";st.env=[];st.size=[];st.light=[];st.weather=[];st.feat=[];apply();};
   return card;}
 $("welcome-sample").onclick=e=>{e.preventDefault();closeWelcome();setTimeout(showSampleShowcaseModal,100);};
 // Browse Samples button in the empty-state placeholder. Visible whenever there's no map loaded
