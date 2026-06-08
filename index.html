@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.115                                      https://battlescry.com
+BattleScry v0.1.118                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,28 +19,25 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.118 - Changed: "Random Map" now shows a single random map in the gallery (with "pick another" and
+            "back to results") instead of loading it directly, so you can preview or load it yourself.
+            Loading any library map now warns when it will replace an existing background and may change
+            the grid size and cell dimensions (not just when tokens/walls are placed).
+  v0.1.117 - Changed: retired local image upload and the Sample Backgrounds gallery. The Map tab now
+            has a single "Browse Map Library" button (backgrounds come from the Map Library or a pasted
+            URL), and the empty-state and welcome screens point to the Map Library too.
+  v0.1.116 - Changed: moved the Tom Cartos credit into the Map Library header (right of the title) to
+            free up vertical space, split it across two lines, and linked his name to tomcartos.com
+            (the Patreon link still points to his posts).
   v0.1.115 - Added: a Tom Cartos credit line at the top of the Map Library linking to his Patreon (where
             high-res, gridless, and other variants live), and made the related-maps banner name the
             specific collection (e.g. Showing 4 related maps from the "Ruin & Rebuild > 01 - Isolated
             Temple" collection) instead of saying "from one location".
   v0.1.114 - Changed: renamed the Map Library "Features" filter to "Meta Features" (Multi-Level,
             Multi-Area, Multi-Phase), which better describes what those tags are about.
-  v0.1.113 - Added: an "All maps" button that clears every filter and the search in one click, and a
-            "Random Map" button that loads a random map drawn from whatever the current filters (or a
-            related-maps group) are showing. Random is disabled when nothing matches; "All maps" is
-            disabled when no filters are active.
-  v0.1.112 - Changed: Map Library filters refined. Checkboxes are now true select-all / select-none:
-            every option starts checked (the full library), the "All ..." row toggles all on or off, and
-            "only" isolates one. Weather and Features gained a "(none)" option so "All" still means every
-            map. Sizes is a single Tiny-to-Huge column with an info tooltip and each band's average map
-            size. Related-maps now offers "back to search results" (keeping your filters) as well as
-            "show all maps". Long option names no longer get clipped, and "only" shares the count's slot.
-  v0.1.111 - Changed: facet option lists in the Map Library now flow top-to-bottom down each column
-            (column-major) instead of left-to-right across rows, so an alphabetical list like
-            Environments reads down the first column, then continues at the top of the next.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.115"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.118"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -214,7 +211,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.115</span>
+  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.118</span>
   <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Revert all changes to original state">⟲ Revert</button>
   <button id="btn-undo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Undo last change (Ctrl+Z)">↩ Undo</button>
   <button id="btn-redo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
@@ -239,7 +236,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 </div>
 <div id="main">
   <div id="map-wrap" style="flex:1;position:relative;overflow:hidden"><div id="map-vp" style="position:absolute;inset:0;overflow:auto"><div id="map-container"><img id="map-img" style="display:none" alt=""><svg id="map-svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
-    <div id="placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--fg4);flex-direction:column;gap:14px;pointer-events:none;padding:20px;text-align:center"><span style="font-size:48px">🗺️</span><span style="font-size:16px;color:var(--fg2)">Run <code>!bscry</code> in your Discord game during an active combat</span><span style="font-size:13px;color:var(--fg3);max-width:520px">Click the <b>🗺️ Click here to open current map in BattleScry</b> link in the response to load your map, tokens, walls, and overlays automatically.</span><button id="ph-browse-samples" style="pointer-events:auto;background:linear-gradient(135deg,var(--accent),#7b5ad8);color:#fff;border:none;border-radius:6px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;box-shadow:0 4px 12px rgba(118,75,255,.3)">🎨 Browse Sample Backgrounds</button><button id="ph-browse-tclib" style="pointer-events:auto;background:var(--bg2);color:var(--fg);border:1px solid var(--accent);border-radius:6px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px">🗺️ Browse Map Library</button><span style="font-size:10px;color:var(--fg4);max-width:520px;margin-top:4px;font-style:italic">Curated backgrounds from partnering creators - load any one to start editing</span><span style="font-size:10px;color:var(--fg4);max-width:520px;margin-top:8px;font-style:italic">Advanced: you can also paste a <code>!bscry</code> data string manually in <b>Map → Advanced Import</b></span></div></div>
+    <div id="placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--fg4);flex-direction:column;gap:14px;pointer-events:none;padding:20px;text-align:center"><span style="font-size:48px">🗺️</span><span style="font-size:16px;color:var(--fg2)">Run <code>!bscry</code> in your Discord game during an active combat</span><span style="font-size:13px;color:var(--fg3);max-width:520px">Click the <b>🗺️ Click here to open current map in BattleScry</b> link in the response to load your map, tokens, walls, and overlays automatically.</span><button id="ph-browse-tclib" style="pointer-events:auto;background:var(--accent);color:#1a1814;border:none;border-radius:6px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;box-shadow:0 4px 12px rgba(0,0,0,.3)">🗺️ Browse Map Library</button><span style="font-size:10px;color:var(--fg4);max-width:520px;margin-top:4px;font-style:italic">Curated backgrounds from partnering creators - load any one to start editing</span><span style="font-size:10px;color:var(--fg4);max-width:520px;margin-top:8px;font-style:italic">Advanced: you can also paste a <code>!bscry</code> data string manually in <b>Map → Advanced Import</b></span></div></div>
   <button id="btn-hamburger" class="btn btn-s" style="position:absolute;top:4px;right:17px;z-index:60;width:36px;height:28px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1" title="Toggle sidebar">☰</button>
   <div id="zoom-float" style="position:absolute;z-index:50;display:flex;flex-direction:column;align-items:center;gap:3px;background:rgba(0,0,0,0.65);border-radius:6px;padding:6px 4px;pointer-events:auto;width:36px">
     <button id="btn-zin" class="btn btn-s" style="font-size:14px;padding:2px 0;width:28px" onmousedown="event.preventDefault()" title="Zoom in">+</button>
@@ -264,7 +261,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
     <div style="margin-bottom:8px"><svg width="40" height="40" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg></div>
     <div style="font-size:20px;font-weight:bold;color:var(--accent);margin-bottom:14px">Welcome to BattleScry!</div>
     <div style="font-size:13px;color:var(--fg2);line-height:1.6;margin-bottom:16px;text-align:left">BattleScry builds D&amp;D battlemaps visually. Upload your own map and token art, drag combatants into place and resize them, and it writes the Avrae commands for you ... no manual image hosting, grid alignment, or command syntax to wrestle with.<br><br>Made for <b>Avrae</b> combat on <b>Discord</b>. Already in a game? Run <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">!bscry</code> during combat and click the link to edit your live map.<br><br><span style="color:var(--fg3)">This is an empty grid to start. Pick a starting point:</span></div>
-    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:16px"><button class="btn btn-s" id="welcome-sample" style="flex:1;max-width:200px;padding:9px 12px;font-size:12px">🗺 See a sample battlemap</button><button class="btn btn-p" id="welcome-create" style="flex:1;max-width:200px;padding:9px 12px;font-size:12px">➕ Create your own map</button></div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:16px"><button class="btn btn-s" id="welcome-sample" style="flex:1;max-width:200px;padding:9px 12px;font-size:12px">🗺 Browse Map Library</button><button class="btn btn-p" id="welcome-create" style="flex:1;max-width:200px;padding:9px 12px;font-size:12px">➕ Create your own map</button></div>
     <label style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:var(--fg3);margin-bottom:12px;cursor:pointer"><input type="checkbox" id="welcome-dontshow" style="accent-color:var(--accent);cursor:pointer"><span>Don't show this again</span></label>
     <div style="display:flex;gap:10px;justify-content:center"><button class="btn btn-s" id="welcome-more" style="padding:6px 16px;font-size:11px">Tell me more</button><button class="btn btn-s" id="welcome-ok" style="padding:6px 16px;font-size:11px">Got it</button></div>
   </div>
@@ -2075,16 +2072,16 @@ function rMapTabContent(){
   const mapFt=S.grid.cols*5+"ft × "+S.grid.rows*5+"ft";
   // Yellow "Add New X" button at top - visual consistency across tabs (Map/Tokens/Overlays/Other all have one).
   // Clicking focuses the URL input below; when a bg is already loaded, label switches to "Change".
-  h+=`<button class="btn btn-p" id="btn-add-bg" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0" title="Add or change the battlemap background image - paste a URL, upload a file, or browse samples/saved maps below">${bgUrl?"✏️ Change Map Background":"➕ Add New Map Background"}</button>`;
+  h+=`<button class="btn btn-p" id="btn-add-bg" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0" title="Add or change the battlemap background image - paste a URL, browse the Map Library, or pick a saved map below">${bgUrl?"✏️ Change Map Background":"➕ Add New Map Background"}</button>`;
   // Background section. The URL / upload / sample / browse controls collapse until the user clicks
   // "Add New Map Background" (S._uiBgOpen); once an image is loaded they stay expanded so the URL
   // stays visible. The image-info line is always shown.
   const _bgAll=[...S.savedMaps,...S.mapSaves.map(x=>x.name).filter(n=>!S.savedMaps.includes(n))].filter(n=>!S.mapDeletes.includes(n));
   const _bgBrowse=_bgAll.length?`<button class="btn btn-s" id="m-bgbrowsesaved" style="width:100%;font-size:10px;padding:4px 8px;margin-bottom:6px" title="View thumbnails and load a previously saved map">🗂 Browse Saved Battlemaps (${_bgAll.length})</button>`:"";
   const _bgControls=(bgUrl||S._uiBgOpen)?`
-  <div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><input class="inp" id="m-bgurl" value="${bgUrl}" placeholder="Paste image URL or upload below" style="flex:1;font-family:monospace;font-size:9px" title="${bgUrl||'No background image'}"><button class="btn btn-s" id="m-bgupdate" style="font-size:9px;padding:3px 8px;white-space:nowrap">${bgUrl?"Update":"Load"}</button>${bgUrl?`<button class="btn btn-s" id="m-bgremove" style="font-size:9px;padding:3px 6px;color:#e74c3c" title="Remove background image">Remove</button>`:""}</div>
+  <div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><input class="inp" id="m-bgurl" value="${bgUrl}" placeholder="Paste image URL or browse below" style="flex:1;font-family:monospace;font-size:9px" title="${bgUrl||'No background image'}"><button class="btn btn-s" id="m-bgupdate" style="font-size:9px;padding:3px 8px;white-space:nowrap">${bgUrl?"Update":"Load"}</button>${bgUrl?`<button class="btn btn-s" id="m-bgremove" style="font-size:9px;padding:3px 6px;color:#e74c3c" title="Remove background image">Remove</button>`:""}</div>
   <label style="font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:6px" title="When ON, BS analyzes new background images and auto-applies the best-fit grid. Turn off if you want to set the grid manually."><input type="checkbox" id="m-autodetect" ${S.autoDetect?"checked":""} style="accent-color:var(--accent)"><span>Auto-detect grid when image loads</span></label>
-  <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap"><input type="file" id="m-bgfile" accept=".jpg,.jpeg,.png,.gif" style="display:none"><button class="btn btn-s" id="m-bgfilebtn" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px">📁 Upload Image</button><button class="btn btn-s" id="m-bgsamples" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Browse curated background images from partnered creators">🎨 Sample Backgrounds</button><button class="btn btn-s" id="m-bgtclib" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Browse the Tom Cartos map library">🗺️ Map Library</button></div>
+  <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap"><button class="btn btn-s" id="m-bgtclib" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Browse the Tom Cartos map library">🗺️ Browse Map Library</button></div>
   ${_bgBrowse}`:"";
   if(bgUrl||S._uiBgOpen){
   h+=`<div class="sec" style="border:1px solid var(--accent)"><div class="sec-title" style="display:flex;align-items:center;gap:4px"><span class="vis-eye${S.showBg?'':' off'}" data-vis="bg" style="cursor:pointer;font-size:11px;position:relative" title="${S.showBg?'Hide background':'Show background'}">👁</span>Background</div>
@@ -3627,10 +3624,6 @@ function setup(){
     if(t.id==="ao-cancel"){cancelAddOverlay();return;}
     // Map sub-tab clicks
     if(t.classList.contains("subtab")&&t.dataset.structsub){S.structSubTab=t.dataset.structsub;renderSB();return;}
-    // BG file upload button
-    if(t.id==="m-bgfilebtn"){$("m-bgfile")?.click();return;}
-    // Sample battlemaps browse (in Background section) - same modal as empty-state / Welcome link
-    if(t.id==="m-bgsamples"){showSampleShowcaseModal();return;}
     // Tom Cartos map library browser (in Background section)
     if(t.id==="m-bgtclib"){showTCLibraryModal();return;}
     // Browse saved battlemaps (in Background section) - same modal as Save/Load Battlemap section
@@ -3946,15 +3939,7 @@ function setup(){
     // File upload for grid analysis
     if(e.target.id==="m-walltype"){const w=S.sel.type==="wall"?S.walls.find(x=>x.id===[...S.sel.ids][0]):null;if(w){pushU();w.door=e.target.value||null;renderAll();return;}}
     if(e.target.id==="m-objtype"){const o=S.sel.type==="object"?S.objects.find(x=>x.id===[...S.sel.ids][0]):null;if(o&&OBJ_SVG[e.target.value]){pushU("Changed object type");o.type=e.target.value;renderAll();return;}}
-    // BG file upload
-    if(e.target.id==="m-bgfile"){const file=e.target.files?.[0];if(!file)return;
-      const info=$("m-bginfo");if(!info)return;
-      uploadImage(file,info,(url,w,h)=>{
-        // Auto-populate URL and load
-        S.loadedUrl=url;$("map-img").src=url;$("map-img").style.display="block";
-        renderAll();
-        // Run the shared analyze flow - populates m-bginfo + m-gridsuggestions identically to URL-load path
-        window.analyzeBackgroundForLayout(url);});return;}
+    // BG local file upload retired (v0.1.117): backgrounds come from the Map Library or a pasted URL.
     if(e.target.id==="m-altfont")S.altFont=e.target.checked;
     if(e.target.id==="m-dark"){pushU();const wasDark=S.darkMode;S.darkMode=e.target.checked;document.body.style.background=S.darkMode?"#0d0c0a":"";$("map-vp").style.background=S.darkMode?"#000":"#fff";
       // Auto-swap grid color to stay visible: black grid on dark bg → white, white grid on light bg → black.
@@ -6386,8 +6371,14 @@ function tcDisplayName(m){
   return n||m.name||"(untitled)";
 }
 function loadTCMap(m){
+  const hasBg=!!(S.loadedUrl&&String(S.loadedUrl).trim());
   const hasContent=S.tokens.filter(t=>!t.hidden).length>0||S.overlays.length>0||S.walls.length>0||S.objects.length>0||S.fowRegions.length>0;
-  if(hasContent&&!confirm("Loading a library map loads it as a fresh scene and will replace your current map - including placed tokens/combatants, overlays, walls, and objects. Continue?"))return;
+  if(hasBg||hasContent){
+    let msg="Loading this map replaces your current background entirely and may change the grid size and cell dimensions.";
+    if(hasContent)msg+=" It also clears your placed tokens/combatants, overlays, walls, and objects.";
+    msg+=" Continue?";
+    if(!confirm(msg))return;
+  }
   const w=Math.round(m.w||26),h=Math.round(m.h||26),cell=m.cell||72,url=tcImgUrl(m.img);
   const hash=`g=${w}x${h}&o=c${cell}&bg=${url}&vw=a1:${w}x${h}`;
   try{
@@ -6400,6 +6391,15 @@ function showTCLibraryModal(){
   const M=smartModal({title:`🗺️ Map Library <span id="tclib-count" style="font-size:10px;color:var(--fg3);font-weight:400;margin-left:6px"></span>`,size:"lg",
     onEsc:(close)=>{if(TC_FACET_OPEN)tcCloseFacet();else close();},
     onClose:()=>tcCloseFacet()});
+  // Tom Cartos attribution lives in the header (right of the title) to save vertical space in the body.
+  const hdr=M.backdrop.querySelector(".smart-modal-header");
+  if(hdr){
+    const cred=document.createElement("div");
+    cred.style.cssText="margin-left:auto;text-align:right;max-width:62%;color:var(--fg3);line-height:1.45;font-size:10px";
+    cred.innerHTML=`<div style="font-size:12px;color:var(--fg2);margin-bottom:1px">Sample maps courtesy of <a href="https://www.tomcartos.com/" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:600;text-decoration:none">Tom Cartos</a>.</div><div>Browse his full library of battlemaps, tokens and other TTRPG assets on his <a href="https://www.patreon.com/c/tomcartos/posts" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:600;text-decoration:underline">Patreon</a>, where you'll also find high-resolution, gridless, and other variants of the maps shown here.</div>`;
+    const x=hdr.querySelector(".smart-modal-close");
+    if(x)hdr.insertBefore(cred,x);else hdr.appendChild(cred);
+  }
   M.body.innerHTML=`<div id="tclib-loading" style="padding:40px;text-align:center;color:var(--fg3);font-size:13px">Loading map library...</div>`;
   fetchTCLib().then(maps=>renderTCLib(M,maps)).catch(err=>{
     M.body.innerHTML=`<div style="padding:30px;text-align:center;color:var(--fg3);font-size:12px;line-height:1.7">Couldn't load the map library.<br><span style="font-size:11px;color:var(--fg4)">${(err&&err.message)||err}</span><br><span style="font-size:10px;color:var(--fg4)">Check that tc_inventory.json is hosted and CORS allows this site.</span></div>`;});
@@ -6512,8 +6512,8 @@ function tcOpenFacet(panelId,panelFacets,btn,ctx){
     });
   };
   syncChecks();
-  // Any change to a filter exits the related-maps group view and re-applies the live filters.
-  const changed=()=>{ctx.st.group=null;syncChecks();ctx.apply();};
+  // Any change to a filter exits the related-maps group / random-pick view and re-applies live.
+  const changed=()=>{ctx.st.group=null;ctx.st.pick=null;syncChecks();ctx.apply();};
   sectionEls.forEach(sec=>{
     const f=facetByKey[sec.dataset.fkey];
     // "All" is a true select-all / select-none toggle.
@@ -6535,7 +6535,7 @@ function tcOpenFacet(panelId,panelFacets,btn,ctx){
   TC_POP_CLEANUP=()=>{document.removeEventListener("mousedown",onDocDown);ctx.body.removeEventListener("scroll",onScroll);window.removeEventListener("resize",onScroll);};
 }
 function renderTCLib(M,maps){
-  const st={q:"",group:null}; // per-facet selections are added below (default: all selected)
+  const st={q:"",group:null,pick:null}; // per-facet selections added below; pick = a single random-map view
   const envValues=[...new Set(maps.flatMap(m=>m.env||[]))].sort((a,b)=>a.localeCompare(b));
   const gcount={};maps.forEach(m=>{if(m.group)gcount[m.group]=(gcount[m.group]||0)+1;});
   // Average dimensions per size band, for the per-row size annotation.
@@ -6573,7 +6573,6 @@ function renderTCLib(M,maps){
   const isActive=f=>f.selected().length!==f.allValues.length;
   const anyFilter=()=>st.q.trim()!==""||facets.some(isActive);
   M.body.innerHTML=`
-    <div style="margin-bottom:10px;font-size:10px;color:var(--fg3);line-height:1.5">Sample maps courtesy of <span style="color:var(--accent);font-weight:600">Tom Cartos</span>. Browse his full library of battlemaps, tokens and other TTRPG assets on his <a href="https://www.patreon.com/c/tomcartos/posts" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:600;text-decoration:underline">Patreon</a>, where you'll also find high-resolution, gridless, and other variants of the maps shown here.</div>
     <div style="margin-bottom:8px"><input id="tclib-q" class="inp" placeholder="Search name, set, or location..." style="width:100%;font-size:11px"></div>
     <div class="tclib-bar" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <span style="font-size:11px;color:var(--fg3);font-weight:600;margin-right:2px">Filters:</span>
@@ -6590,22 +6589,34 @@ function renderTCLib(M,maps){
   const countEl=document.getElementById("tclib-count");
   const allmapsBtn=M.body.querySelector(".tclib-allmaps"),randomBtn=M.body.querySelector(".tclib-random");
   let currentList=[]; // the maps currently shown (filtered, or the related-maps group); Random draws from this
-  const resetFilters=()=>{st.q="";const qi=M.body.querySelector("#tclib-q");if(qi)qi.value="";facets.forEach(f=>f.setSelected(f.allValues.slice()));};
+  const resetFilters=()=>{st.q="";st.pick=null;const qi=M.body.querySelector("#tclib-q");if(qi)qi.value="";facets.forEach(f=>f.setSelected(f.allValues.slice()));};
   const apply=()=>{
-    let list;
-    if(st.group){
-      list=maps.filter(m=>m.group===st.group);
+    // Base pool = related-maps group if active, otherwise the filtered set. Random draws from this.
+    const inGroup=!!st.group;
+    const pool=inGroup?maps.filter(m=>m.group===st.group):tcApplyFilters(maps,st,facets,null);
+    currentList=pool;
+    // Stale-pick guard: if the picked map fell out of the pool (filters changed), drop the pick.
+    if(st.pick&&!pool.some(m=>m.img===st.pick))st.pick=null;
+    const picked=st.pick?pool.find(m=>m.img===st.pick):null;
+    const list=picked?[picked]:pool;
+    // Context bar: a random pick takes priority, then the related-maps group, else hidden.
+    if(picked){
+      groupbar.style.display="block";
+      const backTo=inGroup?"related maps":(anyFilter()?"results":"all maps");
+      groupbar.innerHTML=`🎲 Showing one random map. <a href="#" id="tclib-pick-another" style="color:var(--accent);margin-left:6px">pick another</a> <span style="color:var(--fg4);margin:0 3px">·</span> <a href="#" id="tclib-pick-back" style="color:var(--fg3)">back to ${backTo}</a>`;
+      groupbar.querySelector("#tclib-pick-another").onclick=(e)=>{e.preventDefault();if(pool.length)st.pick=pool[Math.floor(Math.random()*pool.length)].img;apply();};
+      groupbar.querySelector("#tclib-pick-back").onclick=(e)=>{e.preventDefault();st.pick=null;apply();};
+    }else if(inGroup){
       groupbar.style.display="block";
       const links=anyFilter()
         ? `<a href="#" id="tclib-back-search" style="color:var(--accent);margin-left:6px">← back to search results</a> <span style="color:var(--fg4);margin:0 3px">·</span> <a href="#" id="tclib-back-all" style="color:var(--fg3)">show all maps</a>`
         : `<a href="#" id="tclib-back-all" style="color:var(--accent);margin-left:6px">← back to all maps</a>`;
       const glabel=st.group.replace(/\s*::\s*/g," › ").replace(/&/g,"&amp;").replace(/</g,"&lt;");
-      groupbar.innerHTML=`Showing <b>${list.length}</b> related map${list.length===1?"":"s"} from the "${glabel}" collection. ${links}`;
+      groupbar.innerHTML=`Showing <b>${pool.length}</b> related map${pool.length===1?"":"s"} from the "${glabel}" collection. ${links}`;
       const bs=groupbar.querySelector("#tclib-back-search");if(bs)bs.onclick=(e)=>{e.preventDefault();st.group=null;apply();};
       const ba=groupbar.querySelector("#tclib-back-all");if(ba)ba.onclick=(e)=>{e.preventDefault();resetFilters();st.group=null;apply();};
     }else{
       groupbar.style.display="none";
-      list=tcApplyFilters(maps,st,facets,null);
     }
     // Keep the title count and every facet button's badge/highlight in sync on each render.
     // A button is highlighted when any of its facets is narrowed; multi-facet buttons (More
@@ -6617,16 +6628,15 @@ function renderTCLib(M,maps){
       const btnEl=M.body.querySelector(`[data-facet="${p.id}"]`);if(btnEl)btnEl.classList.toggle("tclib-facet-active",active>0);
     });
     grid.innerHTML="";empty.style.display=list.length?"none":"block";
-    currentList=list;
-    if(allmapsBtn)allmapsBtn.disabled=!(anyFilter()||st.group);
-    if(randomBtn)randomBtn.disabled=list.length===0;
+    if(allmapsBtn)allmapsBtn.disabled=!(anyFilter()||st.group||st.pick);
+    if(randomBtn)randomBtn.disabled=pool.length===0;
     list.forEach(m=>grid.appendChild(tcCard(m,M,st,apply,gcount)));
   };
   const ctx={maps,st,body:M.body,facets,apply};
   panels.forEach(p=>{const btn=M.body.querySelector(`[data-facet="${p.id}"]`);btn.onclick=e=>{e.stopPropagation();tcOpenFacet(p.id,p.facets,e.currentTarget,ctx);};});
   allmapsBtn.onclick=()=>{tcCloseFacet();resetFilters();st.group=null;apply();};
-  randomBtn.onclick=()=>{if(!currentList.length)return;const m=currentList[Math.floor(Math.random()*currentList.length)];M.close();setTimeout(()=>loadTCMap(m),50);};
-  M.body.querySelector("#tclib-q").oninput=e=>{st.q=e.target.value;st.group=null;tcCloseFacet();apply();};
+  randomBtn.onclick=()=>{if(!currentList.length)return;st.pick=currentList[Math.floor(Math.random()*currentList.length)].img;apply();M.body.scrollTop=0;};
+  M.body.querySelector("#tclib-q").oninput=e=>{st.q=e.target.value;st.group=null;st.pick=null;tcCloseFacet();apply();};
   apply();
 }
 function tcCard(m,M,st,apply,gcount){
@@ -6645,12 +6655,11 @@ function tcCard(m,M,st,apply,gcount){
     </div>`;
   card.querySelector(".tclib-thumb").onclick=(e)=>{e.stopPropagation();showFullscreenThumb(tcImgUrl(m.img));};
   card.querySelector(".tclib-load").onclick=(e)=>{e.stopPropagation();M.close();setTimeout(()=>loadTCMap(m),50);};
-  const relBtn=card.querySelector(".tclib-rel");if(relBtn)relBtn.onclick=(e)=>{e.stopPropagation();tcCloseFacet();st.group=m.group;apply();};
+  const relBtn=card.querySelector(".tclib-rel");if(relBtn)relBtn.onclick=(e)=>{e.stopPropagation();tcCloseFacet();st.group=m.group;st.pick=null;apply();};
   return card;}
-$("welcome-sample").onclick=e=>{e.preventDefault();closeWelcome();setTimeout(showSampleShowcaseModal,100);};
+$("welcome-sample").onclick=e=>{e.preventDefault();closeWelcome();setTimeout(showTCLibraryModal,100);};
 // Browse Samples button in the empty-state placeholder. Visible whenever there's no map loaded
 // and the user is at the default empty grid, giving them a path to try the tool.
-const phBtn=$("ph-browse-samples");if(phBtn)phBtn.onclick=()=>showSampleShowcaseModal();
 const phTcBtn=$("ph-browse-tclib");if(phTcBtn)phTcBtn.onclick=()=>showTCLibraryModal();
 // Toast handlers - toast stays visible until user dismisses (OK button or "Don't show next time")
 var _toastTimer=null;
