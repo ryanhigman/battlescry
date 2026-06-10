@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.126                                      https://battlescry.com
+BattleScry v0.1.142                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,26 +19,23 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.126 - Changed: the Map Library no longer closes when you click outside the window, so a stray
-            click can't wipe your filters. Close it with the ✕ button (or Esc, which first closes an
-            open filter dropdown, then the library).
-  v0.1.125 - Added: Map Library favorites. Hover a card to reveal a heart in its corner (filled hearts
-            stay visible); click to favorite. Favorites persist in the browser (device-local, not synced
-            to Avrae). A "♥ Favorites" button on the right of the filter row (disabled until you've
-            favorited something) opens a standalone favorites-only view; un-hearting there removes a map
-            live.
-  v0.1.124 - Changed: Map Library filters. "More Filters" is broken out into separate Lighting, Weather
-            & Time, and Meta Features dropdowns on the filter row; each filter popup now sizes to its
-            contents so the match counts sit right next to the tags; the average-size note and the
-            (non-working) info icon were removed from Sizes; Weather's "All" is now "All weather & time".
-  v0.1.123 - Changed: shortened the Map Library credit to a single line, "Battlemaps by Tom Cartos."
-            (linked to tomcartos.com), which trims the modal header height.
-  v0.1.122 - Changed: the Map Library "Meta Features" filter now derives its options from the data, so
-            any extra tag in the inventory (the new "Gridless" tag for the ~11 grid-free maps) shows up
-            as a filter automatically alongside Multi-Level / Multi-Area / Multi-Phase.
+  v0.1.142 - Changed: the "I have a hosted URL" wizard branch now opens the Map panel and shows a big
+            bouncing arrow pointing at the background URL box, so you can see exactly where to paste. The
+            arrow clears when you dismiss the screen.
+  v0.1.141 - Changed: the Add Map Background wizard choice now uses icons - a wizard face for "Walk me
+            through it" and a brain for "I know what I'm doing".
+  v0.1.140 - Added: the start of guided wizards (a reusable shell that will also serve tokens and
+            overlays). The Add Map Background button now opens a "walk me through it / I know what I'm
+            doing" choice (with a "Don't show this again" option), then asks whether you have a map -
+            URL, need to upload, or need one. The "need a map" branch is live (Browse Map Library or
+            free maps); the URL and upload branches are placeholders for the next steps. A new "Tips &
+            Prompts" section in Help re-enables dismissed prompts (welcome screen, this guide).
+  v0.1.139 - Changed: the Map View binoculars icon now uses a detailed binoculars SVG.
+  v0.1.138 - Changed: the Revert icon is now a filled anticlockwise circular arrow (SVG), matching the
+            weight and style of the Undo / Redo arrows instead of the ⟲ text glyph.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.126"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.142"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -153,6 +150,10 @@ input,select,textarea,button{font-family:inherit}
 #btn-copy.ready:hover{box-shadow:0 0 18px rgba(159,90,229,0.8);transform:translateY(-1px);background:#b074ea}
 #btn-copy.copied{background:#10b981;color:#fff;opacity:1;cursor:default;box-shadow:0 0 14px rgba(16,185,129,0.6);animation:none}
 @keyframes btnReady{0%,100%{box-shadow:0 0 12px rgba(159,90,229,0.5)}50%{box-shadow:0 0 22px rgba(159,90,229,0.9)}}
+@keyframes btnFlash{0%{box-shadow:0 0 0 0 rgba(159,90,229,0.95)}25%{box-shadow:0 0 26px 5px rgba(159,90,229,1)}100%{box-shadow:0 0 12px rgba(159,90,229,0.5)}}
+#btn-copy.flash{animation:btnFlash .7s ease-out!important}
+@keyframes wizBounceDown{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+@keyframes wizBounceUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .grp-hdr .arrow{font-size:10px;color:var(--fg3);transition:transform .2s}.grp-hdr .arrow.closed{transform:rotate(-90deg)}
 #cmd-bar{border-top:1px solid var(--border);padding:6px 8px;background:var(--bg5);flex-shrink:0}
 #cmd-bar .cmd{font-family:monospace;font-size:9px;color:var(--fg2);max-height:48px;overflow:auto;word-break:break-all;margin-bottom:4px;line-height:1.4}
@@ -212,26 +213,26 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.126</span>
-  <button id="btn-revert" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Revert all changes to original state">⟲ Revert</button>
-  <button id="btn-undo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Undo last change (Ctrl+Z)">↩ Undo</button>
-  <button id="btn-redo" class="btn btn-s" style="font-size:10px;padding:3px 6px" title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
+  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.142</span>
+  <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
+  <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+  <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
   <div class="sep"></div>
   <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--fg2)" title="Map View - visible portion of the grid. Type coordinates, drag a crop area on the map, or click a field then click the map.">
-    <span style="font-size:9px;color:var(--fg3)">Map View:</span>
+    <span title="Map View" aria-label="Map View" style="display:inline-flex;align-items:center;color:var(--fg3)"><svg width="22" height="14" viewBox="0 0 122.88 78.5" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" aria-hidden="true" style="display:block"><path d="M50.57,17.2C40.73,10.31,31,8.79,20.94,11.42c2.2-5.29,5.51-8.76,9.4-10.39c5.51-2.31,14.53-0.67,18.08,4.27 C50.24,7.82,51.15,11.56,50.57,17.2L50.57,17.2z M83.52,55.32c-0.27-1.12,0.43-2.24,1.55-2.51c1.12-0.27,2.24,0.43,2.51,1.55 c0.54,2.27,1.47,4.03,2.71,5.3c1.27,1.29,2.9,2.12,4.84,2.5c1.13,0.22,1.86,1.31,1.64,2.44c-0.22,1.13-1.31,1.86-2.44,1.64 c-2.76-0.55-5.13-1.76-7-3.67C85.54,60.75,84.24,58.35,83.52,55.32L83.52,55.32z M13.54,55.32c-0.27-1.12,0.43-2.24,1.55-2.51 c1.12-0.27,2.24,0.43,2.51,1.55c0.54,2.27,1.47,4.03,2.71,5.3c1.27,1.29,2.9,2.12,4.84,2.5c1.13,0.22,1.86,1.31,1.64,2.44 c-0.22,1.13-1.31,1.86-2.44,1.64c-2.76-0.55-5.13-1.76-7-3.67C15.56,60.75,14.26,58.35,13.54,55.32L13.54,55.32z M61.3,47.71 c2.8,0,5.07,2.21,5.07,4.93c0,2.72-2.27,4.93-5.07,4.93c-2.8,0-5.07-2.21-5.07-4.93C56.23,49.92,58.5,47.71,61.3,47.71L61.3,47.71z M26.66,34.57c10,0,18.11,7.88,18.11,17.61c0,9.72-8.11,17.61-18.11,17.61c-10,0-18.11-7.88-18.11-17.61 C8.55,42.45,16.65,34.57,26.66,34.57L26.66,34.57z M96.64,34.57c10,0,18.11,7.88,18.11,17.61c0,9.72-8.11,17.61-18.11,17.61 c-10,0-18.11-7.88-18.11-17.61C78.53,42.45,86.63,34.57,96.64,34.57L96.64,34.57z M72.31,17.2c9.84-6.89,19.57-8.41,29.62-5.78 c-2.2-5.29-5.51-8.76-9.4-10.39C87.02-1.28,78,0.36,74.46,5.3C72.64,7.82,71.73,11.56,72.31,17.2L72.31,17.2z M107.57,17.4 c-3.42-3.52-8.96-5.11-16.63-4.77c-8.69,0.43-17.87,4.06-20.82,12.29c-2.47-5.42-14.89-5.42-17.35,0 c-2.95-8.23-12.13-11.87-20.82-12.29c-7.67-0.34-13.2,1.26-16.63,4.77C10.5,23.86,0.96,40.74,0.16,48.99 C-3.1,82.47,44.92,90.87,52.62,56.3c4.37,7.75,13.27,7.75,17.64,0c7.7,34.58,55.72,26.17,52.46-7.31 C121.92,40.74,112.38,23.86,107.57,17.4L107.57,17.4z"/></svg></span>
     <input id="vw-start" class="inp" style="width:36px;font-size:10px;padding:1px 3px;font-family:monospace;text-transform:uppercase" placeholder="A1" title="Top-left coordinate - type or click then click the map (drag to set both)">
     <span style="color:var(--fg3)">→</span>
     <input id="vw-end" class="inp" style="width:36px;font-size:10px;padding:1px 3px;font-family:monospace;text-transform:uppercase" placeholder="J10" title="Bottom-right coordinate - type or click then click the map (drag to set both)">
     <button id="btn-vw-update" class="btn btn-s" style="font-size:9px;padding:2px 5px;opacity:.4;cursor:default" disabled title="Apply view coordinates">Update</button>
     <button id="btn-vw-reset" class="btn btn-s" style="font-size:9px;padding:2px 5px;opacity:.4;cursor:default" disabled title="Reset to full map view">Reset</button>
-    <label id="tb-border-label" style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--fg2);cursor:pointer;margin-left:6px" title="Toggle solid border around the map (OTFBM 'e' option)"><input type="checkbox" id="tb-border" style="accent-color:var(--accent);cursor:pointer"><span>Solid border</span></label>
+    <label id="tb-border-label" style="display:none;align-items:center;gap:3px;font-size:9px;color:var(--fg2);cursor:pointer;margin-left:6px" title="Solid border around the map (OTFBM 'e' option). Available when the map view is cropped."><input type="checkbox" id="tb-border" style="accent-color:var(--accent);cursor:pointer"><span>Solid border</span></label>
   </div>
   <div class="sep"></div>
-  <button class="btn btn-p" id="btn-copy" style="font-size:11px;padding:5px 14px;font-weight:bold" title="Copy the !bscry apply command to clipboard, then paste it in Discord to apply your changes">No changes to apply</button>
+  <label id="hide-toggle-label" style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--fg3);cursor:pointer;padding:3px 6px;background:var(--bg2);border-radius:4px;margin-right:2px" title="When Secret Mode is enabled, the export command will update the map normally, but players won't see the list of changes (token moves, Fog of War reveals, etc)."><input type="checkbox" id="cmd-hidden" style="accent-color:var(--accent);cursor:pointer"><span>Secret Mode</span></label>
+  <button class="btn btn-p" id="btn-copy" style="font-size:11px;padding:5px 14px;font-weight:bold" title="Save your changes: copies the !bscry apply command to the clipboard, then paste it in Discord to apply">Save / Export</button>
   <div style="flex:1"></div>
   <div id="status-msg" style="font-size:10px;color:var(--fg3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;text-align:right;padding:0 8px"></div>
   <span id="partial-view" style="display:none;font-size:9px;color:var(--fg3);margin-right:4px"></span>
-  <label id="hide-toggle-label" style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--fg3);cursor:pointer;padding:3px 6px;background:var(--bg2);border-radius:4px" title="When Secret Mode is enabled, the export command will update the map normally, but players won't see the list of changes (token moves, Fog of War reveals, etc)."><input type="checkbox" id="cmd-hidden" style="accent-color:var(--accent);cursor:pointer"><span>Secret Mode</span></label>
   <button id="btn-help" class="btn btn-s" style="font-size:10px;padding:3px 8px" title="Quick start guide">? Help</button>
   <button id="btn-about" class="btn btn-s" style="font-size:10px;padding:3px 8px" title="About BattleScry">ℹ About</button>
 </div>
@@ -248,8 +249,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
     <button id="btn-zout" class="btn btn-s" style="font-size:14px;padding:2px 0;width:28px" onmousedown="event.preventDefault()" title="Zoom out">−</button>
     <hr style="border:0;border-top:1px solid rgba(255,255,255,0.2);margin:2px 0;width:100%">
     <button id="btn-z100" class="btn btn-s" style="font-size:9px;padding:2px 0;width:28px" onmousedown="event.preventDefault()" title="Reset to 100%">100%</button>
-    <button id="btn-fitw" class="btn btn-s" style="font-size:9px;padding:2px 0;width:28px;opacity:.4;cursor:default" disabled onmousedown="event.preventDefault()" title="Fit map width to viewport">Fit W</button>
-    <button id="btn-fith" class="btn btn-s" style="font-size:9px;padding:2px 0;width:28px" onmousedown="event.preventDefault()" title="Fit map height to viewport">Fit H</button>
+    <button id="btn-fit" class="btn btn-s" style="font-size:9px;padding:2px 0;width:28px" onmousedown="event.preventDefault()" title="Fit map to the viewport - fills the constraining dimension and scrolls the longer side. Use Full to see the whole map at once.">Fit</button>
     <button id="btn-fitall" class="btn btn-s" style="font-size:9px;padding:2px 0;width:28px" onmousedown="event.preventDefault()" title="View entire map in viewport">Full</button>
     <hr style="border:0;border-top:1px solid rgba(255,255,255,0.2);margin:2px 0;width:100%">
     <button id="btn-ruler" class="btn btn-s" style="padding:2px 0;width:28px;height:24px;display:inline-flex;align-items:center;justify-content:center" onmousedown="event.preventDefault()" title="Ruler - measure distances between points or tokens"><svg viewBox="0 0 122.88 122.88" width="16" height="16" fill="currentColor"><path d="M0.92,32.82l31.9-31.9C33.44,0.3,34.24,0,35.05,0c0.8,0,1.61,0.3,2.22,0.92l84.69,84.69c0.61,0.61,0.92,1.42,0.92,2.23c0,0.8-0.31,1.6-0.92,2.21l-0.01,0.01l0.01,0.01l-31.9,31.9c-0.62,0.62-1.42,0.92-2.23,0.92c-0.8,0-1.61-0.3-2.23-0.92L0.92,37.27C0.3,36.65,0,35.84,0,35.05C0,34.24,0.3,33.44,0.92,32.82L0.92,32.82z M105.32,77.15L90.84,91.63c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l14.48-14.48L90.12,61.94l-6.86,6.85c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l6.86-6.86L75.88,47.71L61.4,62.19c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l14.48-14.48L61.09,32.91l-6.86,6.85c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l6.86-6.86L46.43,18.26L31.95,32.74c-1.13,1.13-2.83,1.25-3.8,0.29c-0.97-0.97-0.84-2.67,0.29-3.8l14.48-14.48l-7.87-7.87L6.87,35.05l80.96,80.96l28.17-28.17C102.8,74.62,118.53,90.36,105.32,77.15L105.32,77.15z"/></svg></button>
@@ -356,6 +356,13 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   <div>• Token moves, overlay changes, wall edits, and map settings in a single command</div>
   <div>• The alias reads walls, FOW, overlays, and saved tokens/maps/battles from Avrae</div>
   <div>• Run <code style="background:var(--bg3);padding:1px 4px;border-radius:2px">!bscry</code> again anytime to refresh</div>
+  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Tips & Prompts</div>
+  <div>• Re-enable prompts you've dismissed with "Don't show this again":</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+    <button class="btn btn-s" id="hr-welcome" style="font-size:11px;padding:4px 10px">Show welcome screen again</button>
+    <button class="btn btn-s" id="hr-bgwiz" style="font-size:11px;padding:4px 10px">Show "Add map background" guide again</button>
+  </div>
+  <div id="hr-msg" style="font-size:11px;color:var(--accent);margin-top:6px;min-height:14px"></div>
   </div>
 </div></div>
 <div id="srd-modal" class="smart-modal-backdrop" style="display:none;z-index:9998">
@@ -743,7 +750,7 @@ const IS_TOUCH='ontouchstart'in window||navigator.maxTouchPoints>0;
 const HANDLE_R=IS_TOUCH?16:8;// Bigger touch targets on mobile
 // Convert touch event to mouse-like coordinates
 function touchPt(e){const t=e.touches[0]||e.changedTouches[0];return{clientX:t.clientX,clientY:t.clientY,target:document.elementFromPoint(t.clientX,t.clientY)||e.target,shiftKey:e.shiftKey,preventDefault:()=>e.preventDefault()};}
-const S={grid:{cellSize:40,offsetX:0,offsetY:0,cols:26,rows:26,startCol:0,startRow:0,fullCols:26,fullRows:26},tokens:[],overlays:[],walls:[],objects:[],combatants:[],sel:{type:null,ids:new Set()},zoom:1,showGrid:true,showOverlays:true,showWalls:true,showObjects:true,showTokens:true,showFow:true,showBg:true,coordLabels:true,autoDetect:true,gridOpacity:0.99,darkMode:false,noBorder:false,altFont:false,gridColor:"",fowOpacity:0,labelFont:"Figtree",loadedUrl:"",tab:"map",addingOverlay:null,addingCombatant:null,structSubTab:"walls",_uiMapAdvOpen:false,_uiBgOpen:false,_uiMapImportOpen:false,_uiAoeRuleOpen:false,aoeRule:"cell50",drag:null,marquee:null,tokCol:false,ovCol:false,npCol:true,tokSort:"init",ovSort:"name",sidebarOpen:true,coordPick:null,diagRule:"5105",fowRegions:[],wallDraw:null,fowDraw:null,spaceHeld:false,panDrag:null,fowResize:null,wallDrag:null,rulerMode:false,rulerStart:null,rulerEnd:null,rulerDrag:null,placingObject:null,objDraw:null,objResize:null,objMove:null,savedTokens:[],tokenSaves:[],tokenDeletes:[],savedMaps:[],mapSaves:[],mapDeletes:[],mapThumbs:{},savedBattles:[],battleSaves:[],battleDeletes:[],tokenLabels:[],tokenLabelSaves:[],tokenLabelDeletes:[]};
+const S={grid:{cellSize:40,offsetX:0,offsetY:0,cols:26,rows:26,startCol:0,startRow:0,fullCols:26,fullRows:26},tokens:[],overlays:[],walls:[],objects:[],combatants:[],sel:{type:null,ids:new Set()},zoom:1,showGrid:true,showOverlays:true,showWalls:true,showObjects:true,showTokens:true,showFow:true,showBg:true,coordLabels:true,gridOpacity:0.99,bgAnalysis:null,mapBakedGrid:null,darkMode:false,noBorder:false,altFont:false,gridColor:"",fowOpacity:0,labelFont:"Figtree",loadedUrl:"",tab:"map",addingOverlay:null,addingCombatant:null,structSubTab:"walls",_uiMapAdvOpen:false,_uiBgOpen:false,_uiMapImportOpen:false,_uiAoeRuleOpen:false,aoeRule:"cell50",drag:null,marquee:null,tokCol:false,ovCol:false,npCol:true,tokSort:"init",ovSort:"name",sidebarOpen:true,coordPick:null,diagRule:"5105",fowRegions:[],wallDraw:null,fowDraw:null,spaceHeld:false,panDrag:null,fowResize:null,wallDrag:null,rulerMode:false,rulerStart:null,rulerEnd:null,rulerDrag:null,placingObject:null,objDraw:null,objResize:null,objMove:null,savedTokens:[],tokenSaves:[],tokenDeletes:[],savedMaps:[],mapSaves:[],mapDeletes:[],mapThumbs:{},savedBattles:[],battleSaves:[],battleDeletes:[],tokenLabels:[],tokenLabelSaves:[],tokenLabelDeletes:[]};
 // 3D cube distance between two tokens (nearest surface-to-surface, in feet)
 function tokCubeCells(t){const c=Math.max(1,SIZES[t.size]?.c||1);return c;}
 function cubeDist3D(a,b){
@@ -849,7 +856,15 @@ function scrollTo(col,row){const vp=$("map-vp"),g=S.grid;
 let origState=null,origBgUrl="",undoStack=[],redoStack=[];
 function snap(){return JSON.parse(JSON.stringify({tokens:S.tokens,overlays:S.overlays,walls:S.walls,objects:S.objects,fowRegions:S.fowRegions,grid:S.grid}));}
 function setStatus(msg){const el=$("status-msg");if(el){el.textContent=msg;el.style.color="var(--accent)";clearTimeout(window._statusTimer);window._statusTimer=setTimeout(()=>{if(el.textContent===msg){el.style.color="var(--fg3)";setTimeout(()=>{if(el.textContent===msg)el.textContent="";},1500);}},2000);}}
-function pushU(msg){undoStack.push(snap());if(undoStack.length>30)undoStack.shift();redoStack=[];S._lastExport=false;if(msg)setStatus(msg);}
+function pushU(msg){undoStack.push(snap());if(undoStack.length>30)undoStack.shift();redoStack=[];S._lastExport=false;if(msg)setStatus(msg);
+  // Pulse the Save / Export button so a change that needs exporting is visible.
+  const _b=document.getElementById("btn-copy");if(_b){_b.classList.remove("flash");void _b.offsetWidth;_b.classList.add("flash");setTimeout(()=>_b.classList.remove("flash"),700);}}
+// Warn before leaving if there are unsaved (un-exported) changes. The export button is enabled only
+// when changes are pending, and S._lastExport is true only immediately after a successful export.
+window.addEventListener("beforeunload",function(e){
+  const b=document.getElementById("btn-copy");
+  if(b&&!b.disabled&&!S._lastExport){e.preventDefault();e.returnValue="";}
+});
 function popU(){if(!undoStack.length)return;redoStack.push(snap());const s=undoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;clearSel();setStatus("\u21a9 Undo");renderAll();}
 function redoU(){if(!redoStack.length)return;undoStack.push(snap());const s=redoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;clearSel();setStatus("\u21aa Redo");renderAll();}
 function clearSel(){S.sel={type:null,ids:new Set()};S._lastClick=null;}
@@ -966,6 +981,15 @@ function getOvDisplayName(ov){
 // gave M=5, L=10, H=15, G=20 and sliced Tiny to the first 2 chars.)
 // `mx`, if explicitly passed, still acts as a plain first-N cap for callers.
 function tokLbl(t,mx){const nm=t.name||"";if(mx)return nm.slice(0,mx);const sz=t.size;if(sz==="T")return nm.length<=2?nm:nm[0]+nm[nm.length-1];const cap=({S:4,M:4,L:9,H:14,G:18})[sz]||4;return nm.slice(0,cap);}
+// OTFBM custom-image label badge. Per tokens.md: image tokens only show a label when the name ends in
+// a digit, drawn bottom-right. How much shows scales with size via tokLbl's caps (T=2 first+last, S/M=4,
+// L=9, H=14, G=18); if the size cap would truncate the trailing number away ("too small for the full
+// label"), only the number is shown. Returns "" when no badge should appear.
+function imgTokBadge(t){
+  const nm=t.name||"";const dm=nm.match(/(\d+)$/);if(!dm)return "";
+  const num=dm[1],lbl=tokLbl(t);
+  return lbl.endsWith(num)?lbl:num;
+}
 // Token display info for lists/popups: Name, Name (30'H), Name (S), Name (-10'H, S)
 function tokInfo(t){const parts=[];if(t.height)parts.push(t.height+"'H");if(t.size!=="M")parts.push(t.size);return parts.length?t.name+" ("+parts.join(", ")+")":t.name;}
 function groupToks(){const g={};S.tokens.filter(t=>!t.hidden&&!t.mapHidden).forEach(t=>{const k=`${t.col},${t.row},${t.size}`;(g[k]=g[k]||[]).push(t);});return g;}
@@ -1161,7 +1185,10 @@ function renderSVG(){
   const pvEl=$("partial-view");
   if(pvEl){if(S.grid.startCol||S.grid.startRow){
     pvEl.textContent=`📐 Partial view: ${col2l(S.grid.startCol).toUpperCase()}${S.grid.startRow+1} → ${col2l(S.grid.startCol+S.grid.cols-1).toUpperCase()}${S.grid.startRow+S.grid.rows} (${S.grid.cols}×${S.grid.rows} of ${S.grid.fullCols||S.grid.cols}×${S.grid.fullRows||S.grid.rows})`;
-    pvEl.style.display="block";}else{pvEl.style.display="none";}}}
+    pvEl.style.display="block";}else{pvEl.style.display="none";}}
+  // Solid Border is only relevant on a cropped view, so only surface it then (saves toolbar space).
+  const _tbl=document.getElementById("tb-border-label");
+  if(_tbl){const _crop=S.grid.startCol>0||S.grid.startRow>0||S.grid.cols<(S.grid.fullCols||S.grid.cols)||S.grid.rows<(S.grid.fullRows||S.grid.rows);_tbl.style.display=_crop?"inline-flex":"none";}}
 
 function rTok(svg,t){
   const g=S.grid,cp=SIZES[t.size]?.c||1,r=(cp*g.cellSize)/2-2,p=tokCenter(t);
@@ -1195,7 +1222,16 @@ function rTok(svg,t){
     
     gr.appendChild(sEl("circle",cA));
     if(sel)gr.appendChild(sEl("circle",{cx:p.x,cy:p.y,r:r-1.5,fill:"none",stroke:"rgba(0,0,0,0.6)","stroke-width":1}));}
-  const lb=tokLbl(t),tx=sEl("text",{x:p.x,y:p.y+fs*.35,"text-anchor":"middle","font-size":fs,"font-weight":"bold",fill:"#fff",style:"pointer-events:none",stroke:"rgba(0,0,0,0.6)","stroke-width":"3","paint-order":"stroke"});tx.textContent=lb;gr.appendChild(tx);
+  if(t.tokenImage){
+    // OTFBM only labels custom-image tokens when the name ends in a digit, drawn as a small red
+    // badge in the bottom-right of the token; how much of the label shows scales with token size.
+    const bd=imgTokBadge(t);
+    if(bd){const bfs=Math.max(9,Math.min(r*0.55,1.6*r/bd.length)),bx=p.x+r*0.5,by=p.y+r*0.5,bw=bd.length*bfs*0.62+bfs*0.5,bh=bfs*1.2;
+      gr.appendChild(sEl("rect",{x:bx-bw/2,y:by-bh/2,width:bw,height:bh,rx:bh*0.25,fill:"#cc2b2b",stroke:"rgba(0,0,0,0.55)","stroke-width":1,style:"pointer-events:none"}));
+      const tb=sEl("text",{x:bx,y:by+bfs*0.34,"text-anchor":"middle","font-size":bfs,"font-weight":"bold",fill:"#fff",style:"pointer-events:none"});tb.textContent=bd;gr.appendChild(tb);}
+  }else{
+    const lb=tokLbl(t),tx=sEl("text",{x:p.x,y:p.y+fs*.35,"text-anchor":"middle","font-size":fs,"font-weight":"bold",fill:"#fff",style:"pointer-events:none",stroke:"rgba(0,0,0,0.6)","stroke-width":"3","paint-order":"stroke"});tx.textContent=lb;gr.appendChild(tx);
+  }
   if(t.height){const htFs=Math.max(14,fs*.55);const ht=sEl("text",{x:p.x,y:p.y-r-4,"text-anchor":"middle","font-size":htFs,fill:"#fbbf24","font-weight":"bold","font-family":"monospace",style:"pointer-events:none",stroke:"rgba(0,0,0,0.7)","stroke-width":"3","paint-order":"stroke"});ht.textContent="↕"+t.height+"'";gr.appendChild(ht);}
   svg.appendChild(gr);}
 
@@ -2063,17 +2099,101 @@ function rOtherTab(pa,la){
   pa.innerHTML=subtabsHtml+(parts[0]||"");
   la.innerHTML=parts[1]||"";
 }
+// Build the background-info line for the Map tab from the cached image analysis (S.bgAnalysis).
+function mapBgInfoHtml(){
+  if(!S.loadedUrl)return '<span style="color:var(--fg3);font-style:italic">📐 No background image loaded</span>';
+  const a=S.bgAnalysis;
+  if(!a)return '<span style="color:var(--accent);font-style:italic">Analyzing image…</span>';
+  if(a.error)return '<span style="color:#e74c3c">Could not analyze image (CORS or network error)</span>';
+  return `<span style="color:var(--accent)">✓</span> <b>${a.w} × ${a.h} px</b>${a.sizeStr?" · "+a.sizeStr:""}`;
+}
+// Build the grid-preset dropdown for the Map tab. Render-driven (rebuilt on every render) so it
+// persists. Library maps carry an exact baked grid (S.mapBakedGrid): that grid is shown as the
+// authoritative "map's grid" option and pre-selected, and choosing any other preset shows a warning
+// that the chosen grid won't line up with the grid printed on the map.
+function mapGridPickerHtml(){
+  if(!S.loadedUrl)return '<div style="font-size:10px;color:var(--fg4);font-style:italic;padding:2px 0">Recommended layouts appear here once a background image is loaded.</div>';
+  const a=S.bgAnalysis;
+  if(!a||a.error)return a&&a.error?'':'<div style="font-size:10px;color:var(--fg3);font-style:italic;padding:2px 0">Analyzing image…</div>';
+  if(!a.options||!a.options.length)return '<div style="font-size:10px;color:var(--fg3);font-style:italic;padding:2px 0">Analyzing image…</div>';
+  const baked=S.mapBakedGrid;
+  let opts=a.options.slice();
+  if(baked){opts=opts.filter(o=>!(o.cs===baked.cell&&o.gw===baked.cols&&o.gh===baked.rows));
+    opts.unshift({cs:baked.cell,gw:baked.cols,gh:baked.rows,ox:0,oy:0,conf:100,baked:true});}
+  const key=o=>o.cs+"|"+o.gw+"|"+o.gh;
+  const curKey=S.grid.cellSize+"|"+S.grid.cols+"|"+S.grid.rows;
+  const bakedKey=baked?baked.cell+"|"+baked.cols+"|"+baked.rows:null;
+  const recOpt=a.recCs!=null?opts.find(o=>o.cs===a.recCs&&!o.baked):null;
+  const selKey=opts.some(o=>key(o)===curKey)?curKey:(baked?bakedKey:(recOpt?key(recOpt):null));
+  let sh='<select class="inp" id="m-gridpick" style="font-size:10px;width:100%">';
+  opts.forEach(o=>{const ar=o.gw*o.gh;
+    const f2=ar>2000?"Epic Battlefield":ar>800?"Large Battle":ar>300?"Standard Encounter":ar>100?"Skirmish":"Close Quarters";
+    const warn=o.cs<40?" ⚠":"";const star=o.baked?" ⭐ map's grid":(!baked&&o.cs===a.recCs?" ⭐ recommended":"");
+    const sel=key(o)===selKey?" selected":"";
+    sh+=`<option value="${o.cs}|${o.gw}|${o.gh}|${o.ox}|${o.oy}"${sel}>${o.gw}×${o.gh} @ c${o.cs} · ${f2} · ${o.gw*5}×${o.gh*5}ft${warn}${star}</option>`;});
+  sh+="</select>";
+  if(baked&&curKey!==bakedKey){
+    sh+=`<div style="font-size:9px;color:#e74c3c;margin-top:4px;line-height:1.4">⚠ This grid differs from the map's built-in grid (${baked.cols}×${baked.rows} @ c${baked.cell}). The grid printed on the map and your tokens may not line up. Re-select "${baked.cols}×${baked.rows} @ c${baked.cell} ⭐" to restore it.</div>`;
+  }else{
+    const selCs=selKey?+selKey.split("|")[0]:null;
+    if(selCs!==null&&selCs<40)sh+='<div style="font-size:9px;color:#e74c3c;margin-top:4px;line-height:1.4">⚠ Below c40: custom token images won\'t render, and the map may appear fuzzy in Discord.</div>';
+  }
+  return sh;
+}
+// Commit the in-progress "add combatant" form into the combatant list, placing a token if a valid
+// location is set. Returns true on success. Shared by the Add button (cb-submit) and the location
+// picker (clicking a cell in add mode drops the token right away).
+function commitAddCombatant(){
+  const ac=S.addingCombatant;if(!ac)return false;
+  const v=id=>document.getElementById(id)?.value||"";
+  const name=slugifyName(v("cb-name"),true);
+  if(!name){setStatus("⚠ Name required");return false;}
+  if(S.tokens.find(t=>normalizeNameForCompare(t.name)===normalizeNameForCompare(name))
+    ||S.combatants.find(c=>normalizeNameForCompare(c.name)===normalizeNameForCompare(name))){
+    setStatus(`⚠ Combatant "${name}" already exists`);return false;}
+  const isMon=!!(ac.mon&&(ac.mon.srd||"").trim());
+  if(isMon&&!(ac.mon.srd||"").trim()){setStatus("⚠ Pick a stat block");return false;}
+  const initRaw=v("cb-init").trim();
+  const init=isMon?(initRaw===""?null:(parseInt(initRaw)||0)):(parseInt(v("cb-init"))||0);
+  const acVal=v("cb-ac")?parseInt(v("cb-ac")):undefined;
+  let hpCurRaw=v("cb-hpcur"),hpMaxRaw=v("cb-hpmax");
+  let hpCurVal=hpCurRaw?parseInt(hpCurRaw):undefined,hpMaxVal=hpMaxRaw?parseInt(hpMaxRaw):undefined;
+  if(hpCurVal!=null&&hpMaxVal==null)hpMaxVal=hpCurVal;
+  else if(hpMaxVal!=null&&hpCurVal==null)hpCurVal=hpMaxVal;
+  const note=v("cb-note").trim();
+  const size=v("cb-size")||"M";
+  const hideStats=document.getElementById("cb-hide")?.checked||false;
+  const loc=v("cb-loc").trim();
+  const group=v("cb-group").trim();
+  const color=ac.color||"#888888";
+  const tokenImage=ac.tokenImage||"";
+  pushU();
+  const cb={name,placed:false,init,ac:acVal,hp:hpCurVal,hpMax:hpMaxVal,note,hideStats,group,isNew:true,
+    savedTok:{color,size,tokenImage}};
+  if(isMon)cb.mon={srd:(ac.mon.srd||"").trim(),src:ac.mon.src||"brlegacy"};
+  S.combatants.push(cb);
+  let placed=false,newTokId=null,placedCoord=null;
+  if(loc){const coord=parseC(loc);if(coord){
+    newTokId=uid();
+    S.tokens.push({id:newTokId,name,col:coord.col,row:coord.row,size,color,height:0,tokenImage,originalCol:coord.col,originalRow:coord.row,group,
+      hpCur:hpCurVal,hpMax:hpMaxVal,ac:acVal,hideStats,note});
+    cb.placed=true;placed=true;placedCoord=coord;}}
+  S.addingCombatant=null;
+  if(placed&&newTokId){S.sel={type:"token",ids:new Set([newTokId])};if(placedCoord)scrollTo(placedCoord.col,placedCoord.row);}
+  else{S.sel={type:"unplaced",ids:new Set(),name};}
+  renderAll();
+  setStatus(`✓ Added ${isMon?"monster":"combatant"} "${name}"${placed?" at "+loc:" (unplaced)"}`);
+  return true;
+}
 function rMapTabContent(){
   // Slimmed Map tab: primary controls visible, advanced tweaks collapsed.
   // Layout dropdown does the heavy lifting now - user picks a scale ("zoom into the battle"),
   // BS computes cols/rows for them. Manual cols/rows override remains for fine-tuning.
   let h="";
   const bgUrl=S.loadedUrl||"";
-  const area=S.grid.cols*S.grid.rows;const feel=area>2000?"Epic Battlefield":area>800?"Large Battle":area>300?"Standard Encounter":area>100?"Skirmish":"Close Quarters";
-  const mapFt=S.grid.cols*5+"ft × "+S.grid.rows*5+"ft";
   // Yellow "Add New X" button at top - visual consistency across tabs (Map/Tokens/Overlays/Other all have one).
   // Clicking focuses the URL input below; when a bg is already loaded, label switches to "Change".
-  h+=`<button class="btn btn-p" id="btn-add-bg" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0" title="Add or change the battlemap background image - paste a URL, browse the Map Library, or pick a saved map below">${bgUrl?"✏️ Change Map Background":"➕ Add New Map Background"}</button>`;
+  h+=`<button class="btn btn-p" id="btn-add-bg" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0" title="Add or change the battlemap background image - paste a URL, browse the Map Library, or pick a saved map below">${bgUrl?"✏️ Change Map Background":"➕ Add Map Background"}</button>`;
   // Background section. The URL / upload / sample / browse controls collapse until the user clicks
   // "Add New Map Background" (S._uiBgOpen); once an image is loaded they stay expanded so the URL
   // stays visible. The image-info line is always shown.
@@ -2081,21 +2201,28 @@ function rMapTabContent(){
   const _bgBrowse=_bgAll.length?`<button class="btn btn-s" id="m-bgbrowsesaved" style="width:100%;font-size:10px;padding:4px 8px;margin-bottom:6px" title="View thumbnails and load a previously saved map">🗂 Browse Saved Battlemaps (${_bgAll.length})</button>`:"";
   const _bgControls=(bgUrl||S._uiBgOpen)?`
   <div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><input class="inp" id="m-bgurl" value="${bgUrl}" placeholder="Paste image URL or browse below" style="flex:1;font-family:monospace;font-size:9px" title="${bgUrl||'No background image'}"><button class="btn btn-s" id="m-bgupdate" style="font-size:9px;padding:3px 8px;white-space:nowrap">${bgUrl?"Update":"Load"}</button>${bgUrl?`<button class="btn btn-s" id="m-bgremove" style="font-size:9px;padding:3px 6px;color:#e74c3c" title="Remove background image">Remove</button>`:""}</div>
-  <label style="font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:6px" title="When ON, BS analyzes new background images and auto-applies the best-fit grid. Turn off if you want to set the grid manually."><input type="checkbox" id="m-autodetect" ${S.autoDetect?"checked":""} style="accent-color:var(--accent)"><span>Auto-detect grid when image loads</span></label>
   <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap"><button class="btn btn-s" id="m-bgtclib" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Browse the Tom Cartos map library">🗺️ Browse Map Library</button></div>
   ${_bgBrowse}`:"";
   if(bgUrl||S._uiBgOpen){
   h+=`<div class="sec" style="border:1px solid var(--accent)"><div class="sec-title" style="display:flex;align-items:center;gap:4px"><span class="vis-eye${S.showBg?'':' off'}" data-vis="bg" style="cursor:pointer;font-size:11px;position:relative" title="${S.showBg?'Hide background':'Show background'}">👁</span>Background</div>
-  <div id="m-bginfo" style="font-size:11px;color:var(--fg2);margin-bottom:8px;padding:4px 6px;background:var(--bg);border-radius:3px;min-height:18px">${bgUrl?'<span style="color:var(--fg3);font-style:italic">Image loading...</span>':'<span style="color:var(--fg3);font-style:italic">📐 No background image loaded</span>'}</div>
+  <div id="m-bginfo" style="font-size:11px;color:var(--fg2);margin-bottom:8px;padding:4px 6px;background:var(--bg);border-radius:3px;min-height:18px">${mapBgInfoHtml()}</div>
   ${_bgControls}</div>`;
   }
-  // Layout section - dropdown only meaningful with an image loaded
-  h+=`<div class="sec"><div class="sec-title">Layout</div>
-  <div style="font-size:10px;color:var(--fg2);margin-bottom:6px;line-height:1.4"><b>${feel}</b>: ${mapFt} · ${S.grid.cols}×${S.grid.rows} at c${S.grid.cellSize}</div>
-  <div id="m-gridsuggestions" style="margin-bottom:6px">${bgUrl?'':'<div style="font-size:10px;color:var(--fg4);font-style:italic;padding:2px 0">Recommended layouts appear here once a background image is loaded.</div>'}</div>
-  <div class="row"><span class="lbl" style="width:50px">Cell px</span><input type="number" class="inp" id="m-cell" value="${S.grid.cellSize}" min="20" max="100" step="1"></div>
-  <div class="row"><span class="lbl" style="width:40px">Cols</span><input type="number" class="inp" id="m-cols" value="${S.grid.cols}"><span class="lbl" style="width:35px;margin-left:4px">Rows</span><input type="number" class="inp" id="m-rows" value="${S.grid.rows}"></div>
-  <div class="row"><span class="lbl" style="width:40px">Ofs X</span><input type="number" class="inp" id="m-ox" value="${S.grid.offsetX}"><span class="lbl" style="width:35px;margin-left:4px">Ofs Y</span><input type="number" class="inp" id="m-oy" value="${S.grid.offsetY}"></div>
+  // Grid section
+  h+=`<div class="sec"><div class="sec-title">Grid Properties</div>
+  <div id="m-gridsuggestions" style="margin-bottom:6px">${mapGridPickerHtml()}</div>
+  <div class="row" style="gap:6px;margin-bottom:6px;align-items:flex-end">
+    <div style="flex:1"><span class="lbl">Columns (W)</span><input type="number" class="inp" id="m-cols" value="${S.grid.cols}"></div>
+    <div style="flex:1"><span class="lbl">Rows (H)</span><input type="number" class="inp" id="m-rows" value="${S.grid.rows}"></div>
+    <div style="flex:1"><span class="lbl">Pixels/cell</span><input type="number" class="inp" id="m-cell" value="${S.grid.cellSize}" min="20" max="100" step="1"></div>
+  </div>
+  <div class="row" style="gap:6px;margin-bottom:8px;align-items:flex-end">
+    <div style="flex:1${bgUrl?'':';opacity:.45'}" title="${bgUrl?'Nudge the grid to line up with the grid printed on the background image':'Offsets align the grid to a background image - load a map first'}"><span class="lbl">Offset X</span><input type="number" class="inp" id="m-ox" value="${S.grid.offsetX}" ${bgUrl?'':'disabled'}></div>
+    <div style="flex:1${bgUrl?'':';opacity:.45'}" title="${bgUrl?'Nudge the grid to line up with the grid printed on the background image':'Offsets align the grid to a background image - load a map first'}"><span class="lbl">Offset Y</span><input type="number" class="inp" id="m-oy" value="${S.grid.offsetY}" ${bgUrl?'':'disabled'}></div>
+    <div style="flex:1"><span class="lbl">&nbsp;</span><label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;height:25px;white-space:nowrap" title="Dark mode (the OTFBM 'd' option): renders the map on a dark background."><input type="checkbox" id="m-dark" ${S.darkMode?"checked":""} style="accent-color:var(--accent)">Dark Mode</label></div>
+  </div>
+  <div style="margin:8px 0"><span class="lbl">Grid line opacity (${Math.min(99,Math.round(S.gridOpacity*100))}%)</span><input type="range" id="m-opacity" min="0" max="99" value="${Math.min(99,Math.round(S.gridOpacity*100))}" style="width:100%;accent-color:var(--accent)"></div>
+  <div style="margin:8px 0"><span class="lbl">Grid line & axis label color</span><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;padding:3px 0">${COLORS.map(c=>`<div class="cswatch${(S.gridColor===c.code||(!S.gridColor&&c.code==="bk"))?" on":""}" style="background:${c.hex}" data-color="${c.code}" data-prefix="gcol" title="${c.n}"></div>`).join("")}</div></div>
   </div>`;
   return h;
 }
@@ -2104,10 +2231,7 @@ function rMapTabContent(){
 function rAdvancedMapSection(){
   return `<details ${S._uiMapAdvOpen?'open':''} data-section="map-advanced" style="margin-top:12px;padding:8px;background:var(--bg);border:1px solid var(--bg3);border-radius:4px"><summary style="cursor:pointer;font-size:11px;color:var(--fg3);font-weight:bold;user-select:none">⚙ Advanced Map Settings</summary>
   <div style="margin-top:8px">
-  <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:6px"><input type="checkbox" id="m-dark" ${S.darkMode?"checked":""} style="accent-color:var(--accent)">Dark mode (d)</label>
-  <div style="margin:8px 0"><span class="lbl">Grid line opacity (${Math.min(99,Math.round(S.gridOpacity*100))}%)</span><input type="range" id="m-opacity" min="0" max="99" value="${Math.min(99,Math.round(S.gridOpacity*100))}" style="width:100%;accent-color:var(--accent)"></div>
   <div style="margin:8px 0"><span class="lbl">Fog of War opacity (${100-(S.fowOpacity||0)}%)</span><input type="range" id="m-fowopacity" min="0" max="100" value="${100-(S.fowOpacity||0)}" style="width:100%;accent-color:var(--accent)"></div>
-  <div style="margin:8px 0"><span class="lbl">Gridline/Axis Label Color</span><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;padding:3px 0">${COLORS.map(c=>`<div class="cswatch${(S.gridColor===c.code||(!S.gridColor&&c.code==="bk"))?" on":""}" style="background:${c.hex}" data-color="${c.code}" data-prefix="gcol" title="${c.n}"></div>`).join("")}</div></div>
   <div class="row" style="align-items:center;gap:6px;margin:8px 0"><span class="lbl" style="font-size:11px">Diagonal Rule</span><select class="inp" id="m-diagrule" style="font-size:11px"><option value="5105"${S.diagRule==="5105"?" selected":""}>5-10-5 (DMG Optional)</option><option value="simple"${S.diagRule==="simple"?" selected":""}>Simple 5' per square (PHB)</option></select></div>
   <div style="font-size:9px;color:var(--fg3);margin:4px 0 8px 0;line-height:1.4">${S.diagRule==="5105"?"Diagonal movement alternates between 5' and 10' per square. More realistic.":"Every square costs 5' of movement, including diagonals. Faster but less accurate."}</div>
   ${(()=>{const aoeRule=S.aoeRule||"cell50";return `<div style="margin:8px 0"><span class="lbl" style="font-size:11px">AOE Affected Tokens Rule</span><select class="inp" id="m-aoerule" style="font-size:11px"><option value="touch"${aoeRule==="touch"?" selected":""}>Touch (any overlap)</option><option value="cell50"${aoeRule==="cell50"?" selected":""}>Cell ≥50% (DMG default)</option><option value="token50"${aoeRule==="token50"?" selected":""}>Token ≥50%</option></select></div>
@@ -2285,21 +2409,14 @@ window.doImportLoad=function(){const inp=$("m-import-str");const val=inp?inp.val
   try{setSafeHash(raw);loadFromHashStr(raw);setStatus("✅ Loaded from import string");}
   catch(err){setStatus("⚠ Load failed: "+err.message);console.error("Import load error:",err);}};
 window.doImportUpdate=function(){const h=buildExportHash();if(h){$("m-import-str").value=h;setSafeHash(h);setStatus("✓ Import string updated");}};
-// Analyze a loaded background image and populate the Map tab's bginfo + layout dropdown.
-// Reused by: m-bgupdate click, sample loader (loadSampleById), and initial page load if a bg URL exists in the hash.
-// Idempotent - safe to call repeatedly. No-op if the bginfo/suggestions divs aren't in the DOM (e.g. user is on a different tab).
+// Analyze a loaded background image: cache its pixel size + candidate grids in S.bgAnalysis, then
+// re-render the Map tab (the bg-info line and grid picker are built from that cache, so they persist
+// across re-renders). Reused by: m-bgupdate, loadTCMap, and initial page load if a bg URL exists.
 window.analyzeBackgroundForLayout=function(url){
   if(!url)return;
-  const info=document.getElementById("m-bginfo");const sugg=document.getElementById("m-gridsuggestions");
-  if(!info&&!sugg)return; // Map tab isn't visible - nothing to do
-  if(info)info.innerHTML='<span style="color:var(--accent);font-style:italic">Analyzing image...</span>';
   const proxyUrl=PROXY_URL?PROXY_URL+encodeURIComponent(url):null;
   const img=new Image();img.crossOrigin="anonymous";
-  function showSuggestions(w,h,canDetect){
-    let infoStr=`<span style="color:var(--accent)">✓</span> <b>${w} × ${h} px</b>`;
-    if(info){fetch(proxyUrl||url,{method:"HEAD",mode:"cors"}).then(r=>{const cl=r.headers.get("content-length");if(cl){const kb=Math.round(+cl/1024);infoStr+=" · "+(kb>1024?(kb/1024).toFixed(1)+"MB":kb+"KB");info.innerHTML=infoStr;}}).catch(()=>{});
-      info.innerHTML=infoStr;}
-    if(!sugg)return;
+  function done(w,h,canDetect){
     const options=[];const tested=new Set();
     if(canDetect){let r=null;try{r=detectGrid(img);}catch(e){}
       if(r&&!r.error&&r.cellSize){options.push({cs:r.cellSize,gw:r.gridW,gh:r.gridH,ox:r.offsetX,oy:r.offsetY,conf:r.confidence});tested.add(r.cellSize);}}
@@ -2310,26 +2427,20 @@ window.analyzeBackgroundForLayout=function(url){
         options.push({cs,gw,gh,ox:Math.round((w-gw*cs)/2),oy:Math.round((h-gh*cs)/2),conf});}}
     const recCs=options.length?[...options].sort((a,b)=>b.conf-a.conf)[0].cs:null;
     options.sort((a,b)=>b.cs-a.cs);
-    if(options.length){
-      let sh=`<select class="inp" id="m-gridpick" style="font-size:10px;width:100%">`;
-      options.forEach((o)=>{const a2=o.gw*o.gh;
-        const f2=a2>2000?"Epic Battlefield":a2>800?"Large Battle":a2>300?"Standard Encounter":a2>100?"Skirmish":"Close Quarters";
-        const warn=o.cs<40?" ⚠":"";const rec=o.cs===recCs?" ⭐":"";
-        // Pre-select the option whose c-value matches the currently-applied grid (so the dropdown reflects reality).
-        // Fall back to the recommended option if no exact match (e.g. fresh load with no grid set yet).
-        const sel=(o.cs===S.grid.cellSize)?" selected":(o.cs===recCs&&!options.some(x=>x.cs===S.grid.cellSize)?" selected":"");
-        sh+=`<option value="${o.cs}|${o.gw}|${o.gh}|${o.ox}|${o.oy}"${sel}>${o.gw}×${o.gh} @ c${o.cs} · ${f2} · ${o.gw*5}×${o.gh*5}ft${warn}${rec}</option>`;});
-      sh+="</select>";
-      const selCs=options.find(o=>o.cs===S.grid.cellSize)?S.grid.cellSize:recCs;
-      if(selCs!==null&&selCs<40)sh+='<div style="font-size:9px;color:#e74c3c;margin-top:4px;line-height:1.4">⚠ Below c40: custom token images won\'t render, and the map may appear fuzzy in Discord.</div>';
-      sugg.innerHTML=sh;}
-    if(typeof renderCmd==="function")renderCmd();}
-  img.onload=()=>{showSuggestions(img.naturalWidth,img.naturalHeight,true);};
+    const prevSize=(S.bgAnalysis&&S.bgAnalysis.w===w&&S.bgAnalysis.h===h)?S.bgAnalysis.sizeStr:"";
+    S.bgAnalysis={w,h,sizeStr:prevSize,options,recCs};
+    if(S.tab==="map")renderSB();
+    // File size (async, CORS permitting) - update the info line once known.
+    fetch(proxyUrl||url,{method:"HEAD",mode:"cors"}).then(r=>{const cl=r.headers.get("content-length");
+      if(cl&&S.bgAnalysis&&S.bgAnalysis.w===w&&S.bgAnalysis.h===h){const kb=Math.round(+cl/1024);
+        S.bgAnalysis.sizeStr=kb>1024?(kb/1024).toFixed(1)+"MB":kb+"KB";if(S.tab==="map")renderSB();}}).catch(()=>{});
+  }
+  img.onload=()=>done(img.naturalWidth,img.naturalHeight,true);
   img.onerror=()=>{
-    // Proxy load failed - try direct (no CORS, so we can't detect grid but can still read dimensions)
+    // Proxy/CORS load failed - retry direct (no CORS, so no pixel grid-detection, but dimensions still read).
     const img2=new Image();
-    img2.onload=()=>{showSuggestions(img2.naturalWidth,img2.naturalHeight,false);};
-    img2.onerror=()=>{if(info)info.innerHTML='<span style="color:#e74c3c">Could not analyze image (CORS or network error)</span>';};
+    img2.onload=()=>done(img2.naturalWidth,img2.naturalHeight,false);
+    img2.onerror=()=>{S.bgAnalysis={w:0,h:0,sizeStr:"",options:[],recCs:null,error:true};if(S.tab==="map")renderSB();};
     img2.src=url;};
   img.src=proxyUrl||url;
 };
@@ -2458,6 +2569,10 @@ function renderCombatantPreview(token,opts){
     const url="https://token.otfbm.io/img/"+code;
     html+=`<div class="cb-prev-disc" style="position:absolute;left:${tokenOffset}px;top:${tokenOffset}px;width:${tokenPx}px;height:${tokenPx}px;border-radius:50%;overflow:hidden;border:${ringStyle};box-sizing:border-box;background:${color}">
       <img src="${url}" style="width:100%;height:100%;object-fit:cover;display:block"/></div>`;
+    // OTFBM only labels custom-image tokens when the name ends in a digit (bottom-right; amount scales with size).
+    const bd=imgTokBadge(token);
+    if(bd){const bfs=Math.max(8,Math.min(Math.round(tokenPx*0.24),Math.round(tokenPx*0.72/bd.length)));
+      html+=`<span style="position:absolute;left:${Math.round(tokenOffset+tokenPx*0.6)}px;top:${Math.round(tokenOffset+tokenPx*0.6)}px;transform:translate(-50%,-50%);background:#cc2b2b;color:#fff;font-size:${bfs}px;font-weight:bold;line-height:1;padding:1px 4px;border-radius:4px;border:1px solid rgba(0,0,0,0.5);pointer-events:none;white-space:nowrap">${bd}</span>`;}
   }else{
     // Empty state in the form reads as an upload target (camera) instead of a bare "?".
     const discInner=(editIcon&&placeholder)?`<span class="cb-prev-cam" aria-hidden="true"></span>`:`<span class="cb-prev-label">${label}</span>`;
@@ -2791,7 +2906,7 @@ function renderCmd(){
   btn.title="Copy the !bscry apply command to clipboard, then paste it in Discord to apply your changes";
   // Fresh startup detection - no background loaded and no real combatants
   const isEmptyStartup=!S.loadedUrl&&S.tokens.length<=1&&S.walls.length===0&&S.fowRegions.length===0&&S.overlays.length===0&&S.objects.length===0;
-  if(isEmptyStartup){ct.innerHTML='<span style="color:var(--fg4);font-style:italic">No changes - default 10×10 grid</span>';btn.textContent="No changes to apply";btn.disabled=true;btn.classList.remove("ready");btn.classList.remove("copied");return;}
+  if(isEmptyStartup){ct.innerHTML='<span style="color:var(--fg4);font-style:italic">No changes - default 10×10 grid</span>';btn.textContent="Save / Export";btn.disabled=true;btn.classList.remove("ready");btn.classList.remove("copied");return;}
   const lines=[];
   // Token move parts
   const moveParts=[];
@@ -2966,7 +3081,7 @@ function renderCmd(){
     const cc=h2c(rt.color);if(cc&&cc!=="b"&&cc!=="r")props.push("Color: "+cc);
     if(rt.tokenImage)props.push("Token: "+rt.tokenImage);
     lines.push("!i note "+qN(rt.name)+(props.length?" "+props.join(" | "):""));});
-  if(!lines.length){ct.innerHTML="None - make edits to enable Export Updated Map";ct.style.color="var(--fg4)";btn.textContent="No changes to apply";btn.disabled=true;btn.classList.remove("ready");btn.classList.remove("copied");}
+  if(!lines.length){ct.innerHTML="None - make edits to enable Save / Export";ct.style.color="var(--fg4)";btn.textContent="Save / Export";btn.disabled=true;btn.classList.remove("ready");btn.classList.remove("copied");}
   else{
   const warns=[];
   if(S.grid.cellSize<40&&S.tokens.some(t=>t.tokenImage))warns.push("⚠ Grid size "+S.grid.cellSize+"px per cell - custom token images need 40px or larger to display");
@@ -2993,9 +3108,9 @@ function renderCmd(){
     else summaryParts.push("map");}
   if(uvarOps.length)summaryParts.push(uvarOps.length+" save"+(uvarOps.length>1?"s":""));
   btn.disabled=false;
-  if(S._lastExport){btn.classList.add("copied");btn.classList.remove("ready");btn.textContent="✓ Exported";}
+  if(S._lastExport){btn.classList.add("copied");btn.classList.remove("ready");btn.textContent="✓ Saved";}
   else{btn.classList.add("ready");btn.classList.remove("copied");
-    btn.textContent=mv.length>MAX_MV?`⚠ ${mv.length}/${MAX_MV}! Copy`:`Export Updated Map (${summaryParts.join(", ")})`;}
+    btn.textContent=mv.length>MAX_MV?`⚠ ${mv.length}/${MAX_MV}! Copy`:`Save / Export (${summaryParts.join(", ")})`;}
   if(hideLbl)hideLbl.style.display="";}}
 
 // Check if cell is within overlay area
@@ -3411,6 +3526,8 @@ function setup(){
   window.fitAllZoom=function(){const vp2=$("map-vp"),mapW=S.grid.cols*S.grid.cellSize+PAD*2,mapH=S.grid.rows*S.grid.cellSize+PAD*2;
     const zw=vp2.clientWidth/mapW,zh=vp2.clientHeight/mapH;return Math.max(.1,Math.min(3,Math.min(zw,zh)));}
   window.fitHeightZoom=function(){const vp=$("map-vp");const vpH=vp.clientHeight-(vp.scrollWidth>vp.clientWidth?17:0)-4;const mapH=S.grid.rows*S.grid.cellSize+PAD*2;return vpH&&mapH?Math.max(.1,Math.min(3,vpH/mapH)):1;}
+  // "Fit" fills the constraining dimension: for a tall map that's width (scroll down), for a wide map height (scroll across).
+  window.fitSmartZoom=function(){return Math.max(fitZoom(),fitHeightZoom());};
   window.zoomAt=function(newZ){const oldZ=S.zoom;newZ=Math.max(.1,Math.min(3,newZ));if(newZ===oldZ&&!S._fitRecheck)return;
     const r=vp.getBoundingClientRect(),cx=r.width/2,cy=r.height/2;
     // Find the map point currently at viewport center
@@ -3428,10 +3545,8 @@ function setup(){
     // Update button states
     const is100=Math.abs(S.zoom-1)<.01;
     const z100=$("btn-z100");z100.disabled=is100;z100.style.opacity=is100?.4:1;z100.style.cursor=is100?"default":"pointer";
-    const fz=fitZoom(),isFitW=Math.abs(S.zoom-fz)<.01;
-    const fw=$("btn-fitw");fw.disabled=isFitW;fw.style.opacity=isFitW?.4:1;fw.style.cursor=isFitW?"default":"pointer";
-    const fhz=fitHeightZoom(),isFitH=Math.abs(S.zoom-fhz)<.01;
-    const fh=$("btn-fith");fh.disabled=isFitH;fh.style.opacity=isFitH?.4:1;fh.style.cursor=isFitH?"default":"pointer";
+    const fsz=fitSmartZoom(),isFit=Math.abs(S.zoom-fsz)<.01;
+    const fbtn=$("btn-fit");if(fbtn){fbtn.disabled=isFit;fbtn.style.opacity=isFit?.4:1;fbtn.style.cursor=isFit?"default":"pointer";}
     const faz=fitAllZoom(),isFitAll=Math.abs(S.zoom-faz)<.01;
     const fa=$("btn-fitall");fa.disabled=isFitAll;fa.style.opacity=isFitAll?.4:1;fa.style.cursor=isFitAll?"default":"pointer";
     // Post-render recheck: if horizontal scrollbar appeared after a FIT operation, shrink to fit
@@ -3454,8 +3569,7 @@ function setup(){
     zf.style.top="40px";zf.style.right="17px";zf.style.left="auto";}
   positionZoomPanel();
   $("btn-z100").onclick=()=>zoomAt(1);
-  $("btn-fitw").onclick=()=>{S._fitRecheck=true;zoomAt(fitZoom());};
-  $("btn-fith").onclick=()=>{S._fitRecheck=true;zoomAt(fitHeightZoom());};
+  $("btn-fit").onclick=()=>{const fw=fitZoom(),fh=fitHeightZoom(),useWidth=fw>=fh;S._fitRecheck=useWidth;zoomAt(useWidth?fw:fh);};
   $("btn-fitall").onclick=()=>{S._fitRecheck=true;zoomAt(fitAllZoom());};
   // Solid Border toggle in toolbar - lives next to View Bounds because it's a viewing/framing control,
   // not a map-config detail. Was previously buried inside DM Tools → Map → Display.
@@ -3530,7 +3644,7 @@ function setup(){
     // Yellow Add New Map Background button - focuses the URL input for paste; user can also use the
     // upload / sample / browse buttons below it. No actual form expansion (the controls are always visible).
     if(t.id==="btn-add-bg"){
-      if(!S.loadedUrl){S._uiBgOpen=!S._uiBgOpen;renderSB();if(S._uiBgOpen)$("m-bgurl")?.focus();return;}
+      if(!S.loadedUrl){openAddBackground();return;}
       const inp=$("m-bgurl");if(inp){inp.focus();inp.select();}return;}
     // Toggle Add New Combatant form on Tokens tab
     if(t.id==="btn-add-cb"){
@@ -3570,57 +3684,7 @@ function setup(){
         inp.dispatchEvent(new Event("change",{bubbles:true}));
       }
       return;}
-    if(t.id==="cb-submit"){
-      const ac=S.addingCombatant;if(!ac)return;
-      const v=id=>document.getElementById(id)?.value||"";
-      const name=slugifyName(v("cb-name"),true);
-      if(!name){setStatus("⚠ Name required");return;}
-      // Check name conflicts (token + combatant lists)
-      if(S.tokens.find(t=>normalizeNameForCompare(t.name)===normalizeNameForCompare(name))
-        ||S.combatants.find(c=>normalizeNameForCompare(c.name)===normalizeNameForCompare(name))){
-        setStatus(`⚠ Combatant "${name}" already exists`);return;}
-      const isMon=!!(ac.mon&&(ac.mon.srd||"").trim());
-      if(isMon&&!(ac.mon.srd||"").trim()){setStatus("⚠ Pick a stat block");return;}
-      // For monsters a blank initiative means "let Avrae roll on add" (null -> no -p); a number -> -p N.
-      const initRaw=v("cb-init").trim();
-      const init=isMon?(initRaw===""?null:(parseInt(initRaw)||0)):(parseInt(v("cb-init"))||0);
-      const acVal=v("cb-ac")?parseInt(v("cb-ac")):undefined;
-      // HP auto-mirror: setting one but leaving the other blank defaults blank to the same value.
-      // Both blank = no HP (Avrae picks up monster default later).
-      let hpCurRaw=v("cb-hpcur"),hpMaxRaw=v("cb-hpmax");
-      let hpCurVal=hpCurRaw?parseInt(hpCurRaw):undefined,hpMaxVal=hpMaxRaw?parseInt(hpMaxRaw):undefined;
-      if(hpCurVal!=null&&hpMaxVal==null)hpMaxVal=hpCurVal;
-      else if(hpMaxVal!=null&&hpCurVal==null)hpCurVal=hpMaxVal;
-      const note=v("cb-note").trim();
-      const size=v("cb-size")||"M";
-      const hideStats=document.getElementById("cb-hide")?.checked||false;
-      const loc=v("cb-loc").trim();
-      const group=v("cb-group").trim();
-      const color=ac.color||"#888888";
-      const tokenImage=ac.tokenImage||"";
-      pushU();
-      // Add to combatants list with full metadata; isNew flag triggers !i add on apply.
-      // hp = current HP, hpMax = max HP (Avrae uses -hp for current and -max for max separately).
-      const cb={name,placed:false,init,ac:acVal,hp:hpCurVal,hpMax:hpMaxVal,note,hideStats,group,isNew:true,
-        savedTok:{color,size,tokenImage}};
-      if(isMon)cb.mon={srd:(ac.mon.srd||"").trim(),src:ac.mon.src||"brlegacy"};
-      S.combatants.push(cb);
-      // Parse location: empty/unplaced -> stay unplaced; valid coord -> place at that coord.
-      let placed=false,newTokId=null,placedCoord=null;
-      if(loc){const coord=parseC(loc);if(coord){
-        newTokId=uid();
-        S.tokens.push({id:newTokId,name,col:coord.col,row:coord.row,size,color,height:0,tokenImage,originalCol:coord.col,originalRow:coord.row,group,
-          // Store new combatant fields directly on the token too so the unified form picks them up when selected.
-          hpCur:hpCurVal,hpMax:hpMaxVal,ac:acVal,hideStats,note});
-        cb.placed=true;placed=true;placedCoord=coord;}}
-      S.addingCombatant=null;
-      // Auto-select the new token (or unplaced combatant) so user sees its properties immediately.
-      // For placed tokens, also scroll the viewport so the new token is visible.
-      if(placed&&newTokId){S.sel={type:"token",ids:new Set([newTokId])};if(placedCoord)scrollTo(placedCoord.col,placedCoord.row);}
-      else{S.sel={type:"unplaced",ids:new Set(),name};}
-      renderAll();
-      setStatus(`✓ Added ${isMon?"monster":"combatant"} "${name}"${placed?" at "+loc:" (unplaced)"}`);
-      return;}
+    if(t.id==="cb-submit"){commitAddCombatant();return;}
     if(t.id==="ao-place"){placeNewOverlay();return;}
     if(t.id==="ao-cancel"){cancelAddOverlay();return;}
     // Map sub-tab clicks
@@ -3634,15 +3698,16 @@ function setup(){
       const url=$("m-bgurl")?.value.trim();if(!url)return;
       // Apply the new BG immediately
       S.loadedUrl=url;$("map-img").src=url;$("map-img").style.display="block";
+      S.mapBakedGrid=null;S.bgAnalysis=null; // a pasted URL has no known/baked grid
       $("map-img").onerror=function(){showError("Could not load background.");this.style.display="none";};
       renderAll();
-      // Trigger analysis - populates m-bginfo + m-gridsuggestions
+      // Trigger analysis - caches dimensions + candidate grids, then re-renders the Map tab
       window.analyzeBackgroundForLayout(url);
       return;}
     // Background Remove button
     if(t.id==="m-bgremove"){
       if(!confirm("Remove background image? Grid settings will be kept."))return;
-      S.loadedUrl="";$("map-img").style.display="none";$("map-img").src="";renderAll();return;}
+      S.loadedUrl="";S.mapBakedGrid=null;S.bgAnalysis=null;$("map-img").style.display="none";$("map-img").src="";renderAll();return;}
     // Save current map - capture full scene state into a save object
     if(t.id==="m-mapsave"){
       const raw=$("m-mapsavename")?.value;
@@ -3948,7 +4013,6 @@ function setup(){
       if(!wasDark&&S.darkMode){if(!S.gridColor||S.gridColor==="bk")S.gridColor="w";}
       else if(wasDark&&!S.darkMode){if(S.gridColor==="w")S.gridColor="";}
       renderAll();return;}
-    if(e.target.id==="m-autodetect"){S.autoDetect=e.target.checked;return;}
     if(e.target.id==="m-diagrule"){S.diagRule=e.target.value;}
     if(e.target.id==="m-detect"){
       const img=$("map-img");
@@ -4403,12 +4467,12 @@ function setup(){
           const coordStr=fmtU(gp.col,gp.row);
           const field=$("cb-loc");if(field)field.value=coordStr;
           if(S.addingCombatant){
-            // Mirror all form fields so the impending render doesn't wipe what user typed
-            const ac=S.addingCombatant,gv=id=>document.getElementById(id)?.value||"";
-            ac.name=gv("cb-name");ac.initStr=gv("cb-init");ac.ac=gv("cb-ac");
-            ac.hpCur=gv("cb-hpcur");ac.hpMax=gv("cb-hpmax");ac.hp=ac.hpMax;
-            ac.size=gv("cb-size")||"M";ac.note=gv("cb-note");ac.location=coordStr;
-            ac.hideStats=document.getElementById("cb-hide")?.checked||false;
+            // Add mode: commit the new combatant and drop its token at the picked coord right away
+            // (previously this only filled the Location field and waited for the Add button).
+            S.addingCombatant.location=coordStr;
+            S.coordPick=null;$("map-svg").style.cursor="";
+            if(commitAddCombatant())return;
+            // Commit failed (e.g. no stat block / name yet) - fall through to keep field + show popup.
           }else if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
             const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);
             if(tk){pushU();tk.col=gp.col;tk.row=gp.row;}
@@ -4785,6 +4849,8 @@ function setup(){
 
   // Help modal
   $("btn-help").onclick=()=>{$("help-modal").style.display="flex";};
+  $("hr-welcome").onclick=()=>{setPromptDismissed("welcomeDismissed",false);$("hr-msg").textContent="✓ The welcome screen will show next time you open BattleScry with an empty map.";};
+  $("hr-bgwiz").onclick=()=>{setPromptDismissed("bgWizardDismissed",false);$("hr-msg").textContent="✓ The Add Map Background guide will show next time you add a background.";};
   // View controls - new design with input focus → coord pick, button states, and drag-to-crop
   window.syncViewInputs=function(){
     const g=S.grid;
@@ -6138,10 +6204,10 @@ function smartModal(opts){
   if(opts.dismissOnBackdrop!==false){bd.addEventListener("click",e=>{if(e.target===bd)close();});}
   return{backdrop:bd,body,footer,close};
 }
-function showFullscreenThumb(url){
+function showFullscreenThumb(url,meta){
   const bd=document.createElement("div");bd.id="fs-thumb-bd";bd.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;display:flex;flex-direction:column;padding:0;overflow:hidden";
   bd.innerHTML=`<div style="padding:8px 14px;display:flex;align-items:center;gap:8px;background:var(--bg2);border-bottom:1px solid var(--bg3);flex-shrink:0">
-    <div style="flex:1 1 0"></div>
+    <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center">${meta&&meta.title?`<div style="font-size:18px;font-weight:700;color:var(--fg);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escAttr(meta.title)}">${escAttr(meta.title)}</div><div style="font-size:11px;color:var(--fg3);font-family:monospace;margin-top:2px">${meta.w} × ${meta.h} · ${meta.cell} px/cell</div>`:""}</div>
     <div style="display:flex;align-items:center;gap:8px">
       <button id="fst-zoomout" class="btn btn-s" style="font-size:14px;padding:4px 10px" title="Zoom out (or scroll down)">−</button>
       <span id="fst-zoom-label" style="font-family:monospace;font-size:11px;color:var(--fg2);min-width:50px;text-align:center">100%</span>
@@ -6150,7 +6216,7 @@ function showFullscreenThumb(url){
       <button id="fst-100" class="btn btn-s" style="font-size:10px;padding:4px 10px" title="100% (actual pixel size)">100%</button>
       <span style="font-size:10px;color:var(--fg3);font-style:italic;margin-left:6px">Scroll to zoom · drag to pan · ESC to close</span>
     </div>
-    <div style="flex:1 1 0;display:flex;justify-content:flex-end"><button id="fst-close" class="btn btn-s" style="font-size:11px;padding:4px 10px">✕ Close</button></div>
+    <div style="flex:1 1 0;display:flex;justify-content:flex-end;align-items:center;gap:12px">${meta&&meta.tc?`<div style="font-size:12px;color:var(--fg2);white-space:nowrap">Battlemaps by <a href="https://www.tomcartos.com/" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:600;text-decoration:none">Tom Cartos</a>.</div>`:""}<button id="fst-close" class="btn btn-s" style="font-size:11px;padding:4px 10px">✕ Close</button></div>
   </div>
   <div id="fst-stage" style="flex:1;overflow:hidden;position:relative;cursor:grab;background:#000">
     <img id="fst-img" src="${url}" draggable="false" style="position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none">
@@ -6351,6 +6417,126 @@ function loadSampleById(creatorId, mapId){
     // Slight delay so the Map tab DOM is settled (loadFromHashStr triggered a renderAll).
     setTimeout(()=>window.analyzeBackgroundForLayout(map.bgUrl),100);}
   catch(err){setStatus("⚠ Sample load failed: "+err.message);}}
+// ===== Reusable wizard shell =====
+// Generic stepper modal reused for map backgrounds, tokens, and overlays. A "screen" is a function
+// (nav) => { title, html, mount?(bodyEl) }. nav = { go(screenFn), back(), close() }.
+function wizardModal(firstScreen,opts){
+  opts=opts||{};
+  const bd=document.createElement("div");
+  bd.className="smart-modal-backdrop";bd.style.cssText="display:flex;z-index:10001";
+  bd.innerHTML=`<div class="smart-modal" style="max-width:${opts.width||520}px;width:92vw;display:flex;flex-direction:column;max-height:88vh">
+    <div class="smart-modal-header" style="display:flex;align-items:center;gap:8px;padding:12px 16px">
+      <button id="wz-back" class="btn btn-s" style="font-size:12px;padding:3px 9px;display:none">‹ Back</button>
+      <div id="wz-title" style="flex:1;font-size:15px;font-weight:700;color:var(--fg)"></div>
+      <button id="wz-x" class="btn btn-s" style="font-size:13px;padding:3px 10px" title="Close">✕</button>
+    </div>
+    <div id="wz-body" style="padding:16px;overflow:auto"></div>
+  </div>`;
+  document.body.appendChild(bd);
+  const titleEl=bd.querySelector("#wz-title"),bodyEl=bd.querySelector("#wz-body"),backBtn=bd.querySelector("#wz-back");
+  const stack=[];let curScr=null;
+  function unmountCur(){if(curScr&&curScr.unmount){try{curScr.unmount();}catch(e){}}curScr=null;}
+  function close(){unmountCur();document.removeEventListener("keydown",onKey);bd.remove();}
+  function onKey(e){if(e.key==="Escape")close();}
+  const nav={go(s){stack.push(s);draw();},back(){if(stack.length>1){stack.pop();draw();}else close();},close};
+  function draw(){
+    unmountCur();
+    const scr=stack[stack.length-1](nav);curScr=scr;
+    titleEl.textContent=scr.title||"";bodyEl.innerHTML=scr.html||"";
+    backBtn.style.display=stack.length>1?"inline-block":"none";
+    if(scr.mount)scr.mount(bodyEl);
+  }
+  backBtn.onclick=()=>nav.back();
+  bd.querySelector("#wz-x").onclick=close;
+  bd.addEventListener("mousedown",e=>{if(e.target===bd)close();});
+  document.addEventListener("keydown",onKey);
+  stack.push(firstScreen);draw();
+  return{close,nav};
+}
+// Big bouncing arrow that points at an on-screen element (used by the URL wizard hand-off).
+// Returns a cleanup function that removes the arrow.
+function showWizPointer(sel){
+  const el=document.querySelector(sel);if(!el)return ()=>{};
+  const r=el.getBoundingClientRect();const size=48;
+  const above=r.top-size-8>8;
+  const a=document.createElement("div");
+  a.style.cssText=`position:fixed;z-index:10005;pointer-events:none;left:${Math.max(8,Math.min(window.innerWidth-size-8,r.left+r.width/2-size/2))}px;top:${above?r.top-size-8:r.bottom+8}px;animation:${above?"wizBounceDown":"wizBounceUp"} .9s ease-in-out infinite`;
+  a.innerHTML=`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="#9f5ae5" style="filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));transform:rotate(${above?0:180}deg)"><path d="M10.5 3h3v8.5h3.5L12 18 7 11.5h3.5z"/></svg>`;
+  document.body.appendChild(a);
+  return ()=>{a.remove();};
+}
+// Prompt-suppression (matches the welcome modal's localStorage pattern). Restorable from Help.
+function promptDismissed(key){try{return !!localStorage.getItem(key);}catch(e){return false;}}
+function setPromptDismissed(key,v){try{if(v)localStorage.setItem(key,"1");else localStorage.removeItem(key);}catch(e){}}
+
+// ===== Map background wizard =====
+// Open the Background section of the Map tab directly (the "I know what I'm doing" path).
+function openBgPanel(){
+  S.tab="map";
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab==="map"));
+  S._uiBgOpen=true;renderSB();
+  setTimeout(()=>{const i=$("m-bgurl");if(i){i.focus();if(i.select)i.select();}},60);
+}
+// Entry point for the Add Map Background button. Shows the guided/skip choice unless dismissed.
+function openAddBackground(){
+  if(promptDismissed("bgWizardDismissed")){openBgPanel();return;}
+  wizardModal(bgEntryChoice,{width:520});
+}
+function bgEntryChoice(nav){
+  return {title:"Add a map background",
+    html:`<div style="font-size:13px;color:var(--fg2);line-height:1.5;margin-bottom:16px">The background is the image your grid sits on. Want a guided walk-through, or jump straight to the map panel?</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-p" id="wz-guided" style="padding:12px;font-size:13px;font-weight:600;text-align:left;display:flex;align-items:center;gap:12px"><svg viewBox="0 0 512 512" width="30" height="30" fill="currentColor" style="flex-shrink:0" aria-hidden="true"><path d="M256.3 19.42C204 57.2 177.2 111 152.5 160.7c43.4-24.6 101.7-32.9 126.9-28.7-63.8 10.6-108 25.8-144.4 64.3-2.2 4.5-4.1 8.3-6.4 13.1 115.4-27.8 134.4-27 250.9-.7C368 158.6 343 126.6 304 65.83 345.9 118.4 428.1 208.1 424.3 190.6 401.4 85.73 324.2 23.49 256.3 19.42zM88 231.3c-31 7.4-53.9 17.5-62.8 26.7.9 11.7 6.7 22.1 17.5 32 11.8 10.8 29.6 20.4 51.3 28.1 2.69.9 5.39 1.8 8.1 2.7-8.4-11-11.2-26.3-13-41.1 0-15.4-3-33.5-1.1-48.4zm336 0c2.2 16.2.6 34.5-1.1 48.4-1.8 14.8-4.6 30.1-13 41.1 20.2-7 44.6-17.6 59.4-30.8 10.8-9.9 16.6-20.3 17.5-32-8.9-9.2-31.7-19.3-62.8-26.7zm-274.4.3-7 14h98.8l-7-14zm128 0-7 14h98.8l-7-14zM119 241c-4.7 1.3-9.4 2.6-14 4.1 1 19.9.6 47.6 11.6 64.5h2.4zm274 0v68.6h2.4c10.5-20.7 11.3-41.8 11.6-64.5-4.6-1.5-9.3-2.8-14-4.1zm-255.9 22.6c-.3 18.8 2 39.5 6.2 55.7 21.1-14.1 41.9-25.7 64.7-25.7 3.2 0 6.4.2 9.4.4l5.2-15.7c-5.6 5.7-12.9 8.9-23.2 8.5-25.2-.8-33.9-11.1-37.5-23.2zm109.4 0-12.4 37.2 21.9 27.4 21.9-27.4-12.4-37.2zm103.6 0c-3.6 12.1-12.3 22.4-37.5 23.2-10.3.4-17.6-2.8-23.2-8.5l5.2 15.7c3.1-.3 6.3-.4 9.4-.4 22.8 0 43.6 11.6 64.7 25.7 4.4-20.1 6.8-37.6 6.2-55.7zm-142.1 48c-20 0-43 14.5-68.9 32.4-19.2 13.3-39.9 28.1-63.3 38.4 28.6 6.1 65.8 4.8 98.2-2.6 21.3-4.8 40.5-12.1 53.7-20.5 8.5-5.5 14.1-11.1 17-16.4l-24.2-30.3c-3.7-.6-7.9-1-12.5-1zm96 0c-4.6 0-8.8.4-12.5 1l-24.2 30.3c2.9 5.3 8.5 10.9 17 16.4 13.2 8.4 32.4 15.7 53.7 20.5 32.4 7.4 69.6 8.7 98.2 2.6-23.4-10.3-44.1-25.1-63.3-38.4-25.9-17.9-48.9-32.4-68.9-32.4zm-48 46.7c-4.6 5.7-10.6 10.8-17.4 15.3h34.8c-6.8-4.5-12.8-9.6-17.4-15.3zm-56.7 33.3c-6.9 2.2-14 4.1-21.3 5.8-9.5 2.2-19.2 3.9-28.9 5.1 6.1 19.6 14.1 39.5 23 58.2l.1.2c4.3-6.7 9.4-13.1 13.5-19.8-2.4 13.9-3.3 27.9-2.3 41.8 1.7 3.3 3.5 6.5 5.3 9.7h134.6c3.6-6.3 7-12.7 10.3-19.2 5.4-21.9 3.9-42.8 5.4-64.2 3.1 11.5 6.1 23 8.5 34.7 5.8-13.6 11.1-27.6 15.4-41.4-9.7-1.2-19.4-2.9-28.9-5.1-7.3-1.7-14.4-3.6-21.3-5.8z"/></svg><span>Walk me through it<div style="font-size:11px;font-weight:400;color:rgba(0,0,0,.6);margin-top:2px">Find a map, get it hosted, and make it Avrae-ready</div></span></button>
+        <button class="btn btn-s" id="wz-skip" style="padding:12px;font-size:13px;text-align:left;display:flex;align-items:center;gap:12px"><svg viewBox="0 0 512 512" width="30" height="30" fill="currentColor" style="flex-shrink:0" aria-hidden="true"><path d="M241.063 54.406a293.615 293.615 0 0 0-12.313.282c-8.814 1.567-12.884 5.426-15.094 9.843-2.435 4.87-2.34 11.423.375 17.25 2.717 5.83 7.7 10.596 14.657 12.376 6.958 1.78 16.536.86 29.125-7.187l10.063 15.75c-15.818 10.11-31.124 12.777-43.813 9.53-12.688-3.247-22.103-12.123-26.968-22.563-4.584-9.836-5.426-21.376-1.03-31.624-42.917 6.94-81.777 23.398-111.626 46.562-9.81 10.688-10.77 23.11-6.47 31.594 4.83 9.526 16.21 16.48 38.97 9.28l5.656 17.813c-28.58 9.04-52.137-.588-61.28-18.625-2.23-4.397-3.592-9.156-4.127-14.063-4.814 5.712-9.16 11.658-13 17.844l.126.06c-8.614 19.616-8.81 33.203-5.376 42.032 3.436 8.83 10.635 14.44 21.72 17.532 22.168 6.18 58.065-1.277 83.343-20.156 10.82-8.08 21.077-27.677 21.97-42.875.445-7.6-1.165-13.604-4.345-17.438-3.18-3.834-8.272-6.703-18.813-6.594l-.187-18.686c14.487-.15 26.25 4.754 33.375 13.344 7.124 8.59 9.26 19.652 8.625 30.468-1.27 21.633-12.595 44.172-29.438 56.75-29.876 22.314-69.336 31.606-99.53 23.188-13.988-3.9-26.37-12.386-32.75-25.53-9.546 45.446 4.323 87.66 30.718 116.874 3.45 3.82 7.122 7.43 10.97 10.78-2.754-7.887-4.016-16.1-3.72-24.093.53-14.325 6.082-28.346 17.22-38.03 9.134-7.946 21.752-12.53 36.843-12.5 1.006 0 2.034.018 3.062.06 2.35.1 4.763.304 7.22.626l-2.44 18.532c-15.588-2.048-25.705 1.522-32.436 7.375-6.73 5.854-10.443 14.614-10.813 24.625-.74 20.024 12.07 43.406 39.69 50.188l-.032.188c27.192 5.19 57.536.372 88-18.22.018-.012.043-.017.062-.03 6.34-4.45 9.755-8.808 11.438-12.563 1.985-4.432 1.943-8.292.53-12.438-2.824-8.29-12.94-16.812-22.218-19.187-15.002-3.84-24.532 1.436-29 7.72-4.468 6.28-4.74 12.45 2.156 17.81l-11.47 14.75c-14.187-11.033-15.092-30.487-5.905-43.405 6.892-9.688 18.985-16.326 33.564-16.75a46.963 46.963 0 0 1 1.844-.03c4.306.03 8.79.622 13.437 1.81 15.505 3.97 29.84 15.277 35.28 31.25a36.189 36.189 0 0 1 1.876 13.314c16.71-8.538 34.332-16.12 52.282-21.814 30.156-13.78 43.23-37.938 42.72-58.28-.515-20.493-13.187-37.74-42.376-40.626l1.844-18.594c36.666 3.626 58.462 29.848 59.188 58.75.422 16.84-5.754 34.363-18.188 49.28 16.072-1.8 32.044-1.495 47.53 1.627-3.152-6.472-4.68-13.478-4.467-20.438.677-22.036 19.42-42.593 48.875-42.906a66.155 66.155 0 0 1 6.03.218l-1.5 18.625c-24.927-1.998-34.3 11.086-34.718 24.656-.412 13.42 8.545 28.442 34.22 30.436 28.3.25 48.588-15.098 58.53-37.906 13.31-30.536 6.997-76.317-34.844-118.188-.792-.793-1.578-1.593-2.375-2.375a40.42 40.42 0 0 1-2.842 10.844c-7.25 17.39-24.233 29.128-41.875 32.407-24.335 4.522-44.29-5.347-53.5-20.406-9.21-15.057-6.792-36.35 9.78-47.56l10.47 15.5c-8.913 6.028-9.28 14.19-4.313 22.31 4.967 8.122 16.17 15.156 34.156 11.814 11.306-2.102 23.896-11.33 28.03-21.25 2.07-4.96 2.47-9.862.408-15.47-1.675-4.555-5.187-9.764-11.72-15.25l-.187-.155c-27.316-20.587-56.338-35.393-85.75-45.157.018.032.045.06.063.093 6.684 12.22 7.18 26.082 3.063 38.344-8.233 24.525-34.07 43.848-66.032 42.78-6.948-.23-13.56 3.12-19.186 9.657-5.627 6.537-9.735 16.113-10.688 26.313-1.905 20.4 6.923 42.886 41.344 54L277 258.28c-41.083-13.264-56.83-45.546-54.22-73.5 1.307-13.975 6.706-26.962 15.157-36.78 8.452-9.818 20.475-16.603 33.97-16.156 24.04.802 42.323-14.084 47.687-30.063 2.682-7.988 2.335-15.937-1.75-23.405-3.968-7.252-11.83-14.423-25.906-19.656a292.57 292.57 0 0 0-50.875-4.314zM342.28 306.344c-41.915 3.41-87.366 23.4-125.28 46.562-55.98 34.198-114.89 26.733-156.688-4.28 16.444 58.844 74.712 70.788 135.5 55.905 6.083-2.285 12.06-6.538 17.157-12.03 7.057-7.607 12.17-17.47 13.78-25.625l18.344 3.625c-2.445 12.383-9.078 24.666-18.406 34.72-8.95 9.645-20.61 17.35-34.094 19.374-6.766 15.07-12.334 29.68-14.594 39.906-3.55 16.06 14.206 22.225 22.156 6.03 19.022-38.743 45.87-73.23 79.406-102.967 26.064-17.153 48.406-38.303 62.72-61.22z"/></svg><span>I know what I'm doing<div style="font-size:11px;color:var(--fg3);margin-top:2px">Go straight to the panel to paste a URL or browse the library</div></span></button>
+      </div>
+      <label style="display:flex;align-items:center;justify-content:flex-end;gap:6px;font-size:11px;color:var(--fg3);margin-top:16px;cursor:pointer"><input type="checkbox" id="wz-dontshow" style="accent-color:var(--accent);cursor:pointer">Don't show this again</label>`,
+    mount(b){
+      const dont=()=>{if(b.querySelector("#wz-dontshow").checked)setPromptDismissed("bgWizardDismissed",true);};
+      b.querySelector("#wz-guided").onclick=()=>{dont();nav.go(bgQ1);};
+      b.querySelector("#wz-skip").onclick=()=>{dont();nav.close();openBgPanel();};
+    }};
+}
+function bgQ1(nav){
+  return {title:"Do you already have a map image?",
+    html:`<div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-s" id="q-url" style="padding:12px;font-size:13px;text-align:left">✅ Yes - I have a hosted image URL<div style="font-size:11px;color:var(--fg3);margin-top:2px">A direct link ending in .jpg / .jpeg / .png / .gif</div></button>
+        <button class="btn btn-s" id="q-upload" style="padding:12px;font-size:13px;text-align:left">📤 Yes - but I need to upload it somewhere<div style="font-size:11px;color:var(--fg3);margin-top:2px">You have the file; we'll get it Avrae-ready and hosted</div></button>
+        <button class="btn btn-s" id="q-none" style="padding:12px;font-size:13px;text-align:left">🗺️ No - I need a map<div style="font-size:11px;color:var(--fg3);margin-top:2px">Browse the built-in library or find a free one</div></button>
+      </div>`,
+    mount(b){
+      b.querySelector("#q-url").onclick=()=>nav.go(bgUrlScreen);
+      b.querySelector("#q-upload").onclick=()=>nav.go(bgUploadScreen);
+      b.querySelector("#q-none").onclick=()=>nav.go(bgNoMap);
+    }};
+}
+function bgNoMap(nav){
+  return {title:"Find a map",
+    html:`<div style="font-size:13px;color:var(--fg2);line-height:1.6;margin-bottom:14px">The fastest option is the built-in <b>Map Library</b> - hundreds of battlemaps by Tom Cartos, already grid-aligned and Avrae-ready.</div>
+      <button class="btn btn-p" id="nm-lib" style="width:100%;padding:12px;font-size:13px;font-weight:600;margin-bottom:14px">🗺️ Browse Map Library</button>
+      <div style="font-size:12px;color:var(--fg3);line-height:1.6">Prefer to look elsewhere? There are tons of free battlemaps online (for example <a href="https://2minutetabletop.com/" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">2-Minute Tabletop</a>). Once you have an image, come back and pick <b>"I have a URL"</b> or <b>"I need to upload it"</b>.</div>`,
+    mount(b){b.querySelector("#nm-lib").onclick=()=>{nav.close();showTCLibraryModal();};}};
+}
+// Branches built in later steps - clean hand-offs for now.
+function bgUrlScreen(nav){
+  let clearPtr=null;
+  return {title:"Paste your image URL",
+    html:`<div style="font-size:13px;color:var(--fg2);line-height:1.6;margin-bottom:8px">Paste your map's <b>direct image link</b> (a URL ending in .jpg, .jpeg, .png, or .gif) into the highlighted box in the Map panel, then click <b>Load</b>.</div>
+      <div style="font-size:12px;color:var(--fg3);line-height:1.5;margin-bottom:16px">Not sure it's a direct link? It should open the image on its own in a browser - not a gallery page around it.</div>
+      <button class="btn btn-p" id="u-ok" style="width:100%;padding:11px;font-size:13px;font-weight:600">OK, got it</button>`,
+    mount(b){
+      openBgPanel();
+      setTimeout(()=>{clearPtr=showWizPointer("#m-bgurl");},90);
+      b.querySelector("#u-ok").onclick=()=>{nav.close();const i=document.getElementById("m-bgurl");if(i)i.focus();};
+    },
+    unmount(){if(clearPtr){clearPtr();clearPtr=null;}}};
+}
+function bgUploadScreen(nav){
+  return {title:"Upload & make Avrae-ready",
+    html:`<div style="font-size:13px;color:var(--fg2);line-height:1.6;margin-bottom:14px">Converting/resizing your file and hosting it (imgbb, catbox, or photouploads) is coming next. For now, host your image yourself and use <b>"I have a URL"</b>.</div>
+      <button class="btn btn-s" id="up-back" style="width:100%;padding:11px;font-size:13px">‹ Back to the start</button>`,
+    mount(b){b.querySelector("#up-back").onclick=()=>nav.back();}};
+}
+
 // ===== Tom Cartos map library (served from cdn.battlescry.com) =====
 // Fetches tc_inventory.json once (cached for the session), renders a searchable/filterable thumbnail
 // browser. "Load to map" reuses the sample-load path (loadFromHashStr) so a library map behaves like
@@ -6393,6 +6579,7 @@ function loadTCMap(m){
   const hash=`g=${w}x${h}&o=c${cell}&bg=${url}&vw=a1:${w}x${h}`;
   try{
     loadFromHashStr(hash);renderCmd();
+    S.mapBakedGrid={cols:w,rows:h,cell};S.bgAnalysis=null; // library maps carry an exact grid
     setStatus(`✓ Loaded "${tcDisplayName(m)}"`);
     setTimeout(()=>{S._fitRecheck=true;if(typeof zoomAt==="function"&&typeof smartFit==="function")zoomAt(smartFit());},50);
     setTimeout(()=>{if(window.analyzeBackgroundForLayout)window.analyzeBackgroundForLayout(url);},100);
@@ -6688,7 +6875,7 @@ function tcCard(m,M,st,apply,gcount,onFav){
   card.onmouseenter=()=>{card.style.borderColor="var(--accent)";heart.style.opacity="1";};
   card.onmouseleave=()=>{card.style.borderColor="var(--bg3)";if(!TC_FAV.has(m.img))heart.style.opacity="0";};
   heart.onclick=(e)=>{e.stopPropagation();if(TC_FAV.has(m.img))TC_FAV.delete(m.img);else TC_FAV.add(m.img);tcFavSave(TC_FAV);paintHeart();if(onFav)onFav();};
-  card.querySelector(".tclib-thumb").onclick=(e)=>{e.stopPropagation();showFullscreenThumb(tcImgUrl(m.img));};
+  card.querySelector(".tclib-thumb").onclick=(e)=>{e.stopPropagation();showFullscreenThumb(tcImgUrl(m.img),{title:tcDisplayName(m),w:m.w,h:m.h,cell:m.cell,tc:true});};
   card.querySelector(".tclib-load").onclick=(e)=>{e.stopPropagation();M.close();setTimeout(()=>loadTCMap(m),50);};
   const relBtn=card.querySelector(".tclib-rel");if(relBtn)relBtn.onclick=(e)=>{e.stopPropagation();tcCloseFacet();st.group=m.group;st.pick=null;st.fav=false;apply();};
   return card;}
