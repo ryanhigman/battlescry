@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.142                                      https://battlescry.com
+BattleScry v0.1.148                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,23 +19,27 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.142 - Changed: the "I have a hosted URL" wizard branch now opens the Map panel and shows a big
-            bouncing arrow pointing at the background URL box, so you can see exactly where to paste. The
-            arrow clears when you dismiss the screen.
-  v0.1.141 - Changed: the Add Map Background wizard choice now uses icons - a wizard face for "Walk me
-            through it" and a brain for "I know what I'm doing".
-  v0.1.140 - Added: the start of guided wizards (a reusable shell that will also serve tokens and
-            overlays). The Add Map Background button now opens a "walk me through it / I know what I'm
-            doing" choice (with a "Don't show this again" option), then asks whether you have a map -
-            URL, need to upload, or need one. The "need a map" branch is live (Browse Map Library or
-            free maps); the URL and upload branches are placeholders for the next steps. A new "Tips &
-            Prompts" section in Help re-enables dismissed prompts (welcome screen, this guide).
-  v0.1.139 - Changed: the Map View binoculars icon now uses a detailed binoculars SVG.
-  v0.1.138 - Changed: the Revert icon is now a filled anticlockwise circular arrow (SVG), matching the
-            weight and style of the Undo / Redo arrows instead of the ⟲ text glyph.
+  v0.1.148 - Added: "Log in with Discord" in the top bar. Logging in shows "Logged in as <name>" with a
+            Log out option, and your session is remembered between visits. This is the groundwork for
+            hosting your own maps and tokens on BattleScry; it does not change anything else yet.
+  v0.1.147 - Added: the full-screen map preview now has Prev/Next arrows (and left/right arrow keys) so
+            you can browse through the current filtered results without leaving the preview. A counter
+            shows your position, and it wraps around at the ends.
+  v0.1.146 - Changed: "Random Map" is now "Random Maps" - it draws 8 random maps from the current
+            results at once (with a d8 die icon), and the context bar offers "roll for more" to redraw
+            another 8 or go back. Fewer than 8 are shown if the current results are smaller.
+  v0.1.145 - Added: the start of a Token Library (its own modal with an in-header preview pane, so you
+            can eyeball a token large with its attribution without leaving the screen). Reachable from
+            Manage Token Image > Browse Token Library; choosing one feeds its URL into the existing
+            shortcode flow. Search, a per-creator filter, per-card creator chips, and a "Token by
+            <creator>" credit on the preview are included. Token art is served from short t/ keys; the
+            inventory ships host-side.
+  v0.1.144 - Added: a "Creators" filter in the Map Library to browse by artist (appears automatically
+            once the library holds more than one creator). Also made the remaining "Tom Cartos"
+            descriptive copy generic, since the library now spans multiple creators.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.142"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.148"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -213,7 +217,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.142</span>
+  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.148</span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -233,6 +237,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   <div style="flex:1"></div>
   <div id="status-msg" style="font-size:10px;color:var(--fg3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;text-align:right;padding:0 8px"></div>
   <span id="partial-view" style="display:none;font-size:9px;color:var(--fg3);margin-right:4px"></span>
+  <span id="bscry-login" style="display:inline-flex;align-items:center;gap:4px;margin-right:2px"></span>
   <button id="btn-help" class="btn btn-s" style="font-size:10px;padding:3px 8px" title="Quick start guide">? Help</button>
   <button id="btn-about" class="btn btn-s" style="font-size:10px;padding:3px 8px" title="About BattleScry">ℹ About</button>
 </div>
@@ -395,7 +400,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
     <div style="font-size:11px;color:var(--fg2)">Paste a direct image URL or upload your own token image.</div>
     <div style="font-size:9px;color:var(--fg3)">Supported: .jpg, .jpeg, .gif, .png (max 5MB) - must be publicly accessible</div>
     <div style="display:flex;gap:4px"><input class="inp" id="srd-img-url" placeholder="https://example.com/my-token.png" style="flex:1;font-family:monospace;font-size:10px"><button class="btn btn-p" id="srd-img-go" style="font-size:10px;padding:3px 10px;white-space:nowrap">Get Shortcode</button></div>
-    <div style="display:flex;gap:4px;align-items:center"><input type="file" id="srd-img-file" accept=".jpg,.jpeg,.png,.gif" style="display:none"><button class="btn btn-s" id="srd-img-filebtn" style="font-size:10px;padding:3px 8px;flex:1">📁 Upload Token Image</button></div>
+    <div style="display:flex;gap:4px;align-items:center"><input type="file" id="srd-img-file" accept=".jpg,.jpeg,.png,.gif" style="display:none"><button class="btn btn-s" id="srd-img-filebtn" style="font-size:10px;padding:3px 8px;flex:1">📁 Upload Token Image</button><button class="btn btn-s" id="srd-img-toklib" style="font-size:10px;padding:3px 8px;flex:1">🎭 Browse Token Library</button></div>
     <div id="srd-img-status" style="font-size:10px;min-height:14px"></div>
     <div id="srd-img-preview" style="display:none;flex-direction:column;gap:8px;padding:6px;background:var(--bg2);border-radius:4px">
       <div style="display:flex;align-items:center;gap:10px">
@@ -673,6 +678,51 @@ const OBJ_SVG = {
 const CC=COLORS.map(c=>c.code).sort((a,b)=>b.length-a.length);const OV_T=["circle","circletop","circlecorner","cone","line","arrow","square"];const MAX_MV=16;let PAD=40;// squaretop merged into square (OTFBM treats them identically)
 const PROXY_URL="https://bscry-proxy.rhigman.workers.dev/?url=";
 const UPLOAD_URL="https://bscry-proxy.rhigman.workers.dev/?upload";
+
+// ===== Discord login (session minted by the bscry-proxy Worker) =====
+// The Worker redirects back to battlescry.com/#login=<token> after OAuth. We read that token,
+// store it, strip it from the URL, and show who is logged in. The token is display-only here;
+// the Worker re-verifies its signature on any real upload, so the browser cannot forge it.
+const AUTH_LOGIN_URL="https://bscry-proxy.rhigman.workers.dev/auth/login";
+const BSCRY_SESSION_KEY="bscry_session";
+let BSCRY_SESSION=null; // {token,uid,name,exp} or null
+function bscryB64urlDecode(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";const bin=atob(s);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return new TextDecoder().decode(bytes);}
+function bscryDecodeSession(token){try{const parts=token.split(".");if(parts.length!==2)return null;const obj=JSON.parse(bscryB64urlDecode(parts[0]));if(!obj||!obj.uid)return null;if(obj.exp&&Math.floor(Date.now()/1000)>obj.exp)return null;return{token:token,uid:obj.uid,name:obj.name||"",exp:obj.exp||0};}catch(e){return null;}}
+function bscryLoadSession(){
+  // Capture a fresh token arriving via #login=, else restore the stored one.
+  try{
+    const h=location.hash||"";
+    const m=h.match(/[#&]login=([^&]*)/);
+    if(m){
+      const tok=decodeURIComponent(m[1]);
+      const s=bscryDecodeSession(tok);
+      if(s){BSCRY_SESSION=s;try{localStorage.setItem(BSCRY_SESSION_KEY,tok);}catch(e){}}
+      // Strip the token from the address bar so it is not left visible or shared in screenshots.
+      let rest=h.replace(/[#&]login=[^&]*/,"");
+      if(rest==="#"||rest==="&")rest="";
+      if(rest&&rest[0]==="&")rest="#"+rest.slice(1);
+      try{history.replaceState(null,"",location.pathname+location.search+rest);}catch(e){}
+    }
+  }catch(e){}
+  if(!BSCRY_SESSION){
+    try{const t=localStorage.getItem(BSCRY_SESSION_KEY);if(t){const s2=bscryDecodeSession(t);if(s2)BSCRY_SESSION=s2;else localStorage.removeItem(BSCRY_SESSION_KEY);}}catch(e){}
+  }
+  renderLoginUI();
+  return BSCRY_SESSION;
+}
+function bscryStartLogin(){location.href=AUTH_LOGIN_URL;}
+function bscryLogout(){BSCRY_SESSION=null;try{localStorage.removeItem(BSCRY_SESSION_KEY);}catch(e){}renderLoginUI();try{setStatus("Logged out.");}catch(e){}}
+function renderLoginUI(){
+  const el=$("bscry-login");if(!el)return;
+  if(BSCRY_SESSION){
+    el.innerHTML='<span style="font-size:10px;color:var(--fg2);white-space:nowrap">Logged in as <b id="bscry-login-name" style="color:var(--fg)"></b></span> <button id="bscry-logout" class="btn btn-s" style="font-size:9px;padding:2px 6px" title="Log out of BattleScry">Log out</button>';
+    const nm=$("bscry-login-name");if(nm)nm.textContent=BSCRY_SESSION.name||"player";
+    const lo=$("bscry-logout");if(lo)lo.onclick=bscryLogout;
+  }else{
+    el.innerHTML='<button id="bscry-login-btn" class="btn btn-s" style="font-size:10px;padding:3px 8px;white-space:nowrap" title="Log in with your Discord account to host images on BattleScry">Log in with Discord</button>';
+    const b=$("bscry-login-btn");if(b)b.onclick=bscryStartLogin;
+  }
+}
 function uploadImage(file,statusEl,onSuccess){
   const validExts=["jpg","jpeg","png","gif"];const ext=file.name.split(".").pop().toLowerCase();
   if(!validExts.includes(ext)){statusEl.innerHTML='<span style="color:#e74c3c">⚠ Only jpg, png, gif supported. No webp.</span>';return;}
@@ -2201,7 +2251,7 @@ function rMapTabContent(){
   const _bgBrowse=_bgAll.length?`<button class="btn btn-s" id="m-bgbrowsesaved" style="width:100%;font-size:10px;padding:4px 8px;margin-bottom:6px" title="View thumbnails and load a previously saved map">🗂 Browse Saved Battlemaps (${_bgAll.length})</button>`:"";
   const _bgControls=(bgUrl||S._uiBgOpen)?`
   <div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><input class="inp" id="m-bgurl" value="${bgUrl}" placeholder="Paste image URL or browse below" style="flex:1;font-family:monospace;font-size:9px" title="${bgUrl||'No background image'}"><button class="btn btn-s" id="m-bgupdate" style="font-size:9px;padding:3px 8px;white-space:nowrap">${bgUrl?"Update":"Load"}</button>${bgUrl?`<button class="btn btn-s" id="m-bgremove" style="font-size:9px;padding:3px 6px;color:#e74c3c" title="Remove background image">Remove</button>`:""}</div>
-  <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap"><button class="btn btn-s" id="m-bgtclib" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Browse the Tom Cartos map library">🗺️ Browse Map Library</button></div>
+  <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap"><button class="btn btn-s" id="m-bgtclib" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Browse the map library">🗺️ Browse Map Library</button></div>
   ${_bgBrowse}`:"";
   if(bgUrl||S._uiBgOpen){
   h+=`<div class="sec" style="border:1px solid var(--accent)"><div class="sec-title" style="display:flex;align-items:center;gap:4px"><span class="vis-eye${S.showBg?'':' off'}" data-vis="bg" style="cursor:pointer;font-size:11px;position:relative" title="${S.showBg?'Hide background':'Show background'}">👁</span>Background</div>
@@ -5061,6 +5111,7 @@ function setup(){
           $("srd-img-save").style.display="flex";$("srd-img-savename").value="";}
       }).catch(err=>{status.innerHTML='<span style="color:#e74c3c">⚠ Request failed - check the URL</span>';});};
   $("srd-img-url").onkeydown=e=>{if(e.key==="Enter")$("srd-img-go").click();};
+  {const tlb=$("srd-img-toklib");if(tlb)tlb.onclick=()=>showTokenLibraryModal(t=>{const u=$("srd-img-url");if(u)u.value=tcImgUrl(t.img);$("srd-img-go").click();});}
   $("srd-img-apply").onclick=()=>{const code=$("srd-img-code").textContent;if(!code)return;
     // Auto-save if name field has content
     const saveName=$("srd-img-savename")?.value.trim();
@@ -6204,22 +6255,58 @@ function smartModal(opts){
   if(opts.dismissOnBackdrop!==false){bd.addEventListener("click",e=>{if(e.target===bd)close();});}
   return{backdrop:bd,body,footer,close};
 }
-function showFullscreenThumb(url,meta){
+// ===== Creator registry (shared by the map library, full-size preview, and the future token library) =====
+// Attribution for every hosted asset is driven from here so names/links live in one place.
+const CREATORS={
+  tc:{name:"Tom Cartos",url:"https://www.tomcartos.com/"},
+  "2mt":{name:"2-Minute Tabletop",url:"https://2minutetabletop.com/"},
+  nesimna:{name:"Nesimna",url:"https://www.patreon.com/Nesimna"},
+  asterdas:{name:"Asterdas",url:"https://www.patreon.com/cw/Asterdas"},
+  devinnight:{name:"Devin Night",url:"https://www.patreon.com/cw/devinnight"}
+};
+// Resolve an inventory item to a creator id. Prefers an explicit `creator` field (added host-side in
+// build_csv12.py); otherwise infers from the img path prefix. Existing TC entries (tc/ and tc2/) default to tc.
+function creatorOf(m){
+  if(m){
+    if(m.creator&&CREATORS[m.creator])return m.creator;
+    const p=(m.img||"").toLowerCase();
+    // Flat short-key scheme (m/<cc><num>.jpg, t/<cc><num>.png) where cc is a 2-letter creator code.
+    const fm=p.match(/^[mt]\/([a-z0-9]{2})\d/);
+    if(fm){const cc=({tc:"tc","2m":"2mt",ne:"nesimna",as:"asterdas",dn:"devinnight"})[fm[1]];if(cc&&CREATORS[cc])return cc;}
+    // Legacy nested paths.
+    if(p.startsWith("asterdas/"))return "asterdas";
+    if(p.startsWith("2mt/")||p.startsWith("twomin/"))return "2mt";
+    if(p.startsWith("nesimna/"))return "nesimna";
+    if(p.startsWith("devinnight/")||p.startsWith("devin/"))return "devinnight";
+  }
+  return "tc";
+}
+// Linked credit line ("Map by <Creator>" / "Token by <Creator>"). kind defaults to "Map".
+function creatorCreditHtml(id,kind){
+  const c=CREATORS[id]||CREATORS.tc;
+  return `${kind||"Map"} by <a href="${c.url}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:600;text-decoration:none">${c.name}</a>`;
+}
+// d8 (eight-sided die) icon used by the "Random Maps" control. Inherits color via currentColor.
+function d8Icon(px){return `<svg viewBox="0 0 512 512" width="${px}" height="${px}" fill="currentColor" aria-hidden="true" style="vertical-align:-2px;flex-shrink:0"><path d="M256 37.143 77.896 343.853h356.208zM230.154 49.79 72 164.233v157.91zm51.69 0L440 322.144V164.232zm-132.516 90.02v21.786l-8.486 9.68v-16.942c-2.772 3.24-5.692 6.367-8.385 9.664 3.536.293 2.484 5.43 2.207 7.752-1.746 9.536-8.154 17.575-13.404 24.79-1.943 2.544-3.943 5.075-6.008 7.507-4.65 3.4-8.49 4.39-10.775-1.463.294-7.806 3.84-15.22 8.046-20.967l5.288-7.918c-.048 2.462.1 4.97-.072 7.405-2.34 4.347-6.766 9.46-5.758 14.608 7.76.874 12.22-10.863 14.522-16.58.832-2.76 2.108-5.458-1.418-5.434v-7.264zm212.13 1.21 44.853 54.464v7.262l-30.304-36.31v8.472l-6.06-7.262c-.155-4.15-1.424-8.377-2.425-12.103-1.86-2.936-3.96-5.704-6.06-8.47zM256.07 203.86c8.37 0 14.733 1.53 19.088 4.587 4.355 3.027 6.533 7.475 6.533 13.344 0 3.924-1.08 7.198-3.243 9.823-2.13 2.626-5.297 4.572-9.498 5.838 4.694 1.298 8.23 3.415 10.61 6.35 2.408 2.902 3.614 6.576 3.614 11.024 0 6.857-2.286 12.047-6.858 15.57-4.54 3.49-11.288 5.233-20.246 5.233-8.988 0-15.784-1.744-20.386-5.234-4.572-3.522-6.858-8.712-6.858-15.57 0-4.447 1.19-8.12 3.57-11.024 2.408-2.935 5.96-5.052 10.655-6.35-4.2-1.265-7.366-3.21-9.497-5.837-2.13-2.625-3.198-5.9-3.198-9.822 0-5.837 2.18-10.285 6.534-13.343 4.354-3.058 10.748-4.586 19.18-4.586zm0 11.212c-2.84 0-5.035.742-6.58 2.225-1.513 1.482-2.27 3.583-2.27 6.3 0 2.75.757 4.866 2.27 6.348 1.545 1.483 3.74 2.225 6.58 2.225 2.78 0 4.926-.742 6.44-2.225 1.513-1.482 2.27-3.598 2.27-6.347 0-2.75-.757-4.85-2.27-6.3-1.514-1.484-3.66-2.226-6.44-2.226zm0 28.262c-3.336 0-5.9.912-7.69 2.734-1.793 1.823-2.69 4.433-2.69 7.83 0 3.398.897 6.008 2.69 7.83 1.79 1.792 4.354 2.688 7.69 2.688 3.305 0 5.837-.896 7.598-2.687 1.76-1.824 2.64-4.434 2.64-7.832 0-3.428-.88-6.038-2.64-7.83-1.76-1.822-4.293-2.734-7.598-2.734zM88.7 359.852 256 480.912l167.3-121.06zm139.42 23.23h54.548v4.842c-14.406 5.942-21.582 12.897-27.88 25.416h-15.76c7.104-13.803 14.546-17.714 26.67-25.416h-37.58z"/></svg>`;}
+function showFullscreenThumb(url,meta,nav){
+  const hasNav=!!(nav&&nav.items&&nav.items.length>1&&typeof nav.render==="function");
+  let navIdx=hasNav?(nav.index||0):0;
   const bd=document.createElement("div");bd.id="fs-thumb-bd";bd.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;display:flex;flex-direction:column;padding:0;overflow:hidden";
   bd.innerHTML=`<div style="padding:8px 14px;display:flex;align-items:center;gap:8px;background:var(--bg2);border-bottom:1px solid var(--bg3);flex-shrink:0">
-    <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center">${meta&&meta.title?`<div style="font-size:18px;font-weight:700;color:var(--fg);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escAttr(meta.title)}">${escAttr(meta.title)}</div><div style="font-size:11px;color:var(--fg3);font-family:monospace;margin-top:2px">${meta.w} × ${meta.h} · ${meta.cell} px/cell</div>`:""}</div>
+    <div id="fst-meta" style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center"></div>
     <div style="display:flex;align-items:center;gap:8px">
       <button id="fst-zoomout" class="btn btn-s" style="font-size:14px;padding:4px 10px" title="Zoom out (or scroll down)">−</button>
       <span id="fst-zoom-label" style="font-family:monospace;font-size:11px;color:var(--fg2);min-width:50px;text-align:center">100%</span>
       <button id="fst-zoomin" class="btn btn-s" style="font-size:14px;padding:4px 10px" title="Zoom in (or scroll up)">+</button>
       <button id="fst-fit" class="btn btn-s" style="font-size:10px;padding:4px 10px;margin-left:6px" title="Fit image to window">Fit</button>
       <button id="fst-100" class="btn btn-s" style="font-size:10px;padding:4px 10px" title="100% (actual pixel size)">100%</button>
-      <span style="font-size:10px;color:var(--fg3);font-style:italic;margin-left:6px">Scroll to zoom · drag to pan · ESC to close</span>
+      <span style="font-size:10px;color:var(--fg3);font-style:italic;margin-left:6px">Scroll to zoom · drag to pan${hasNav?" · arrow keys to browse":""} · ESC to close</span>
     </div>
-    <div style="flex:1 1 0;display:flex;justify-content:flex-end;align-items:center;gap:12px">${meta&&meta.tc?`<div style="font-size:12px;color:var(--fg2);white-space:nowrap">Battlemaps by <a href="https://www.tomcartos.com/" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:600;text-decoration:none">Tom Cartos</a>.</div>`:""}<button id="fst-close" class="btn btn-s" style="font-size:11px;padding:4px 10px">✕ Close</button></div>
+    <div style="flex:1 1 0;display:flex;justify-content:flex-end;align-items:center;gap:12px"><div id="fst-cred" style="font-size:12px;color:var(--fg2);white-space:nowrap"></div><button id="fst-close" class="btn btn-s" style="font-size:11px;padding:4px 10px">✕ Close</button></div>
   </div>
   <div id="fst-stage" style="flex:1;overflow:hidden;position:relative;cursor:grab;background:#000">
     <img id="fst-img" src="${url}" draggable="false" style="position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none">
+    ${hasNav?`<button id="fst-prev" title="Previous (left arrow)" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:5;width:46px;height:46px;border:none;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button><button id="fst-next" title="Next (right arrow)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:5;width:46px;height:46px;border:none;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>`:""}
   </div>`;
   document.body.appendChild(bd);
 
@@ -6228,6 +6315,14 @@ function showFullscreenThumb(url,meta){
   const zLabel=bd.querySelector("#fst-zoom-label");
   // View state: zoom (1.0 = 100% pixels), pan offset (x,y in stage coords)
   const view={zoom:1,x:0,y:0,natW:0,natH:0};
+  // Header is updatable so Prev/Next can swap the title/dims/credit without rebuilding the modal.
+  function setMeta(m){
+    const mt=bd.querySelector("#fst-meta"),cr=bd.querySelector("#fst-cred");
+    const counter=hasNav?` <span style="color:var(--fg4)">·</span> ${navIdx+1} / ${nav.items.length}`:"";
+    if(mt)mt.innerHTML=(m&&m.title)?`<div style="font-size:18px;font-weight:700;color:var(--fg);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escAttr(m.title)}">${escAttr(m.title)}</div><div style="font-size:11px;color:var(--fg3);font-family:monospace;margin-top:2px">${m.w} × ${m.h} · ${m.cell} px/cell${counter}</div>`:(hasNav?`<div style="font-size:11px;color:var(--fg3);font-family:monospace">${navIdx+1} / ${nav.items.length}</div>`:"");
+    if(cr)cr.innerHTML=(m&&m.creator&&CREATORS[m.creator])?creatorCreditHtml(m.creator,m.kind):"";
+  }
+  setMeta(meta);
   function apply(){
     img.style.transform=`translate(${view.x}px,${view.y}px) scale(${view.zoom})`;
     zLabel.textContent=Math.round(view.zoom*100)+"%";
@@ -6279,11 +6374,18 @@ function showFullscreenThumb(url,meta){
   bd.querySelector("#fst-zoomin").onclick=()=>{const oldZ=view.zoom;view.zoom=Math.min(10,view.zoom*1.25);const sw=stage.clientWidth/2,sh=stage.clientHeight/2;view.x=sw-(sw-view.x)*(view.zoom/oldZ);view.y=sh-(sh-view.y)*(view.zoom/oldZ);apply();};
   bd.querySelector("#fst-fit").onclick=fit;
   bd.querySelector("#fst-100").onclick=()=>{view.zoom=1;view.x=(stage.clientWidth-view.natW)/2;view.y=(stage.clientHeight-view.natH)/2;apply();};
+  // Navigate within the current filtered results without leaving full-screen. Wraps around.
+  function showItem(i){if(!hasNav)return;navIdx=((i%nav.items.length)+nav.items.length)%nav.items.length;const r=nav.render(nav.items[navIdx])||{};setMeta(r.meta);if(r.url)img.src=r.url;}
+  if(hasNav){
+    const pv=bd.querySelector("#fst-prev"),nx=bd.querySelector("#fst-next");
+    if(pv){pv.onmousedown=e=>e.stopPropagation();pv.onclick=()=>showItem(navIdx-1);}
+    if(nx){nx.onmousedown=e=>e.stopPropagation();nx.onclick=()=>showItem(navIdx+1);}
+  }
   // Close
-  const close=()=>{bd.remove();document.removeEventListener("keydown",esc);};
-  const esc=(e)=>{if(e.key==="Escape")close();};
+  const close=()=>{bd.remove();document.removeEventListener("keydown",onKey);};
+  const onKey=(e)=>{if(e.key==="Escape"){close();}else if(hasNav&&e.key==="ArrowLeft"){e.preventDefault();showItem(navIdx-1);}else if(hasNav&&e.key==="ArrowRight"){e.preventDefault();showItem(navIdx+1);}};
   bd.querySelector("#fst-close").onclick=close;
-  document.addEventListener("keydown",esc);
+  document.addEventListener("keydown",onKey);
 }
 // Auto-load from URL hash on page load
 function loadFromHash(){const hash=safeHash().slice(1);if(hash)loadFromHashStr(hash);
@@ -6296,6 +6398,7 @@ function loadFromHash(){const hash=safeHash().slice(1);if(hash)loadFromHashStr(h
     try{history.replaceState(null,"",cleanHash?"#"+cleanHash:location.pathname);}catch(e){}
     if(params._lm)setTimeout(()=>showLoadSuccessModal("map",params._lm),300);
     if(params._lb)setTimeout(()=>showLoadSuccessModal("battle",params._lb),300);}}
+bscryLoadSession();
 setup();
 // Restore session-scoped UI preferences from localStorage (not exported to Avrae).
 // AOE rule: how Area-of-Effect overlays decide which tokens are "affected" (touch / cell-50% / token-50%).
@@ -6511,7 +6614,7 @@ function bgQ1(nav){
 }
 function bgNoMap(nav){
   return {title:"Find a map",
-    html:`<div style="font-size:13px;color:var(--fg2);line-height:1.6;margin-bottom:14px">The fastest option is the built-in <b>Map Library</b> - hundreds of battlemaps by Tom Cartos, already grid-aligned and Avrae-ready.</div>
+    html:`<div style="font-size:13px;color:var(--fg2);line-height:1.6;margin-bottom:14px">The fastest option is the built-in <b>Map Library</b> - hundreds of curated battlemaps, already grid-aligned and Avrae-ready.</div>
       <button class="btn btn-p" id="nm-lib" style="width:100%;padding:12px;font-size:13px;font-weight:600;margin-bottom:14px">🗺️ Browse Map Library</button>
       <div style="font-size:12px;color:var(--fg3);line-height:1.6">Prefer to look elsewhere? There are tons of free battlemaps online (for example <a href="https://2minutetabletop.com/" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">2-Minute Tabletop</a>). Once you have an image, come back and pick <b>"I have a URL"</b> or <b>"I need to upload it"</b>.</div>`,
     mount(b){b.querySelector("#nm-lib").onclick=()=>{nav.close();showTCLibraryModal();};}};
@@ -6588,15 +6691,8 @@ function showTCLibraryModal(){
   const M=smartModal({title:`🗺️ Map Library <span id="tclib-count" style="font-size:10px;color:var(--fg3);font-weight:400;margin-left:6px"></span>`,size:"lg",dismissOnBackdrop:false,
     onEsc:(close)=>{if(TC_FACET_OPEN)tcCloseFacet();else close();},
     onClose:()=>tcCloseFacet()});
-  // Tom Cartos attribution lives in the header (right of the title) to save vertical space in the body.
-  const hdr=M.backdrop.querySelector(".smart-modal-header");
-  if(hdr){
-    const cred=document.createElement("div");
-    cred.style.cssText="margin-left:auto;text-align:right";
-    cred.innerHTML=`<div style="font-size:12px;color:var(--fg2)">Battlemaps by <a href="https://www.tomcartos.com/" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:600;text-decoration:none">Tom Cartos</a>.</div>`;
-    const x=hdr.querySelector(".smart-modal-close");
-    if(x)hdr.insertBefore(cred,x);else hdr.appendChild(cred);
-  }
+  // Per-creator attribution now lives on each card (creator chip) and on the full-size preview (linked
+  // credit), since the library spans multiple creators. See CREATORS / creatorOf.
   M.body.innerHTML=`<div id="tclib-loading" style="padding:40px;text-align:center;color:var(--fg3);font-size:13px">Loading map library...</div>`;
   fetchTCLib().then(maps=>renderTCLib(M,maps)).catch(err=>{
     M.body.innerHTML=`<div style="padding:30px;text-align:center;color:var(--fg3);font-size:12px;line-height:1.7">Couldn't load the map library.<br><span style="font-size:11px;color:var(--fg4)">${(err&&err.message)||err}</span><br><span style="font-size:10px;color:var(--fg4)">Check that tc_inventory.json is hosted and CORS allows this site.</span></div>`;});
@@ -6710,7 +6806,7 @@ function tcOpenFacet(panelId,panelFacets,btn,ctx){
   };
   syncChecks();
   // Any change to a filter exits the related-maps group / random-pick view and re-applies live.
-  const changed=()=>{ctx.st.group=null;ctx.st.pick=null;ctx.st.fav=false;syncChecks();ctx.apply();};
+  const changed=()=>{ctx.st.group=null;ctx.st.picks=null;ctx.st.fav=false;syncChecks();ctx.apply();};
   sectionEls.forEach(sec=>{
     const f=facetByKey[sec.dataset.fkey];
     // "All" is a true select-all / select-none toggle.
@@ -6732,13 +6828,17 @@ function tcOpenFacet(panelId,panelFacets,btn,ctx){
   TC_POP_CLEANUP=()=>{document.removeEventListener("mousedown",onDocDown);ctx.body.removeEventListener("scroll",onScroll);window.removeEventListener("resize",onScroll);};
 }
 function renderTCLib(M,maps){
-  const st={q:"",group:null,pick:null,fav:false}; // per-facet selections added below; pick = single random-map view; fav = favorites view
+  const st={q:"",group:null,picks:null,fav:false}; // per-facet selections added below; picks = random-maps view (array of img keys); fav = favorites view
   const envValues=[...new Set(maps.flatMap(m=>m.env||[]))].sort((a,b)=>a.localeCompare(b));
   // Meta Features options: the known structural tags first, then any other feat tag present in the
   // data (e.g. "Gridless") appended automatically, so new tags surface once the inventory carries them.
   const FEAT_BASE=["Multi-Level","Multi-Area","Multi-Phase"];
   const featValues=[...FEAT_BASE,...[...new Set(maps.flatMap(m=>m.feat||[]))].filter(v=>!FEAT_BASE.includes(v)).sort((a,b)=>a.localeCompare(b))];
   const gcount={};maps.forEach(m=>{if(m.group)gcount[m.group]=(gcount[m.group]||0)+1;});
+  // Creators present in the library (by display name). The Creator facet only appears when more than
+  // one creator is represented, so a single-creator library stays uncluttered.
+  const creatorValues=[...new Set(maps.map(m=>(CREATORS[creatorOf(m)]||CREATORS.tc).name))].sort((a,b)=>a.localeCompare(b));
+  const multiCreator=creatorValues.length>1;
   // Facet builder. realValues are the genuine tags; for facets where some maps have no tag
   // (weather, features) a synthetic "(none)" option is appended so that "All" really means
   // every map. Each facet's selection defaults to everything checked.
@@ -6756,12 +6856,14 @@ function renderTCLib(M,maps){
     mkFacet("size","Sizes","All map sizes",TC_SIZE_NAMES.slice(),m=>{const s=tcSizeOf(m);return s?[s]:[];}),
     mkFacet("light","Lighting","All lighting",["Bright","Dim","Dark"],m=>m.light||[]),
     mkFacet("weather","Weather & Time","All weather & time",["Day","Night","Snow","Rain","Storm","Blizzard"],m=>m.light||[],{none:true}),
-    mkFacet("feat","Meta Features","All meta features",featValues,m=>m.feat||[],{none:true})
+    mkFacet("feat","Meta Features","All meta features",featValues,m=>m.feat||[],{none:true}),
+    ...(multiCreator?[mkFacet("creator","Creators","All creators",creatorValues,m=>[(CREATORS[creatorOf(m)]||CREATORS.tc).name])]:[])
   ];
   facets.forEach(f=>{st[f.key]=f.allValues.slice();}); // default: everything selected (= no filtering)
   const fByKey={};facets.forEach(f=>fByKey[f.key]=f);
   const panels=[
     {id:"env",facets:[fByKey.env]},
+    ...(multiCreator?[{id:"creator",facets:[fByKey.creator]}]:[]),
     {id:"size",facets:[fByKey.size]},
     {id:"light",facets:[fByKey.light]},
     {id:"weather",facets:[fByKey.weather]},
@@ -6775,13 +6877,14 @@ function renderTCLib(M,maps){
     <div class="tclib-bar" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <span style="font-size:11px;color:var(--fg3);font-weight:600;margin-right:2px">Filters:</span>
       <button class="btn btn-s tclib-facet-btn" data-facet="env" style="font-size:11px">Environments<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>
+      ${multiCreator?`<button class="btn btn-s tclib-facet-btn" data-facet="creator" style="font-size:11px">Creators<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>`:""}
       <button class="btn btn-s tclib-facet-btn" data-facet="size" style="font-size:11px">Sizes<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>
       <button class="btn btn-s tclib-facet-btn" data-facet="light" style="font-size:11px">Lighting<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>
       <button class="btn btn-s tclib-facet-btn" data-facet="weather" style="font-size:11px">Weather & Time<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>
       <button class="btn btn-s tclib-facet-btn" data-facet="feat" style="font-size:11px">Meta Features<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>
       <button class="btn btn-s tclib-favbtn" style="font-size:11px;margin-left:auto" title="Show only the maps you've favorited" disabled>♥ Favorites<span class="tclib-fav-count" style="color:var(--accent)"></span></button>
       <button class="btn btn-s tclib-allmaps" style="font-size:11px" title="Clear all filters and show every map">All maps</button>
-      <button class="btn btn-p tclib-random" style="font-size:11px" title="Show a random map from the current results">🎲 Random Map</button>
+      <button class="btn btn-p tclib-random" style="font-size:11px;display:inline-flex;align-items:center;gap:5px" title="Show 8 random maps from the current results">${d8Icon(14)} Random Maps</button>
     </div>
     <div id="tclib-groupbar" style="display:none;margin-bottom:10px;padding:6px 10px;background:var(--bg);border:1px solid var(--accent);border-radius:5px;font-size:11px;color:var(--fg2)"></div>
     <div id="tclib-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px"></div>
@@ -6791,11 +6894,13 @@ function renderTCLib(M,maps){
   const allmapsBtn=M.body.querySelector(".tclib-allmaps"),randomBtn=M.body.querySelector(".tclib-random");
   const favBtn=M.body.querySelector(".tclib-favbtn");
   let currentList=[]; // the maps currently shown (filtered, related-maps group, or favorites); Random draws from this
+  // Pick up to n distinct random maps' img keys from arr (Fisher-Yates, then slice).
+  const pickRandomImgs=(arr,n)=>{const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[j];a[j]=t;}return a.slice(0,Math.min(n,a.length)).map(m=>m.img);};
   // Reflect the favorites count + active state on the Favorites button (disabled when there are none).
   const syncFavBtn=()=>{if(!favBtn)return;favBtn.disabled=TC_FAV.size===0;favBtn.style.opacity=favBtn.disabled?".5":"";favBtn.style.cursor=favBtn.disabled?"not-allowed":"pointer";const c=favBtn.querySelector(".tclib-fav-count");if(c)c.textContent=TC_FAV.size?` (${TC_FAV.size})`:"";favBtn.classList.toggle("tclib-facet-active",!!st.fav);};
   // After a heart toggles: in the favorites view re-render (a removed map should vanish); otherwise just resync the button.
   const onFavToggle=()=>{if(st.fav)apply();else syncFavBtn();};
-  const resetFilters=()=>{st.q="";st.pick=null;st.fav=false;const qi=M.body.querySelector("#tclib-q");if(qi)qi.value="";facets.forEach(f=>f.setSelected(f.allValues.slice()));};
+  const resetFilters=()=>{st.q="";st.picks=null;st.fav=false;const qi=M.body.querySelector("#tclib-q");if(qi)qi.value="";facets.forEach(f=>f.setSelected(f.allValues.slice()));};
   const apply=()=>{
     // Favorites is a standalone view; if you un-heart your last favorite it exits automatically.
     if(st.fav&&TC_FAV.size===0)st.fav=false;
@@ -6804,17 +6909,17 @@ function renderTCLib(M,maps){
     // Base pool: favorites > related-maps group > the filtered set. Random draws from this.
     const pool=inFav?maps.filter(m=>TC_FAV.has(m.img)):inGroup?maps.filter(m=>m.group===st.group):tcApplyFilters(maps,st,facets,null);
     currentList=pool;
-    // Stale-pick guard: if the picked map fell out of the pool (filters changed), drop the pick.
-    if(st.pick&&!pool.some(m=>m.img===st.pick))st.pick=null;
-    const picked=st.pick?pool.find(m=>m.img===st.pick):null;
-    const list=picked?[picked]:pool;
+    // Stale-pick guard: drop any picked imgs that fell out of the pool (filters changed).
+    if(st.picks){st.picks=st.picks.filter(img=>pool.some(m=>m.img===img));if(!st.picks.length)st.picks=null;}
+    const picked=st.picks?pool.filter(m=>st.picks.includes(m.img)):null;
+    const list=picked?picked:pool;
     // Context bar: a random pick takes priority, then the related-maps group, else hidden.
     if(picked){
       groupbar.style.display="block";
       const backTo=inFav?"favorites":inGroup?"related maps":(anyFilter()?"results":"all maps");
-      groupbar.innerHTML=`🎲 Showing one random map. <a href="#" id="tclib-pick-another" style="color:var(--accent);margin-left:6px">pick another</a> <span style="color:var(--fg4);margin:0 3px">·</span> <a href="#" id="tclib-pick-back" style="color:var(--fg3)">back to ${backTo}</a>`;
-      groupbar.querySelector("#tclib-pick-another").onclick=(e)=>{e.preventDefault();if(pool.length)st.pick=pool[Math.floor(Math.random()*pool.length)].img;apply();};
-      groupbar.querySelector("#tclib-pick-back").onclick=(e)=>{e.preventDefault();st.pick=null;apply();};
+      groupbar.innerHTML=`${d8Icon(13)} Showing <b>${picked.length}</b> random map${picked.length===1?"":"s"}. <a href="#" id="tclib-pick-another" style="color:var(--accent);margin-left:6px">roll for more</a> <span style="color:var(--fg4);margin:0 3px">·</span> <a href="#" id="tclib-pick-back" style="color:var(--fg3)">back to ${backTo}</a>`;
+      groupbar.querySelector("#tclib-pick-another").onclick=(e)=>{e.preventDefault();if(pool.length)st.picks=pickRandomImgs(pool,8);apply();M.body.scrollTop=0;};
+      groupbar.querySelector("#tclib-pick-back").onclick=(e)=>{e.preventDefault();st.picks=null;apply();};
     }else if(inFav){
       groupbar.style.display="block";
       groupbar.innerHTML=`♥ Showing your <b>${pool.length}</b> favorite map${pool.length===1?"":"s"}. <a href="#" id="tclib-fav-back" style="color:var(--accent);margin-left:6px">back to browsing</a>`;
@@ -6841,21 +6946,22 @@ function renderTCLib(M,maps){
       const btnEl=M.body.querySelector(`[data-facet="${p.id}"]`);if(btnEl)btnEl.classList.toggle("tclib-facet-active",active>0);
     });
     grid.innerHTML="";empty.style.display=list.length?"none":"block";
-    if(allmapsBtn)allmapsBtn.disabled=!(anyFilter()||st.group||st.pick||st.fav);
+    if(allmapsBtn)allmapsBtn.disabled=!(anyFilter()||st.group||st.picks||st.fav);
     if(randomBtn)randomBtn.disabled=pool.length===0;
     syncFavBtn();
-    list.forEach(m=>grid.appendChild(tcCard(m,M,st,apply,gcount,onFavToggle)));
+    list.forEach((m,idx)=>grid.appendChild(tcCard(m,M,st,apply,gcount,onFavToggle,list,idx)));
   };
   const ctx={maps,st,body:M.body,facets,apply};
   panels.forEach(p=>{const btn=M.body.querySelector(`[data-facet="${p.id}"]`);btn.onclick=e=>{e.stopPropagation();tcOpenFacet(p.id,p.facets,e.currentTarget,ctx);};});
   allmapsBtn.onclick=()=>{tcCloseFacet();resetFilters();st.group=null;apply();};
-  if(favBtn)favBtn.onclick=()=>{if(TC_FAV.size===0)return;tcCloseFacet();st.fav=!st.fav;st.group=null;st.pick=null;apply();M.body.scrollTop=0;};
-  randomBtn.onclick=()=>{if(!currentList.length)return;st.pick=currentList[Math.floor(Math.random()*currentList.length)].img;apply();M.body.scrollTop=0;};
-  M.body.querySelector("#tclib-q").oninput=e=>{st.q=e.target.value;st.group=null;st.pick=null;st.fav=false;tcCloseFacet();apply();};
+  if(favBtn)favBtn.onclick=()=>{if(TC_FAV.size===0)return;tcCloseFacet();st.fav=!st.fav;st.group=null;st.picks=null;apply();M.body.scrollTop=0;};
+  randomBtn.onclick=()=>{if(!currentList.length)return;st.picks=pickRandomImgs(currentList,8);apply();M.body.scrollTop=0;};
+  M.body.querySelector("#tclib-q").oninput=e=>{st.q=e.target.value;st.group=null;st.picks=null;st.fav=false;tcCloseFacet();apply();};
   apply();
 }
-function tcCard(m,M,st,apply,gcount,onFav){
+function tcCard(m,M,st,apply,gcount,onFav,navList,navIdx){
   const card=document.createElement("div");
+  const cr=CREATORS[creatorOf(m)]||CREATORS.tc;
   card.style.cssText="background:var(--bg);border:1px solid var(--bg3);border-radius:6px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .12s";
   const rel=m.group&&gcount[m.group]>1?gcount[m.group]:0;
   card.innerHTML=`<div style="position:relative">
@@ -6865,7 +6971,7 @@ function tcCard(m,M,st,apply,gcount,onFav){
     <div style="padding:8px 10px 10px;display:flex;flex-direction:column;gap:5px">
       <div style="font-size:11px;font-weight:600;color:var(--fg);line-height:1.3;word-break:break-word" title="${(m.name||"").replace(/"/g,"&quot;")}">${tcDisplayName(m)}</div>
       <div style="font-size:9px;color:var(--fg4);line-height:1.3" title="${((m.set||"")+" › "+(m.loc||"")).replace(/"/g,"&quot;")}">${m.w!=null?Math.round(m.w):"?"} × ${m.h!=null?Math.round(m.h):"?"}${m.cell?" · "+m.cell+" px/cell":""}</div>
-      <div style="display:flex;gap:4px;flex-wrap:wrap">${(m.env||[]).slice(0,3).map(e=>`<span style="font-size:8px;background:var(--bg3);color:var(--fg2);padding:1px 5px;border-radius:3px">${e}</span>`).join("")}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">${(m.env||[]).slice(0,3).map(e=>`<span style="font-size:8px;background:var(--bg3);color:var(--fg2);padding:1px 5px;border-radius:3px">${e}</span>`).join("")}<a class="tclib-cred" href="${cr.url}" target="_blank" rel="noopener noreferrer" title="By ${cr.name.replace(/"/g,"&quot;")} - opens their page in a new tab" style="font-size:8px;background:rgba(159,90,229,.16);color:var(--accent);padding:1px 5px;border-radius:3px;text-decoration:none;font-weight:600;white-space:nowrap">🖌 ${cr.name}</a></div>
       <button class="btn btn-p tclib-load" style="font-size:10px;padding:5px;width:100%;margin-top:2px">Load to map</button>
       ${rel?`<button class="btn btn-s tclib-rel" style="font-size:9px;padding:3px;width:100%">View related maps (${rel})</button>`:""}
     </div>`;
@@ -6875,14 +6981,104 @@ function tcCard(m,M,st,apply,gcount,onFav){
   card.onmouseenter=()=>{card.style.borderColor="var(--accent)";heart.style.opacity="1";};
   card.onmouseleave=()=>{card.style.borderColor="var(--bg3)";if(!TC_FAV.has(m.img))heart.style.opacity="0";};
   heart.onclick=(e)=>{e.stopPropagation();if(TC_FAV.has(m.img))TC_FAV.delete(m.img);else TC_FAV.add(m.img);tcFavSave(TC_FAV);paintHeart();if(onFav)onFav();};
-  card.querySelector(".tclib-thumb").onclick=(e)=>{e.stopPropagation();showFullscreenThumb(tcImgUrl(m.img),{title:tcDisplayName(m),w:m.w,h:m.h,cell:m.cell,tc:true});};
+  const credA=card.querySelector(".tclib-cred");if(credA)credA.onclick=(e)=>e.stopPropagation();
+  card.querySelector(".tclib-thumb").onclick=(e)=>{e.stopPropagation();
+    const render=mm=>({url:tcImgUrl(mm.img),meta:{title:tcDisplayName(mm),w:mm.w,h:mm.h,cell:mm.cell,creator:creatorOf(mm)}});
+    const f=render(m);
+    showFullscreenThumb(f.url,f.meta,(navList&&navList.length>1)?{items:navList,index:navIdx,render}:null);};
   card.querySelector(".tclib-load").onclick=(e)=>{e.stopPropagation();M.close();setTimeout(()=>loadTCMap(m),50);};
-  const relBtn=card.querySelector(".tclib-rel");if(relBtn)relBtn.onclick=(e)=>{e.stopPropagation();tcCloseFacet();st.group=m.group;st.pick=null;st.fav=false;apply();};
+  const relBtn=card.querySelector(".tclib-rel");if(relBtn)relBtn.onclick=(e)=>{e.stopPropagation();tcCloseFacet();st.group=m.group;st.picks=null;st.fav=false;apply();};
   return card;}
 $("welcome-sample").onclick=e=>{e.preventDefault();closeWelcome();setTimeout(showTCLibraryModal,100);};
 // Browse Samples button in the empty-state placeholder. Visible whenever there's no map loaded
 // and the user is at the default empty grid, giving them a path to try the tool.
 const phTcBtn=$("ph-browse-tclib");if(phTcBtn)phTcBtn.onclick=()=>showTCLibraryModal();
+// ===== Token library (served from cdn.battlescry.com, parallel to the map library) =====
+// Tokens are short keys under t/ (e.g. t/ne0006.png), and carry an explicit `creator` field. This is
+// its OWN modal with an in-header preview pane, so picking a token never opens a separate full-size
+// window. Reuses CREATORS / creatorOf / creatorCreditHtml and the shared CDN URL builders.
+// Token inventory schema (t_inventory.json at the CDN root): array of
+//   { "name":"Goblin Boss", "creator":"nesimna", "w":1, "h":1, "cat":["Goblinoid"], "img":"t/ne0006.png" }
+// (or { "tokens":[ ... ] }). Token thumbnails are not required - tokens are already small.
+let TOKLIB=null, TOKLIB_LOADING=null;
+function loadTokenInventory(){
+  if(TOKLIB)return Promise.resolve(TOKLIB);
+  if(TOKLIB_LOADING)return TOKLIB_LOADING;
+  TOKLIB_LOADING=fetch(TC_CDN+"/t_inventory.json")
+    .then(r=>{if(!r.ok)throw new Error("no token inventory");return r.json();})
+    .then(d=>{TOKLIB=Array.isArray(d)?d:(d.tokens||[]);return TOKLIB;})
+    .catch(()=>{TOKLIB=[];return TOKLIB;});
+  return TOKLIB_LOADING;
+}
+function tokDims(t){return (t.w||1)+"×"+(t.h||1);}
+// onPick(token) fires when the user chooses one; the modal then closes.
+function showTokenLibraryModal(onPick){
+  const M=smartModal({title:"🎭 Token Library",size:"lg",dismissOnBackdrop:false});
+  M.body.innerHTML=`<div style="padding:40px;text-align:center;color:var(--fg3);font-size:13px">Loading token library...</div>`;
+  loadTokenInventory().then(toks=>renderTokLib(M,toks,onPick))
+    .catch(()=>{M.body.innerHTML=`<div style="padding:40px;text-align:center;color:var(--fg4);font-size:12px">Could not load the token library.</div>`;});
+}
+function renderTokLib(M,toks,onPick){
+  if(!toks.length){M.body.innerHTML=`<div style="padding:40px;text-align:center;color:var(--fg4);font-size:12px;font-style:italic">The token library is coming soon.</div>`;return;}
+  const creators=[...new Set(toks.map(t=>(CREATORS[creatorOf(t)]||CREATORS.tc).name))].sort((a,b)=>a.localeCompare(b));
+  const multiCreator=creators.length>1;
+  const st={q:"",creator:"",sel:null};
+  M.body.innerHTML=`
+    <div style="display:flex;gap:14px;align-items:center;padding:12px;background:var(--bg);border:1px solid var(--bg3);border-radius:8px;margin-bottom:12px;min-height:128px">
+      <div style="width:104px;height:104px;flex-shrink:0;border-radius:8px;background:#222;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <span id="toklib-pv-hint" style="font-size:10px;color:var(--fg4);text-align:center;padding:6px">Select a token to preview</span>
+        <img id="toklib-pv-img" style="display:none;max-width:100%;max-height:100%;object-fit:contain">
+      </div>
+      <div style="flex:1;min-width:0">
+        <div id="toklib-pv-name" style="font-size:15px;font-weight:700;color:var(--fg)">&mdash;</div>
+        <div id="toklib-pv-meta" style="font-size:11px;color:var(--fg3);font-family:monospace;margin-top:2px"></div>
+        <div id="toklib-pv-cred" style="font-size:12px;color:var(--fg2);margin-top:6px"></div>
+        <button class="btn btn-p" id="toklib-use" style="font-size:12px;padding:6px 14px;margin-top:10px" disabled>Use this token</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+      <input id="toklib-q" class="inp" placeholder="Search tokens..." style="flex:1;min-width:140px;font-size:11px">
+      ${creators.length>1?`<select id="toklib-creator" class="inp" style="font-size:11px;max-width:170px"><option value="">All creators</option>${creators.map(c=>`<option value="${c.replace(/"/g,"&quot;")}">${c}</option>`).join("")}</select>`:""}
+    </div>
+    <div id="toklib-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px"></div>
+    <div id="toklib-empty" style="display:none;padding:30px;text-align:center;color:var(--fg4);font-size:12px;font-style:italic">No tokens match.</div>`;
+  const grid=M.body.querySelector("#toklib-grid"),empty=M.body.querySelector("#toklib-empty");
+  const pvImg=M.body.querySelector("#toklib-pv-img"),pvHint=M.body.querySelector("#toklib-pv-hint"),pvName=M.body.querySelector("#toklib-pv-name"),pvMeta=M.body.querySelector("#toklib-pv-meta"),pvCred=M.body.querySelector("#toklib-pv-cred"),useBtn=M.body.querySelector("#toklib-use");
+  function select(t){
+    st.sel=t;
+    pvImg.src=tcImgUrl(t.img);pvImg.style.display="block";pvHint.style.display="none";
+    pvName.textContent=t.name||"(unnamed)";
+    pvMeta.textContent=tokDims(t)+((t.cat&&t.cat.length)?" · "+t.cat.join(", "):"");
+    pvCred.innerHTML=creatorCreditHtml(creatorOf(t),"Token");
+    useBtn.disabled=false;
+  }
+  useBtn.onclick=()=>{if(st.sel&&onPick){onPick(st.sel);M.close();}};
+  function apply(){
+    const q=st.q.trim().toLowerCase();
+    const list=toks.filter(t=>{
+      if(q&&!((t.name||"").toLowerCase().includes(q)||(t.cat||[]).join(" ").toLowerCase().includes(q)))return false;
+      if(st.creator&&(CREATORS[creatorOf(t)]||CREATORS.tc).name!==st.creator)return false;
+      return true;
+    });
+    grid.innerHTML="";empty.style.display=list.length?"none":"block";
+    list.forEach(t=>{
+      const card=document.createElement("div");
+      card.className="toklib-card";
+      const cr=CREATORS[creatorOf(t)]||CREATORS.tc;
+      card.style.cssText="background:var(--bg);border:1px solid var(--bg3);border-radius:6px;overflow:hidden;cursor:pointer;transition:border-color .12s;display:flex;flex-direction:column";
+      card.innerHTML=`<div style="aspect-ratio:1/1;background:#222;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="${tcImgUrl(t.img)}" loading="lazy" style="max-width:100%;max-height:100%;object-fit:contain" alt=""></div>
+        <div style="padding:5px 6px;display:flex;flex-direction:column;gap:3px"><div style="font-size:9px;font-weight:600;color:var(--fg);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${(t.name||"").replace(/"/g,"&quot;")}">${t.name||""}</div>${multiCreator?`<a class="toklib-cred" href="${cr.url}" target="_blank" rel="noopener noreferrer" title="By ${cr.name.replace(/"/g,"&quot;")} - opens their page in a new tab" style="font-size:7px;background:rgba(159,90,229,.16);color:var(--accent);padding:1px 4px;border-radius:3px;text-decoration:none;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;align-self:flex-start">🖌 ${cr.name}</a>`:""}</div>`;
+      card.onclick=()=>{select(t);grid.querySelectorAll(".toklib-card").forEach(e=>e.style.borderColor="var(--bg3)");card.style.borderColor="var(--accent)";};
+      const credEl=card.querySelector(".toklib-cred");if(credEl)credEl.onclick=(e)=>e.stopPropagation();
+      card.onmouseenter=()=>{if(st.sel!==t)card.style.borderColor="var(--fg4)";};
+      card.onmouseleave=()=>{if(st.sel!==t)card.style.borderColor="var(--bg3)";};
+      grid.appendChild(card);
+    });
+  }
+  M.body.querySelector("#toklib-q").oninput=e=>{st.q=e.target.value;apply();};
+  const csel=M.body.querySelector("#toklib-creator");if(csel)csel.onchange=e=>{st.creator=e.target.value;apply();};
+  apply();
+}
 // Toast handlers - toast stays visible until user dismisses (OK button or "Don't show next time")
 var _toastTimer=null;
 function showLoadToast(summary){
