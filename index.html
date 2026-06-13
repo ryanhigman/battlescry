@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.163                                      https://battlescry.com
+BattleScry v0.1.166                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,19 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.166 - Added: a responsive top bar for small screens. On narrow windows (under 768px) the toolbar
+            collapses to the logo, Save / Export, and a "more" (...) button that opens a dropdown holding
+            the rest: undo/redo, map view, secret mode, sign-in, help, and about. Closes on Escape or an
+            outside click. Desktop is unchanged. First step of the mobile layout pass; the sidebar becomes
+            a bottom sheet next.
+  v0.1.165 - Changed: the About and Quick Start (Help) dialogs now use the same modal style as the rest
+            of the app: matching border, header, and close button, and they can be dismissed with the
+            Escape key or by clicking outside. No content changes.
+  v0.1.164 - Changed: continued the color cleanup. Destructive actions (delete and clear buttons),
+            error messages, input warnings, and the revert-all dialog now all use one consistent red,
+            and success confirmations one consistent green. The gold button hover and the warning
+            banner now match the accent exactly. The map's own selection and handle colors are
+            unchanged (a separate pass). No layout or behavior changes.
   v0.1.163 - Changed: unified the color system. The warm dark surfaces, text grays, and gold accent are
             now defined as a single set of design tokens, with clearer depth between the canvas, panels,
             and cards. Foundation-only change (no layout or behavior changes); the first step of a broader
@@ -28,19 +41,9 @@ RECENT CHANGES
             and press Enter to use the highlighted token. The search and filter bar is now locked in place
             so only the gallery scrolls, and the modal no longer has its own extra scrollbar. Removed the
             CR and Size filters (too little real data to be useful as filters).
-  v0.1.161 - Changed: simplified the token crop options in Manage Token Image. Removed the "Zoomed" crop,
-            leaving Default and Face. The crop previews are now larger, and the Face option is hidden
-            entirely when OTFBM finds no face in the image (instead of showing a greyed-out "No face").
-  v0.1.160 - Changed: the "Browse Token Library" buttons (and the library window title) now use a plain
-            person silhouette icon instead of the theater masks.
-  v0.1.159 - Added: a "Browse Token Library" button at the top of the Tokens tab, under Add Non-Monster
-            Combatant. Picking a token there (when you're not already editing a combatant) starts a new
-            Non-Monster Combatant pre-filled with an auto-generated name (initials plus the next free
-            number, matching OTFBM), the creature's size, and its token image, ready for you to finish in
-            the panel.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.163"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.166"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -67,9 +70,9 @@ body{background:var(--bg);color:var(--fg);font-family:'Segoe UI',system-ui,sans-
 input,select,textarea,button{font-family:inherit}
 .inp{background:#44403a;border:1px solid #55504a;border-radius:4px;padding:3px 6px;font-size:12px;color:var(--fg);outline:none;width:100%}.inp:focus{border-color:var(--accent)}
 .btn{padding:4px 10px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:background .15s}
-.btn-p{background:var(--accent);color:#1a1814}.btn-p:hover{background:#e5ab10}
+.btn-p{background:var(--accent);color:#1a1814}.btn-p:hover{background:var(--gold-dim)}
 .btn-s{background:#44403a;color:var(--fg)}.btn-s:hover{background:#55504a}
-.btn-d{background:#7f1d1d;color:#fca5a5}.btn-d:hover{background:#991b1b}
+.btn-d{background:var(--danger-fill);color:var(--danger-ink)}.btn-d:hover{background:#843029}
 .lbl{font-size:10px;color:var(--fg2);display:block;margin-bottom:2px}
 .sec{background:var(--bg5);border-radius:6px;padding:10px;border:1px solid #33302a;display:flex;flex-direction:column;gap:6px}
 .sec-title{font-size:11px;color:var(--fg2);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
@@ -94,7 +97,7 @@ input,select,textarea,button{font-family:inherit}
 .tok-edit-wrap{position:relative;display:inline-block}
 .tok-edit-icon{position:absolute;right:-4px;top:-4px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#1a1814;border:2px solid var(--bg2);cursor:pointer;font-size:0;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.5)}
 .tok-edit-icon::before{content:"";width:14px;height:14px;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.375 2.625 a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.375-9.375z"/></svg>');background-size:contain;background-repeat:no-repeat;background-position:center}
-.tok-edit-icon:hover{background:#e5ab10;transform:scale(1.08)}
+.tok-edit-icon:hover{background:var(--gold-dim);transform:scale(1.08)}
 .cb-portrait-btn{cursor:pointer}
 .cb-portrait-btn:hover .cb-prev-disc{box-shadow:0 0 0 2px var(--accent),0 0 9px rgba(245,180,20,.55)}
 .cb-prev-overlay{position:absolute;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:rgba(7,3,26,.55);color:#fff;opacity:0;transition:opacity .12s ease;pointer-events:none;box-sizing:border-box}
@@ -125,7 +128,19 @@ input,select,textarea,button{font-family:inherit}
 .tclib-facet-btn.tclib-facet-open{background:#55504a}
 .tclib-pop .tclib-opt:hover,.tclib-pop .tclib-all:hover{background:var(--bg4)}
 .tclib-allmaps:disabled,.tclib-random:disabled{opacity:.45;cursor:default}
-#toolbar{border-bottom:1px solid var(--border);padding:5px 8px;display:flex;gap:5px;align-items:center;flex-wrap:wrap;background:var(--bg2);flex-shrink:0}
+#toolbar{border-bottom:1px solid var(--border);padding:5px 8px;display:flex;gap:5px;align-items:center;flex-wrap:wrap;background:var(--bg2);flex-shrink:0;position:relative}
+/* Responsive top bar (<=768px): collapse the secondary controls into a tap-to-open menu. */
+#tb-overflow{display:contents}
+.tbo-right{order:1}
+#tb-more{display:none;padding:4px 8px;align-items:center;justify-content:center}
+@media (max-width:768px){
+  #toolbar{flex-wrap:nowrap;gap:6px}
+  #tb-more{display:inline-flex}
+  #btn-copy{margin-left:auto}
+  #tb-overflow{display:none;position:absolute;top:calc(100% + 1px);right:6px;z-index:9000;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg-1);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.55);padding:10px;min-width:215px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 56px);overflow:auto}
+  #tb-overflow.open{display:flex}
+  #tb-overflow .sep,#tb-spacer{display:none}
+}
 .logo{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:1px;white-space:nowrap}
 .sep{border-left:1px solid var(--border);height:20px;margin:0 1px}
 #main{flex:1;display:flex;overflow:hidden}
@@ -174,7 +189,7 @@ input,select,textarea,button{font-family:inherit}
 .grp-hdr .arrow{font-size:10px;color:var(--fg3);transition:transform .2s}.grp-hdr .arrow.closed{transform:rotate(-90deg)}
 #cmd-bar{border-top:1px solid var(--border);padding:6px 8px;background:var(--bg5);flex-shrink:0}
 #cmd-bar .cmd{font-family:monospace;font-size:9px;color:var(--fg2);max-height:48px;overflow:auto;word-break:break-all;margin-bottom:4px;line-height:1.4}
-.warn{background:#78350f;color:#fbbf24;border-radius:4px;padding:4px 8px;font-size:10px;margin-bottom:4px}
+.warn{background:#78350f;color:var(--gold);border-radius:4px;padding:4px 8px;font-size:10px;margin-bottom:4px}
 #tooltip{position:fixed;pointer-events:none;background:rgba(0,0,0,.92);color:#fff;font-size:11px;padding:5px 10px;border-radius:5px;font-family:'Segoe UI',sans-serif;z-index:100;display:none;max-width:350px;line-height:1.5}
 #popup{position:fixed;background:var(--bg4);border:1px solid var(--accent);border-radius:8px;padding:12px;z-index:200;min-width:220px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:none;max-height:400px;overflow:auto}
 #popup h3{font-size:12px;color:var(--accent);margin-bottom:8px}
@@ -230,7 +245,8 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.163</span>
+  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.166</span>
+  <div id="tb-overflow">
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -246,13 +262,15 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   </div>
   <div class="sep"></div>
   <label id="hide-toggle-label" style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--fg3);cursor:pointer;padding:3px 6px;background:var(--bg2);border-radius:4px;margin-right:2px" title="When Secret Mode is enabled, the export command will update the map normally, but players won't see the list of changes (token moves, Fog of War reveals, etc)."><input type="checkbox" id="cmd-hidden" style="accent-color:var(--accent);cursor:pointer"><span>Secret Mode</span></label>
+  <div id="tb-spacer" class="tbo-right" style="flex:1"></div>
+  <div id="status-msg" class="tbo-right" style="font-size:10px;color:var(--fg3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;text-align:right;padding:0 8px"></div>
+  <span id="partial-view" class="tbo-right" style="display:none;font-size:9px;color:var(--fg3);margin-right:4px"></span>
+  <span id="bscry-login" class="tbo-right" style="display:inline-flex;align-items:center;gap:4px;margin-right:2px"></span>
+  <button id="btn-help" class="btn btn-s tbo-right" style="font-size:10px;padding:3px 8px" title="Quick start guide">? Help</button>
+  <button id="btn-about" class="btn btn-s tbo-right" style="font-size:10px;padding:3px 8px" title="About BattleScry">ℹ About</button>
+  </div>
   <button class="btn btn-p" id="btn-copy" style="font-size:11px;padding:5px 14px;font-weight:bold" title="Save your changes: copies the !bscry apply command to the clipboard, then paste it in Discord to apply">Save / Export</button>
-  <div style="flex:1"></div>
-  <div id="status-msg" style="font-size:10px;color:var(--fg3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;text-align:right;padding:0 8px"></div>
-  <span id="partial-view" style="display:none;font-size:9px;color:var(--fg3);margin-right:4px"></span>
-  <span id="bscry-login" style="display:inline-flex;align-items:center;gap:4px;margin-right:2px"></span>
-  <button id="btn-help" class="btn btn-s" style="font-size:10px;padding:3px 8px" title="Quick start guide">? Help</button>
-  <button id="btn-about" class="btn btn-s" style="font-size:10px;padding:3px 8px" title="About BattleScry">ℹ About</button>
+  <button id="tb-more" class="btn btn-s" title="More controls" aria-label="More controls" aria-haspopup="true" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
 </div>
 <div id="main">
   <div id="map-wrap" style="flex:1;position:relative;overflow:hidden"><div id="map-vp" style="position:absolute;inset:0;overflow:auto"><div id="map-container"><img id="map-img" style="display:none" alt=""><svg id="map-svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
@@ -285,24 +303,6 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
     <div style="display:flex;gap:10px;justify-content:center"><button class="btn btn-s" id="welcome-more" style="padding:6px 16px;font-size:11px">Tell me more</button><button class="btn btn-s" id="welcome-ok" style="padding:6px 16px;font-size:11px">Got it</button></div>
   </div>
 </div>
-<div id="about-modal" style="display:none;position:fixed;inset:0;z-index:301;background:rgba(0,0,0,0.7);justify-content:center;align-items:center;padding:20px">
-  <div style="background:var(--bg2);border:1px solid var(--bg3);border-radius:8px;width:560px;max-width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,0.6)">
-    <div style="display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid var(--bg3);position:sticky;top:0;background:var(--bg2);z-index:1"><span style="margin-right:8px;display:inline-flex;vertical-align:middle"><svg width="28" height="28" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg></span><span style="font-size:17px;font-weight:bold;color:var(--accent)">About BattleScry</span><button id="about-close" class="btn btn-s" style="margin-left:auto;padding:4px 10px;font-size:13px">✕</button></div>
-    <div style="padding:18px 22px;font-size:13px;color:var(--fg);line-height:1.7">
-      <div style="font-weight:bold;color:var(--accent);margin-top:6px;margin-bottom:6px">What is this?</div>
-      <div>BattleScry is a free interactive battlemap tool for D&amp;D, designed to work seamlessly with Discord, Avrae, and OTFBM.</div>
-      <div style="font-weight:bold;color:var(--accent);margin-top:18px;margin-bottom:6px">How do I use it?</div>
-      <div>In Discord, run <code style="background:var(--bg3);color:var(--accent);padding:1px 5px;border-radius:3px">!bscry</code> during an active combat. Click the link generated to load the current map into BattleScry. Edit tokens, map settings, overlays and other objects as much as you like, and click <b>Export Updated Map</b> when finished.<br><br>Paste the command back into Discord, and your map will be updated with all your changes! If someone else updated the map in Discord while you were editing, don't worry... BattleScry will apply a smart merge of all changes and flag any conflicts. The most recent changes to the Avrae map will take precedence.</div>
-      <div style="font-weight:bold;color:var(--accent);margin-top:18px;margin-bottom:6px">How do I learn more?</div>
-      <div>Click the <b>? Help</b> button in the top right for more detailed instructions. Visit <a href="https://avrae.io" target="_blank" rel="noopener" style="color:var(--accent)">avrae.io</a> to learn more about the D&amp;D bot for Discord, and visit <a href="https://otfbm.io" target="_blank" rel="noopener" style="color:var(--accent)">otfbm.io</a> for more information about the awesome On The Fly Battle Maps tool.</div>
-      <div style="font-weight:bold;color:var(--accent);margin-top:18px;margin-bottom:6px">This is cool! How can I support you?</div>
-      <div>This tool is offered free to the D&amp;D community to make it easier for players and DMs to play this game we all love. If you want to throw me a few gold pieces, feel free to <a href="https://ko-fi.com/battlescry" target="_blank" rel="noopener" style="color:var(--accent)"><b>buy me a healing potion</b></a> and enjoy your free Heroic Inspiration for doing a kind deed. <a href="https://ko-fi.com/battlescry" target="_blank" rel="noopener" style="text-decoration:none">💖</a><br><br>If you want to help me improve BattleScry, check out the <a href="https://github.com/ryanhigman/battlescry" target="_blank" rel="noopener" style="color:var(--accent)"><b>open source code on GitHub</b></a>.</div>
-      <div style="font-weight:bold;color:var(--accent);margin-top:18px;margin-bottom:6px">Credits</div>
-      <div>Default monster token art is from <a href="https://game-icons.net" target="_blank" rel="noopener" style="color:var(--accent)">game-icons.net</a>, used under the <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener" style="color:var(--accent)">CC BY 3.0</a> license, by Lorc, Delapouite, Skoll, Cathelineau, Caro Asercion, Carl Olsen, and Faithtoken. Icons were exported to PNG for use as tokens. See the <a href="ATTRIBUTIONS.md" target="_blank" rel="noopener" style="color:var(--accent)">full per-icon credits</a> for details.</div>
-      <div style="margin-top:22px;padding-top:14px;border-top:1px solid var(--bg3);font-size:10px;color:var(--fg4);text-align:center">Made with care for the D&amp;D community. Check out the <a href="https://discord.gg/sBsx4BrdT" target="_blank" rel="noopener" style="color:var(--accent)">Avalor server on Discord!</a></div>
-    </div>
-  </div>
-</div>
 <div id="load-toast" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:250;background:var(--bg2);border:1px solid var(--accent);border-radius:6px;padding:14px 18px;width:380px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.6)">
   <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px"><span style="font-size:16px;flex-shrink:0">✅</span><div style="font-size:12px;color:var(--fg);line-height:1.5"><b id="toast-summary">Map loaded</b><br><span style="color:var(--fg2);font-size:11px">Edit anything, then click <b>Export Updated Map</b> when done.</span></div></div>
   <div style="display:flex;align-items:center;justify-content:center;margin-top:14px"><button class="btn btn-s" id="toast-ok" style="font-size:11px;padding:4px 28px">OK</button></div>
@@ -317,72 +317,6 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   <div style="font-size:9px;color:var(--fg4);font-style:italic;margin-bottom:6px;line-height:1.3">Surface-to-surface distance (treats each token as its full 3D cube)</div>
   <div id="dist-list" style="overflow-y:auto;max-height:50vh"></div>
 </div>
-<div id="help-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.7);justify-content:center;align-items:center">
-<div style="background:var(--bg);border:1px solid var(--bg3);border-radius:8px;width:480px;max-width:92vw;max-height:85vh;overflow-y:auto;padding:16px">
-  <div style="display:flex;align-items:center;margin-bottom:12px"><span style="font-size:16px;font-weight:bold;color:var(--accent)"><span style="display:inline-flex;vertical-align:middle;margin-right:6px"><svg width="22" height="22" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg></span>BattleScry - Quick Start</span><span style="margin-left:auto;cursor:pointer;font-size:18px;color:var(--fg3)" id="help-close">✕</span></div>
-  <div style="font-size:12px;color:var(--fg);line-height:1.6">
-  <div style="font-weight:bold;color:var(--accent);margin-top:8px">Getting Started</div>
-  <div>1. Run <code style="background:var(--bg3);padding:1px 4px;border-radius:2px">!bscry</code> in Discord during combat</div>
-  <div>2. Click the <b>🗺️ Click here to open current map in BattleScry</b> link in the response to auto-load your map</div>
-  <div>3. Make your changes - move tokens, draw walls, edit overlays</div>
-  <div>4. Click the glowing <b>Export Updated Map</b> button in the top toolbar and paste it back in Discord</div>
-  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Map Navigation</div>
-  <div>• <b>Drag tokens</b> to move them on the grid</div>
-  <div>• <b>Scroll wheel</b> to zoom in/out</div>
-  <div>• <b>Hold Space + drag</b> to pan around the map</div>
-  <div>• <b>Ctrl+Z</b> to undo, <b>Ctrl+Shift+Z</b> to redo</div>
-  <div>• <b>Ctrl+Click</b> (Cmd on Mac) to multi-select any objects - tokens, overlays, walls, FOW regions</div>
-  <div>• <b>Delete</b> key to remove selected walls, overlays, or FOW regions</div>
-  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Tokens Tab</div>
-  <div>• Click a token on the map or in the list to select and edit properties</div>
-  <div>• <b>Customize Token Image</b> - browse 334 SRD monsters, enter shortcodes, or upload custom images</div>
-  <div>• Upload images directly - hosted permanently on imgbb.com</div>
-  <div>• Two crop options: Default (full token image) and Face (AI face crop, shown only when a face is detected)</div>
-  <div>• Click a non-default crop → <b>Use this crop</b> re-uploads it as the token's default</div>
-  <div>• Save tokens by name for reuse across sessions</div>
-  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Overlays Tab</div>
-  <div>• <b>Add New Overlay</b> - choose type (circle, cone, line, arrow, square), size, and color</div>
-  <div>• <b>Attach to (-t)</b> makes overlays persist on a combatant</div>
-  <div>• <b>{targ}</b> makes origin follow the attached token dynamically</div>
-  <div>• <b>Aim at (-aim)</b> makes end follow another token</div>
-  <div>• Drag overlay handles on the map to reposition</div>
-  <div>• Click coordinates fields then click the map for precise placement</div>
-  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Map Tab</div>
-  <div>• Background image - paste a URL or <b>Upload Image</b> directly</div>
-  <div>• Grid size, cell size, dark mode, grid color, and transparency controls</div>
-  <div>• <b>Fog of War</b> - click <b>Add New Revealed Region</b> then drag-select grid cells</div>
-  <div>• <b>Save / Load Battlemap</b> (background + grid + walls + FOW + objects) and <b>Save / Load Battle</b> (everything plus tokens + initiative)</div>
-  <div>• Advanced - Manual Import section (collapsed) for pasting data strings directly</div>
-  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Structures Tab</div>
-  <div>• <b>Walls subtab</b> - click <b>Add New Wall</b> then click grid intersections to draw wall segments</div>
-  <div>• <b>Hold Shift</b> while clicking to chain consecutive wall segments</div>
-  <div>• Click a wall on the map to select - change type (Wall, Open/Closed/Secret/Double Door) and color</div>
-  <div>• <b>Map Objects subtab</b> - place icons (chests, traps, fire, stairs, columns, etc.) on the grid</div>
-  <div>• Use the 👁 toggles to hide walls or objects from the BS preview (doesn't affect the exported map)</div>
-  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Saved Tokens, Maps, and Battles</div>
-  <div>• <b>Saved Tokens</b> store token image shortcodes by name - reuse across all campaigns</div>
-  <div>• <b>Saved Maps</b> store background + grid + walls + FOW - load any time</div>
-  <div>• <b>Saved Battles</b> store the complete combat state (map + combatants + initiative)</div>
-  <div>• All three persist in your Avrae user variables across sessions</div>
-  <div>• <b>Only names are loaded</b> in your <code style="background:var(--bg3);padding:1px 4px;border-radius:2px">!bscry</code> link - the full data is fetched on demand when you click Load</div>
-  <div>• This keeps URLs short and BattleScry fast even with dozens of saved items</div>
-  <div>• To save: type a name in the input field and click Save (queued - applies when you paste the !bscry apply command)</div>
-  <div>• To load: click Load next to a name (generates an <code style="background:var(--bg3);padding:1px 4px;border-radius:2px">!map -loadbattle</code> command to paste back)</div>
-  <div>• To delete: click ✕ next to a name (queued for removal)</div>
-  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Round-Trip with Avrae</div>
-  <div>• All changes go through <code style="background:var(--bg3);padding:1px 4px;border-radius:2px">!bscry apply</code> - one paste does everything</div>
-  <div>• Token moves, overlay changes, wall edits, and map settings in a single command</div>
-  <div>• The alias reads walls, FOW, overlays, and saved tokens/maps/battles from Avrae</div>
-  <div>• Run <code style="background:var(--bg3);padding:1px 4px;border-radius:2px">!bscry</code> again anytime to refresh</div>
-  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Tips & Prompts</div>
-  <div>• Re-enable prompts you've dismissed with "Don't show this again":</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-    <button class="btn btn-s" id="hr-welcome" style="font-size:11px;padding:4px 10px">Show welcome screen again</button>
-    <button class="btn btn-s" id="hr-bgwiz" style="font-size:11px;padding:4px 10px">Show "Add map background" guide again</button>
-  </div>
-  <div id="hr-msg" style="font-size:11px;color:var(--accent);margin-top:6px;min-height:14px"></div>
-  </div>
-</div></div>
 <div id="srd-modal" class="smart-modal-backdrop" style="display:none;z-index:9998">
 <div class="smart-modal smart-modal-lg" style="padding:12px;border-color:var(--bg3);border-width:1px">
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-weight:bold;color:var(--fg);font-size:14px">🎨 Manage Token Image</span><span style="margin-left:auto;cursor:pointer;font-size:18px;color:var(--fg3)" id="srd-close">✕</span></div>
@@ -471,7 +405,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
     </div>
   </div>
   <details style="margin-bottom:4px"><summary style="cursor:pointer;color:var(--fg3);font-size:10px;padding:2px 0">⚙ Advanced</summary>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:6px"><label style="font-size:10px;display:flex;align-items:center;gap:3px;cursor:pointer;color:var(--fg2)"><input type="checkbox" id="srd-facedet" style="accent-color:var(--accent)">Face Detect</label><button class="btn btn-s" id="srd-clear" style="font-size:9px;padding:2px 6px;color:#e74c3c;margin-left:auto">Clear image</button></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:6px"><label style="font-size:10px;display:flex;align-items:center;gap:3px;cursor:pointer;color:var(--fg2)"><input type="checkbox" id="srd-facedet" style="accent-color:var(--accent)">Face Detect</label><button class="btn btn-s" id="srd-clear" style="font-size:9px;padding:2px 6px;color:var(--danger);margin-left:auto">Clear image</button></div>
     <div style="font-size:9px;color:var(--fg3);margin:4px 0 0;font-style:italic" id="srd-facedet-note"></div>
   </details>
 </div></div>
@@ -831,23 +765,23 @@ function bscryHostBlob(blob,filename,onDone,onError){
 }
 function uploadImage(file,statusEl,onSuccess){
   const validExts=["jpg","jpeg","png","gif"];const ext=file.name.split(".").pop().toLowerCase();
-  if(!validExts.includes(ext)){statusEl.innerHTML='<span style="color:#e74c3c">⚠ Only jpg, png, gif supported. No webp.</span>';return;}
-  if(file.size>5*1024*1024){statusEl.innerHTML='<span style="color:#e74c3c">⚠ File too large (max 5MB)</span>';return;}
+  if(!validExts.includes(ext)){statusEl.innerHTML='<span style="color:var(--danger)">⚠ Only jpg, png, gif supported. No webp.</span>';return;}
+  if(file.size>5*1024*1024){statusEl.innerHTML='<span style="color:var(--danger)">⚠ File too large (max 5MB)</span>';return;}
   // Client-side dimension check
   const objUrl=URL.createObjectURL(file);const img=new Image();
   img.onload=()=>{
     const w=img.naturalWidth,h=img.naturalHeight;URL.revokeObjectURL(objUrl);
-    if(w<100||h<100){statusEl.innerHTML='<span style="color:#e74c3c">⚠ Image too small ('+w+'×'+h+'). Min 100×100.</span>';return;}
-    if(w>8000||h>8000){statusEl.innerHTML='<span style="color:#e74c3c">⚠ Image too large ('+w+'×'+h+'). Max 8000×8000.</span>';return;}
+    if(w<100||h<100){statusEl.innerHTML='<span style="color:var(--danger)">⚠ Image too small ('+w+'×'+h+'). Min 100×100.</span>';return;}
+    if(w>8000||h>8000){statusEl.innerHTML='<span style="color:var(--danger)">⚠ Image too large ('+w+'×'+h+'). Max 8000×8000.</span>';return;}
     const kb=Math.round(file.size/1024);statusEl.innerHTML='<span style="color:var(--accent)">⏳ Uploading '+file.name+' ('+w+'×'+h+', '+(kb>1024?(kb/1024).toFixed(1)+'MB':kb+'KB')+')...</span>';
     const fd=new FormData();fd.append("file",file);
     fetch(UPLOAD_URL,{method:"POST",body:fd}).then(r=>r.json()).then(data=>{
-      if(data.error){statusEl.innerHTML='<span style="color:#e74c3c">⚠ '+data.error+'</span>';return;}
+      if(data.error){statusEl.innerHTML='<span style="color:var(--danger)">⚠ '+data.error+'</span>';return;}
       if(data.url){
         const permLabel=data.permanent?'<span style="color:var(--accent)"> ✓ Permanently hosted</span>':'<span style="color:#e67e22"> ⚠ Temporary (72h)</span>';
         statusEl.innerHTML='<span style="color:var(--accent)">✓</span> Uploaded! '+w+'×'+h+permLabel;onSuccess(data.url,w,h);}
-    }).catch(err=>{statusEl.innerHTML='<span style="color:#e74c3c">⚠ Upload failed</span>';});};
-  img.onerror=()=>{URL.revokeObjectURL(objUrl);statusEl.innerHTML='<span style="color:#e74c3c">⚠ Could not read image</span>';};
+    }).catch(err=>{statusEl.innerHTML='<span style="color:var(--danger)">⚠ Upload failed</span>';});};
+  img.onerror=()=>{URL.revokeObjectURL(objUrl);statusEl.innerHTML='<span style="color:var(--danger)">⚠ Could not read image</span>';};
   img.src=objUrl;}
 // SRD 5.1 monster whitelist (CC-BY 4.0): [name, size, type, CR]. Stat-block picker source;
 // all resolve via Avrae `!i madd <name> (BR; legacy)`. Art is chosen separately (see SRD_DEFAULT_ART).
@@ -1917,7 +1851,7 @@ function renderCombatantForm(opts){
   }else if(mode==="token"){
     h+=`<div class="row" style="gap:4px;margin-top:8px">
       <button class="btn btn-s" id="p-revert" ${canRevert?"":"disabled"} style="flex:1;font-size:11px;padding:5px${canRevert?"":";opacity:.4;cursor:default"}" title="Reset this token to its original loaded state">Revert</button>
-      <button class="btn btn-s" id="p-unplace" style="flex:1;font-size:11px;padding:5px;color:#e74c3c" title="Remove from map - moves to Unplaced (stays in initiative)">Unplace from Map</button>
+      <button class="btn btn-s" id="p-unplace" style="flex:1;font-size:11px;padding:5px;color:var(--danger)" title="Remove from map - moves to Unplaced (stays in initiative)">Unplace from Map</button>
     </div>`;
     // Stacked / attached overlay hints
     const stacked=opts.token?tokensAt(opts.token.col,opts.token.row).filter(x=>x.id!==opts.token.id):[];
@@ -2176,7 +2110,7 @@ function rOverlayProps(el){
   // Add New Overlay button always at top
   const ovFull=S.overlays.length>=10;
   h+=`<button class="btn btn-p" id="btn-add-ov" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0${ovFull?";opacity:.4;cursor:default":""}" ${ovFull?"disabled":""} title="${ovFull?"OTFBM limit: 10 overlays max - delete one to add another":"Create a new overlay with default settings"}">➕ Add New Overlay</button>`;
-  if(ovFull)h+=`<div style="font-size:9px;color:#e74c3c;margin:-2px 0 4px;text-align:center">OTFBM limit reached (10/10) - remove an overlay to add more</div>`;
+  if(ovFull)h+=`<div style="font-size:9px;color:var(--danger);margin:-2px 0 4px;text-align:center">OTFBM limit reached (10/10) - remove an overlay to add more</div>`;
   // Add New Overlay form
   if(S.addingOverlay){
     const ao=S.addingOverlay;const nc2=["cone","square","line","arrow"].includes(ao.type);
@@ -2222,7 +2156,7 @@ function rOverlayProps(el){
         const names=ids.map(id=>{const t=S.tokens.find(x=>x.id===id);return t?t.name:null;}).filter(Boolean);
         const ruleLbl=(S.aoeRule||"cell50")==="cell50"?"Cell ≥50%":(S.aoeRule||"cell50")==="touch"?"Touch":"Token ≥50%";
         return`<div style="font-size:10px;margin-top:6px;padding:4px 6px;background:var(--bg);border-radius:3px;border-left:3px solid ${ov.color||"var(--accent)"}"><b style="color:var(--fg)">Affects (${ruleLbl}):</b> <span style="color:var(--fg2)">${names.join(", ")}</span></div>`;})()}
-      <div class="row" style="gap:4px;margin-top:4px"><button class="btn btn-s" style="flex:1" id="p-ovrevert" title="Reset this overlay to original state">Revert</button><button class="btn btn-s" style="flex:1;color:#e74c3c" id="p-ovdel" title="Delete this overlay">Delete</button></div></div>`;}}
+      <div class="row" style="gap:4px;margin-top:4px"><button class="btn btn-s" style="flex:1" id="p-ovrevert" title="Reset this overlay to original state">Revert</button><button class="btn btn-s" style="flex:1;color:var(--danger)" id="p-ovdel" title="Delete this overlay">Delete</button></div></div>`;}}
   el.innerHTML=h;}
 function rOverlayList(el){let h="";const _ovSelBtn=allSel('ov')?'Unselect All':'Select All';
   // Overlay list
@@ -2231,13 +2165,13 @@ function rOverlayList(el){let h="";const _ovSelBtn=allSel('ov')?'Unselect All':'
     const at=a.target||"\uffff",bt=b.target||"\uffff";
     if(at!==bt)return natSort(at,bt);
     return(parseInt(a.ovNum)||0)-(parseInt(b.ovNum)||0);});
-  h+=`<div class="grp-hdr" data-grp="ov">${S.overlays.length?`<span class="vis-eye${S.showOverlays?'':' off'}" data-vis="overlays" style="cursor:pointer;font-size:11px;margin-right:2px;position:relative" title="${S.showOverlays?'Hide overlays':'Show overlays'}">👁</span><span class="arrow${S.ovCol?" closed":""}">▼</span>`:""}<span class="sec-title">Overlays (${S.overlays.length})</span>${S.overlays.length?'<button class="btn btn-s" data-selall="ov" style="font-size:8px;padding:1px 5px;margin-left:4px">'+_ovSelBtn+'</button><button class="btn btn-s" id="ov-clearall" style="font-size:8px;padding:1px 5px;color:#e74c3c;margin-left:2px" title="Remove all overlays">🗑 Clear</button>':""}<select class="inp" data-sort="ov" style="font-size:9px;padding:1px 2px;margin-left:auto;min-width:60px;width:60px;box-sizing:border-box"><option value="name"${S.ovSort==="name"?" selected":""}>Target</option><option value="shape"${S.ovSort==="shape"?" selected":""}>Shape</option></select></div>`;
+  h+=`<div class="grp-hdr" data-grp="ov">${S.overlays.length?`<span class="vis-eye${S.showOverlays?'':' off'}" data-vis="overlays" style="cursor:pointer;font-size:11px;margin-right:2px;position:relative" title="${S.showOverlays?'Hide overlays':'Show overlays'}">👁</span><span class="arrow${S.ovCol?" closed":""}">▼</span>`:""}<span class="sec-title">Overlays (${S.overlays.length})</span>${S.overlays.length?'<button class="btn btn-s" data-selall="ov" style="font-size:8px;padding:1px 5px;margin-left:4px">'+_ovSelBtn+'</button><button class="btn btn-s" id="ov-clearall" style="font-size:8px;padding:1px 5px;color:var(--danger);margin-left:2px" title="Remove all overlays">🗑 Clear</button>':""}<select class="inp" data-sort="ov" style="font-size:9px;padding:1px 2px;margin-left:auto;min-width:60px;width:60px;box-sizing:border-box"><option value="name"${S.ovSort==="name"?" selected":""}>Target</option><option value="shape"${S.ovSort==="shape"?" selected":""}>Shape</option></select></div>`;
   if(!S.ovCol){const shp={circle:"●",circletop:"●",circlecorner:"●",square:"■",cone:"◄",arrow:"→",line:"━"};
     sortedOvs.forEach(o=>{const sel=isSel("overlay",o.id);const ic=shp[o.type]||"◆";
     const coord=getOvCoord(o);const _c2d=getOvCoord2(o);const len=(o.type==="line"||o.type==="arrow")&&_c2d&&coord?gridDist(coord.col,coord.row,_c2d.col,_c2d.row):0;
     const lenStr=len?" "+len+"'":"";const sizeStr=o.size&&o.type!=="line"&&o.type!=="arrow"?" "+o.size+"'":"";
     const ovN=getOvNum(o);const tgtStr=o.target?" → "+o.target:"";
-    h+=`<div class="obj-item${sel?" sel":""}" data-oid="${o.id}" style="display:flex;align-items:center"><span style="color:${o.color};font-size:20px;line-height:14px;width:16px;text-align:center;flex-shrink:0">${ic}</span><div class="info" style="flex:1"><div class="name">${ovN.label}: ${o.type}${sizeStr}${lenStr}${tgtStr}${o.locked?" 🔗":""}</div></div><button class="btn btn-s ov-del-btn" data-delov="${o.id}" style="font-size:9px;padding:1px 5px;color:#e74c3c;flex-shrink:0" title="Delete">✕</button></div>`;});}
+    h+=`<div class="obj-item${sel?" sel":""}" data-oid="${o.id}" style="display:flex;align-items:center"><span style="color:${o.color};font-size:20px;line-height:14px;width:16px;text-align:center;flex-shrink:0">${ic}</span><div class="info" style="flex:1"><div class="name">${ovN.label}: ${o.type}${sizeStr}${lenStr}${tgtStr}${o.locked?" 🔗":""}</div></div><button class="btn btn-s ov-del-btn" data-delov="${o.id}" style="font-size:9px;padding:1px 5px;color:var(--danger);flex-shrink:0" title="Delete">✕</button></div>`;});}
   el.innerHTML=h;}
 function rMapTab(el){
   // The Map tab is the editing surface for the battlemap itself.
@@ -2261,7 +2195,7 @@ function mapBgInfoHtml(){
   if(!S.loadedUrl)return '<span style="color:var(--fg3);font-style:italic">📐 No background image loaded</span>';
   const a=S.bgAnalysis;
   if(!a)return '<span style="color:var(--accent);font-style:italic">Analyzing image…</span>';
-  if(a.error)return '<span style="color:#e74c3c">Could not analyze image (CORS or network error)</span>';
+  if(a.error)return '<span style="color:var(--danger)">Could not analyze image (CORS or network error)</span>';
   return `<span style="color:var(--accent)">✓</span> <b>${a.w} × ${a.h} px</b>${a.sizeStr?" · "+a.sizeStr:""}`;
 }
 // Build the grid-preset dropdown for the Map tab. Render-driven (rebuilt on every render) so it
@@ -2290,10 +2224,10 @@ function mapGridPickerHtml(){
     sh+=`<option value="${o.cs}|${o.gw}|${o.gh}|${o.ox}|${o.oy}"${sel}>${o.gw}×${o.gh} @ c${o.cs} · ${f2} · ${o.gw*5}×${o.gh*5}ft${warn}${star}</option>`;});
   sh+="</select>";
   if(baked&&curKey!==bakedKey){
-    sh+=`<div style="font-size:9px;color:#e74c3c;margin-top:4px;line-height:1.4">⚠ This grid differs from the map's built-in grid (${baked.cols}×${baked.rows} @ c${baked.cell}). The grid printed on the map and your tokens may not line up. Re-select "${baked.cols}×${baked.rows} @ c${baked.cell} ⭐" to restore it.</div>`;
+    sh+=`<div style="font-size:9px;color:var(--danger);margin-top:4px;line-height:1.4">⚠ This grid differs from the map's built-in grid (${baked.cols}×${baked.rows} @ c${baked.cell}). The grid printed on the map and your tokens may not line up. Re-select "${baked.cols}×${baked.rows} @ c${baked.cell} ⭐" to restore it.</div>`;
   }else{
     const selCs=selKey?+selKey.split("|")[0]:null;
-    if(selCs!==null&&selCs<40)sh+='<div style="font-size:9px;color:#e74c3c;margin-top:4px;line-height:1.4">⚠ Below c40: custom token images won\'t render, and the map may appear fuzzy in Discord.</div>';
+    if(selCs!==null&&selCs<40)sh+='<div style="font-size:9px;color:var(--danger);margin-top:4px;line-height:1.4">⚠ Below c40: custom token images won\'t render, and the map may appear fuzzy in Discord.</div>';
   }
   return sh;
 }
@@ -2357,7 +2291,7 @@ function rMapTabContent(){
   const _bgAll=[...S.savedMaps,...S.mapSaves.map(x=>x.name).filter(n=>!S.savedMaps.includes(n))].filter(n=>!S.mapDeletes.includes(n));
   const _bgBrowse=_bgAll.length?`<button class="btn btn-s" id="m-bgbrowsesaved" style="width:100%;font-size:10px;padding:4px 8px;margin-bottom:6px" title="View thumbnails and load a previously saved map">🗂 Browse Saved Battlemaps (${_bgAll.length})</button>`:"";
   const _bgControls=(bgUrl||S._uiBgOpen)?`
-  <div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><input class="inp" id="m-bgurl" value="${bgUrl}" placeholder="Paste image URL or browse below" style="flex:1;font-family:monospace;font-size:9px" title="${bgUrl||'No background image'}"><button class="btn btn-s" id="m-bgupdate" style="font-size:9px;padding:3px 8px;white-space:nowrap">${bgUrl?"Update":"Load"}</button>${bgUrl?`<button class="btn btn-s" id="m-bgremove" style="font-size:9px;padding:3px 6px;color:#e74c3c" title="Remove background image">Remove</button>`:""}</div>
+  <div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><input class="inp" id="m-bgurl" value="${bgUrl}" placeholder="Paste image URL or browse below" style="flex:1;font-family:monospace;font-size:9px" title="${bgUrl||'No background image'}"><button class="btn btn-s" id="m-bgupdate" style="font-size:9px;padding:3px 8px;white-space:nowrap">${bgUrl?"Update":"Load"}</button>${bgUrl?`<button class="btn btn-s" id="m-bgremove" style="font-size:9px;padding:3px 6px;color:var(--danger)" title="Remove background image">Remove</button>`:""}</div>
   <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap"><button class="btn btn-s" id="m-bgtclib" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Browse the map library">🗺️ Browse Map Library</button></div>
   ${_bgBrowse}`:"";
   if(bgUrl||S._uiBgOpen){
@@ -2409,7 +2343,7 @@ function rFowSection(){
     <div style="font-size:11px;color:var(--fg);padding:2px 0">${tl} → ${br} (${Math.abs(r.c2-r.c1)+1}×${Math.abs(r.r2-r.r1)+1} cells)</div></div>`;}}
   // Boundary: Add button + draw hint + region properties go in props area; region list goes in list area.
   h+="<!--SPLIT-->";
-  h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:4px">${S.fowRegions.length?`<span class="vis-eye${S.showFow?'':' off'}" data-vis="fow" style="cursor:pointer;font-size:11px;position:relative" title="${S.showFow?'Hide fog':'Show fog'}">👁</span>`:""}Fog of War Revealed Regions (${S.fowRegions.length})</span><span style="display:flex;gap:4px">${S.fowRegions.length?'<button class="btn btn-s" data-selall="fow" style="font-size:8px;padding:1px 5px">'+(allSel("fow")?"Unselect All":"Select All")+'</button><button class="btn btn-s" id="m-fowclear" style="font-size:8px;padding:1px 5px;color:#e74c3c" title="Remove all regions">🗑 Clear</button>':""}</span></div>`;
+  h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:4px">${S.fowRegions.length?`<span class="vis-eye${S.showFow?'':' off'}" data-vis="fow" style="cursor:pointer;font-size:11px;position:relative" title="${S.showFow?'Hide fog':'Show fog'}">👁</span>`:""}Fog of War Revealed Regions (${S.fowRegions.length})</span><span style="display:flex;gap:4px">${S.fowRegions.length?'<button class="btn btn-s" data-selall="fow" style="font-size:8px;padding:1px 5px">'+(allSel("fow")?"Unselect All":"Select All")+'</button><button class="btn btn-s" id="m-fowclear" style="font-size:8px;padding:1px 5px;color:var(--danger)" title="Remove all regions">🗑 Clear</button>':""}</span></div>`;
   if(S.fowRegions.length){
     S.fowRegions.forEach(r=>{const sel=isSel("fow",r.id);
       const tl=fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2));
@@ -2418,7 +2352,7 @@ function rFowSection(){
       h+=`<div class="obj-item${sel?" sel":""}" data-fid="${r.id}" style="display:flex;align-items:center;gap:6px;padding:3px 4px;cursor:pointer;border-radius:4px;font-size:11px">
       <span style="color:var(--accent)">☀</span>
       <span style="flex:1;color:var(--fg)">${tl}:${br} <span style="color:var(--fg3)">(${rw}×${rh})</span></span>
-      <button class="btn btn-s m-fowdel" data-delfow="${r.id}" style="font-size:9px;padding:1px 5px;color:#e74c3c" title="Delete">✕</button></div>`;});}
+      <button class="btn btn-s m-fowdel" data-delfow="${r.id}" style="font-size:9px;padding:1px 5px;color:var(--danger)" title="Delete">✕</button></div>`;});}
   else h+=`<div style="font-size:10px;color:var(--fg3);font-style:italic;padding:4px 0">No revealed regions - add new region to enable Fog of War</div>`;
   h+=`</div>`;
   // FOW opacity slider lives in Advanced Map Settings (under Map tab) for global visibility/scene controls.
@@ -2447,7 +2381,7 @@ function rSaveLoadSections(){
     const all=[...S.savedBattles,...S.battleSaves.map(s=>s.name).filter(n=>!S.savedBattles.includes(n))].filter(n=>!S.battleDeletes.includes(n));
     if(!all.length)return'<div style="font-size:10px;color:var(--fg3);font-style:italic">No saved battles</div>';
     return all.map(n=>{const isPending=!!S.battleSaves.find(s=>s.name===n);
-      return'<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px"><span style="flex:1;color:var(--fg)">'+n+(isPending?' <span style="color:var(--accent);font-size:9px">(pending)</span>':"")+'</span><button class="btn btn-s m-btlload" data-btlname="'+n+'" style="font-size:9px;padding:1px 6px" title="Load this battle (copies command to clipboard for Discord)">Load</button><button class="btn btn-s m-btldel" data-btlname="'+n+'" style="font-size:9px;padding:1px 5px;color:#e74c3c" title="Delete saved battle">✕</button></div>';}).join("");}
+      return'<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px"><span style="flex:1;color:var(--fg)">'+n+(isPending?' <span style="color:var(--accent);font-size:9px">(pending)</span>':"")+'</span><button class="btn btn-s m-btlload" data-btlname="'+n+'" style="font-size:9px;padding:1px 6px" title="Load this battle (copies command to clipboard for Discord)">Load</button><button class="btn btn-s m-btldel" data-btlname="'+n+'" style="font-size:9px;padding:1px 5px;color:var(--danger)" title="Delete saved battle">✕</button></div>';}).join("");}
   )()}</div></div>`;
   return h;
 }
@@ -2478,13 +2412,13 @@ function rObjectsTabContent(st){
     // Boundary: everything above this goes into the props area (Add button + draw hint + properties).
     // Everything below this goes into the list area (the Walls list section).
     h+="<!--SPLIT-->";
-    h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:4px">${S.walls.length?`<span class="vis-eye${S.showWalls?'':' off'}" data-vis="walls" style="cursor:pointer;font-size:11px;position:relative" title="${S.showWalls?'Hide walls':'Show walls'}">👁</span>`:""}Walls (${S.walls.length})</span><span style="display:flex;gap:4px">${S.walls.length?'<button class="btn btn-s" data-selall="wall" style="font-size:8px;padding:1px 5px">'+(allSel("wall")?"Unselect All":"Select All")+'</button><button class="btn btn-s" id="m-wallclear" style="font-size:8px;padding:1px 5px;color:#e74c3c" title="Remove all walls">🗑 Clear</button>':""}</span></div>`;
+    h+=`<div class="sec"><div class="sec-title" style="display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:4px">${S.walls.length?`<span class="vis-eye${S.showWalls?'':' off'}" data-vis="walls" style="cursor:pointer;font-size:11px;position:relative" title="${S.showWalls?'Hide walls':'Show walls'}">👁</span>`:""}Walls (${S.walls.length})</span><span style="display:flex;gap:4px">${S.walls.length?'<button class="btn btn-s" data-selall="wall" style="font-size:8px;padding:1px 5px">'+(allSel("wall")?"Unselect All":"Select All")+'</button><button class="btn btn-s" id="m-wallclear" style="font-size:8px;padding:1px 5px;color:var(--danger)" title="Remove all walls">🗑 Clear</button>':""}</span></div>`;
     if(S.walls.length){
       S.walls.forEach(w=>{const sel=isSel("wall",w.id);const s=fmtU(w.start.col,w.start.row),e2=fmtU(w.end.col,w.end.row);
         h+=`<div class="obj-item${sel?" sel":""}" data-wid="${w.id}" style="display:flex;align-items:center;gap:6px;padding:3px 4px;cursor:pointer;border-radius:4px;font-size:11px">
         <span style="width:8px;height:8px;border-radius:50%;background:${w.color||"#000"};flex-shrink:0"></span>
         <span style="flex:1;color:var(--fg)">${s}→${e2} <span style="color:var(--fg3)">${doorLabels[w.door]||"Wall"}</span></span>
-        <button class="btn btn-s m-walldel" data-delwall="${w.id}" style="font-size:9px;padding:1px 5px;color:#e74c3c" title="Delete">✕</button></div>`;});}
+        <button class="btn btn-s m-walldel" data-delwall="${w.id}" style="font-size:9px;padding:1px 5px;color:var(--danger)" title="Delete">✕</button></div>`;});}
     else h+=`<div style="font-size:10px;color:var(--fg3);font-style:italic;padding:4px 0">No walls drawn</div>`;
     h+="</div>";}
   else if(st==="mapobj"){
@@ -2517,7 +2451,7 @@ function rObjectsTabContent(st){
           h+=`<div class="row" style="gap:6px;margin-top:6px"><button class="btn btn-s" id="m-objrot" style="flex:1;font-size:11px;padding:4px" title="Rotate object 90° clockwise">🔄 Rotate (currently ${_rot}°)</button></div>`;
         }
         h+=`<div class="row" style="gap:6px;margin-top:6px">
-          <button class="btn btn-s" id="m-objunplace" style="flex:1;font-size:11px;padding:4px;color:#e74c3c" title="Remove this object from the map">🗑 Delete</button>
+          <button class="btn btn-s" id="m-objunplace" style="flex:1;font-size:11px;padding:4px;color:var(--danger)" title="Remove this object from the map">🗑 Delete</button>
         </div></div>`;
       }
     }
@@ -2551,7 +2485,7 @@ function rObjectsTabContent(st){
           <svg viewBox="0 0 398 398" style="width:22px;height:22px;flex-shrink:0;color:${o.color||"var(--fg)"}">${OBJ_SVG[o.type]}</svg>
           <span style="flex:1;font-size:10px;color:var(--fg)">${meta.name}</span>
           <span style="font-size:9px;color:var(--fg3);font-family:monospace">${coordStr}</span>
-          <button class="btn btn-s m-objdel" data-objdel="${o.id}" style="font-size:10px;padding:1px 5px;color:#e74c3c" title="Delete this object">×</button>
+          <button class="btn btn-s m-objdel" data-objdel="${o.id}" style="font-size:10px;padding:1px 5px;color:var(--danger)" title="Delete this object">×</button>
         </div>`;
       });
     }
@@ -3252,7 +3186,7 @@ function renderCmd(){
   if(unassigned.length){
     const names=unassigned.map(o=>{const n=getOvNum(o);return n.label+": "+o.type;}).join(", ");
     warns.push("ℹ "+names+" not attached to a combatant - will show as preview in apply response only (one-shot)");}
-  ct.innerHTML=`<div style="color:var(--fg)">${lines.join("\n")}</div>${warns.length?`<div style="color:#e74c3c;font-size:10px;margin-top:4px">${warns.join("<br>")}</div>`:""}`;
+  ct.innerHTML=`<div style="color:var(--fg)">${lines.join("\n")}</div>${warns.length?`<div style="color:var(--danger);font-size:10px;margin-top:4px">${warns.join("<br>")}</div>`:""}`;
   const total=mv.length+ovChg.length+removed.length+(mapNeedsUpdate?1:0)+uvarOps.length;
   const summaryParts=[];
   if(mv.length)summaryParts.push(mv.length+" token"+(mv.length>1?"s":""));
@@ -3438,7 +3372,7 @@ function openBgModal(){
         <div style="flex:1"><span class="lbl" style="font-size:9px">Map size</span><div id="bg-mapsize-info" style="font-size:10px;color:var(--fg3);padding-top:4px">-</div></div>
       </div>
     </div>
-    <div id="bg-validation" style="font-size:10px;color:#e74c3c;margin-bottom:6px;min-height:14px"></div>
+    <div id="bg-validation" style="font-size:10px;color:var(--danger);margin-bottom:6px;min-height:14px"></div>
     <div style="display:flex;gap:6px"><button class="btn btn-p" id="bg-update-btn" style="flex:1;padding:6px;opacity:.4;cursor:default" disabled>Update Map</button><button class="btn btn-s" id="bg-cancel-btn" style="flex:1;padding:6px">Cancel</button></div>
   </div>`;
   document.body.appendChild(d);
@@ -3497,7 +3431,7 @@ function openBgModal(){
         ua.querySelector("div").textContent="Upload this image for better grid detection (pixel analysis unavailable)";
         ua.querySelector("div").style.color="var(--fg2)";
         runGridDetection(img2);};
-      img2.onerror=()=>{area.innerHTML='<div style="font-size:10px;color:#e74c3c">⚠ Failed to load image. Check the URL and that it\'s publicly accessible.</div>';document.getElementById("bg-info").textContent="";};
+      img2.onerror=()=>{area.innerHTML='<div style="font-size:10px;color:var(--danger)">⚠ Failed to load image. Check the URL and that it\'s publicly accessible.</div>';document.getElementById("bg-info").textContent="";};
       img2.src=url;};
     img.src=proxyUrl||url;}
   function showManualOnly(w,h){
@@ -3664,8 +3598,8 @@ function setup(){
   // Redo keyboard shortcut
   // url-input moved to Map Options tab
   $("btn-revert").onclick=()=>{if(!origState||!hasAnyChanges())return;
-    const d=document.createElement("div");d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:2px solid #e74c3c;border-radius:8px;padding:20px 24px;z-index:9999;max-width:340px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)";
-    d.innerHTML=`<div style="color:#e74c3c;font-weight:700;font-size:14px;margin-bottom:8px">⟲ Revert All Changes</div><div style="color:var(--fg);font-size:12px;margin-bottom:14px">This will undo all changes and revert the map back to its original state. This cannot be undone.</div><div style="display:flex;gap:6px"><button class="btn btn-s" id="ra-cancel" style="flex:1">Cancel</button><button class="btn btn-s" id="ra-ok" style="flex:1;color:#e74c3c;font-weight:700">Revert All</button></div>`;
+    const d=document.createElement("div");d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:2px solid var(--danger);border-radius:8px;padding:20px 24px;z-index:9999;max-width:340px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)";
+    d.innerHTML=`<div style="color:var(--danger);font-weight:700;font-size:14px;margin-bottom:8px">⟲ Revert All Changes</div><div style="color:var(--fg);font-size:12px;margin-bottom:14px">This will undo all changes and revert the map back to its original state. This cannot be undone.</div><div style="display:flex;gap:6px"><button class="btn btn-s" id="ra-cancel" style="flex:1">Cancel</button><button class="btn btn-s" id="ra-ok" style="flex:1;color:var(--danger);font-weight:700">Revert All</button></div>`;
     document.body.appendChild(d);
     d.querySelector("#ra-cancel").onclick=()=>d.remove();
     d.querySelector("#ra-ok").onclick=()=>{d.remove();const o=JSON.parse(JSON.stringify(origState));S.tokens=o.tokens;S.overlays=o.overlays;S.walls=o.walls;S.objects=o.objects||[];S.fowRegions=o.fowRegions||[];S.grid=o.grid;undoStack=[];redoStack=[];clearSel();setStatus("⟲ Reverted to original state");renderAll();};};
@@ -4190,11 +4124,11 @@ function setup(){
     if(e.target.id==="m-detect"){
       const img=$("map-img");
       const resEl=$("m-detect-result");
-      if(!img||!img.naturalWidth){resEl.innerHTML='<span style="color:#e74c3c">No background image loaded.</span>';return;}
+      if(!img||!img.naturalWidth){resEl.innerHTML='<span style="color:var(--danger)">No background image loaded.</span>';return;}
       resEl.innerHTML='<span style="color:var(--accent)">Analyzing image...</span>';
       setTimeout(()=>{
         const r=detectGrid(img);
-        if(r.error){resEl.innerHTML=`<span style="color:#e74c3c">${r.error}</span>`;return;}
+        if(r.error){resEl.innerHTML=`<span style="color:var(--danger)">${r.error}</span>`;return;}
         // Generate multiple options from detected cell size
         const w=img.naturalWidth,h=img.naturalHeight;
         const options=[];const tested=new Set();
@@ -4300,7 +4234,7 @@ function setup(){
       if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
         const c=parseC(e.target.value);
         if(c){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){pushU();tk.col=c.col;tk.row=c.row;renderSVG();renderCmd();}}
-        else{e.target.style.borderColor="#e74c3c";setTimeout(()=>e.target.style.borderColor="",1500);}
+        else{e.target.style.borderColor="var(--danger)";setTimeout(()=>e.target.style.borderColor="",1500);}
         return;}}
     if(e.target.id==="cb-defart"){
       // Opt-in default token art. On: apply the mapped icon for the current stat block (unless a custom
@@ -4428,13 +4362,13 @@ function setup(){
         if(v==="{targ}"){if(!ov.target){showError("Select a target in 'Attach to (-t)' first");return;}
           pushU();ov.locked="targ";ov.coord=null;renderAll();return;}
         const c=parseC(v);if(c){pushU();ov.coord=c;renderAll();}
-        else{e.target.style.borderColor="#e74c3c";setTimeout(()=>e.target.style.borderColor="",1500);}return;}
+        else{e.target.style.borderColor="var(--danger)";setTimeout(()=>e.target.style.borderColor="",1500);}return;}
       if(e.target.id==="p-ovc2"&&!ov.locked2){const v=e.target.value.trim().toLowerCase();
         if(v==="{aim}"){if(!ov.aimTarget){showError("Select a target in 'Aim at (-aim)' first");return;}
           pushU();ov.locked2="aim";ov.coord2=null;renderAll();return;}
         if(v==="{targ}"){showError("Use {aim} for the End field, or set it in the Start field");return;}
         const c=parseC(v);if(c){pushU();ov.coord2=c;renderAll();}
-        else{e.target.style.borderColor="#e74c3c";setTimeout(()=>e.target.style.borderColor="",1500);}return;}
+        else{e.target.style.borderColor="var(--danger)";setTimeout(()=>e.target.style.borderColor="",1500);}return;}
     }}
     renderAll();});
   // Token shortcode dialog handler (works for both tokens and unplaced)
@@ -4454,10 +4388,10 @@ function setup(){
         <div style="margin-bottom:6px"><span style="font-size:10px;color:var(--fg2)">Image URL</span><input class="inp" id="td-url" placeholder="https://example.com/image.jpg" style="width:100%;font-size:11px;box-sizing:border-box"></div>
         <button class="btn btn-p" id="td-getcode" style="width:100%;margin-bottom:8px">Get Shortcode →</button>
         <div style="margin-bottom:6px"><span style="font-size:10px;color:var(--fg2)">Shortcode</span><input class="inp" id="td-code" placeholder="Paste shortcode here" value="${obj.tokenImage||""}" style="width:100%;font-family:monospace;font-size:12px;box-sizing:border-box"></div>
-        <div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-s" id="td-cancel" style="flex:1">Cancel</button>${hasCode?`<button class="btn btn-s" id="td-remove" style="flex:1;color:#e74c3c">Remove</button>`:""}<button class="btn btn-p" id="td-ok" style="flex:1">OK</button></div>`;
+        <div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-s" id="td-cancel" style="flex:1">Cancel</button>${hasCode?`<button class="btn btn-s" id="td-remove" style="flex:1;color:var(--danger)">Remove</button>`:""}<button class="btn btn-p" id="td-ok" style="flex:1">OK</button></div>`;
       document.body.appendChild(d);
       $("td-getcode").onclick=()=>{
-        const url=$("td-url")?.value.trim();if(!url){$("td-url").style.borderColor="#e74c3c";setTimeout(()=>{if($("td-url"))$("td-url").style.borderColor="";},1500);return;}
+        const url=$("td-url")?.value.trim();if(!url){$("td-url").style.borderColor="var(--danger)";setTimeout(()=>{if($("td-url"))$("td-url").style.borderColor="";},1500);return;}
         const b64=btoa(url);window.open("https://token.otfbm.io/meta/"+b64,"_blank");};
       $("td-cancel").onclick=()=>d.remove();
       if($("td-remove"))$("td-remove").onclick=()=>{if(!isUnplaced)pushU();obj.tokenImage="";d.remove();renderAll();};
@@ -5021,9 +4955,14 @@ function setup(){
   vp.addEventListener("mouseup",endDrag);vp.addEventListener("mouseleave",()=>{if(S.marquee){S.marquee=null;renderSVG();}mStart=null;endDrag();});
 
   // Help modal
-  $("btn-help").onclick=()=>{$("help-modal").style.display="flex";};
-  $("hr-welcome").onclick=()=>{setPromptDismissed("welcomeDismissed",false);$("hr-msg").textContent="✓ The welcome screen will show next time you open BattleScry with an empty map.";};
-  $("hr-bgwiz").onclick=()=>{setPromptDismissed("bgWizardDismissed",false);$("hr-msg").textContent="✓ The Add Map Background guide will show next time you add a background.";};
+  $("btn-help").onclick=openHelp;
+  // Responsive top bar: the ... button opens the overflow dropdown (mobile); Escape or an outside click closes it.
+  {const mb=$("tb-more"),ov=$("tb-overflow");if(mb&&ov){
+    const setOpen=o=>{ov.classList.toggle("open",o);mb.setAttribute("aria-expanded",o?"true":"false");};
+    mb.onclick=e=>{e.stopPropagation();setOpen(!ov.classList.contains("open"));};
+    document.addEventListener("click",e=>{if(ov.classList.contains("open")&&!ov.contains(e.target)&&!mb.contains(e.target))setOpen(false);});
+    document.addEventListener("keydown",e=>{if(e.key==="Escape"&&ov.classList.contains("open"))setOpen(false);});
+  }}
   // View controls - new design with input focus → coord pick, button states, and drag-to-crop
   window.syncViewInputs=function(){
     const g=S.grid;
@@ -5144,8 +5083,6 @@ function setup(){
     setTimeout(()=>{try{S._fitRecheck=true;zoomAt(smartFit());}catch(e){}},50);
     setStatus("✓ View cropped to selection");
   },true);
-  $("help-close").onclick=()=>{$("help-modal").style.display="none";};
-  $("help-modal").onclick=e=>{if(e.target===$("help-modal"))$("help-modal").style.display="none";};
 
   // SRD Monster Token Browser Modal
   let srdTok=null;// token being edited
@@ -5212,13 +5149,13 @@ function setup(){
   // Custom Image - URL to shortcode via proxy
   $("srd-img-go").onclick=()=>{
     const url=$("srd-img-url").value.trim();const status=$("srd-img-status");
-    if(!url){status.innerHTML='<span style="color:#e74c3c">Enter an image URL first</span>';return;}
+    if(!url){status.innerHTML='<span style="color:var(--danger)">Enter an image URL first</span>';return;}
     status.innerHTML='<span style="color:var(--accent)">⏳ Uploading to OTFBM...</span>';
     $("srd-img-preview").style.display="none";
     fetch(PROXY_URL.replace("?url=","?token=")+encodeURIComponent(url))
       .then(r=>r.json())
       .then(data=>{
-        if(data.error){status.innerHTML='<span style="color:#e74c3c">⚠ '+data.error+'</span>';return;}
+        if(data.error){status.innerHTML='<span style="color:var(--danger)">⚠ '+data.error+'</span>';return;}
         if(data.shortcode){
           status.innerHTML='<span style="color:var(--accent)">✓ Shortcode generated!</span>';
           $("srd-img-code").textContent=data.shortcode;
@@ -5229,7 +5166,7 @@ function setup(){
           {const fc=$("srd-crop-face");fc.onerror=function(){this.parentElement.style.display="none";};fc.onload=function(){this.parentElement.style.display="";this.style.opacity="1";};fc.src=base+"face/"+data.shortcode;}
           $("srd-img-preview").style.display="flex";
           $("srd-img-save").style.display="flex";$("srd-img-savename").value="";}
-      }).catch(err=>{status.innerHTML='<span style="color:#e74c3c">⚠ Request failed - check the URL</span>';});};
+      }).catch(err=>{status.innerHTML='<span style="color:var(--danger)">⚠ Request failed - check the URL</span>';});};
   $("srd-img-url").onkeydown=e=>{if(e.key==="Enter")$("srd-img-go").click();};
   {const tlb=$("srd-toklib-open");if(tlb)tlb.onclick=()=>showTokenLibraryModal(t=>{
     // Library tokens carry a known size and (usually) a pre-generated shortcode. Apply both
@@ -5289,7 +5226,7 @@ function setup(){
       {const fc=$("srd-crop-face");fc.onerror=function(){this.parentElement.style.display="none";};fc.onload=function(){this.parentElement.style.display="";this.style.opacity="1";};fc.src=base+"face/"+tkData.shortcode;}
       status.innerHTML='<span style="color:var(--accent)">✓ New shortcode: '+tkData.shortcode+' ('+crop+' crop applied)</span>';
       this.style.display="none";
-    }catch(err){status.innerHTML='<span style="color:#e74c3c">⚠ Re-crop failed: '+err.message+'</span>';}
+    }catch(err){status.innerHTML='<span style="color:var(--danger)">⚠ Re-crop failed: '+err.message+'</span>';}
     this.disabled=false;this.textContent="⬆ Use "+({face:"Face"}[crop]||crop)+" crop as token";};
   // Token image file upload
   $("srd-img-filebtn").onclick=()=>$("srd-img-file").click();
@@ -5303,7 +5240,7 @@ function setup(){
         if(loginbox)loginbox.style.display="none";
         status.innerHTML='<span style="color:var(--accent)">Hosting on BattleScry...</span>';
         bscryHostBlob(out.blob,"token.png",(url)=>{$("srd-img-url").value=url;$("srd-img-go").click();},
-          (err)=>{const s=$("srd-img-status");if(s)s.innerHTML='<span style="color:#e74c3c">'+err+'</span>';});
+          (err)=>{const s=$("srd-img-status");if(s)s.innerHTML='<span style="color:var(--danger)">'+err+'</span>';});
       };
       if(BSCRY_SESSION){proceed();return;}
       // Logged out: a clean login/download box (popup login keeps this modal open and auto-hosts).
@@ -5313,7 +5250,7 @@ function setup(){
         const lo=$("srd-img-login");if(lo){lo.innerHTML=discordLogo(14,11)+"Log in to host it";lo.onclick=()=>{bscryOnSessionChange=()=>{bscryOnSessionChange=null;if(BSCRY_SESSION&&$("srd-img-url"))proceed();};bscryStartLogin();};}
         const dl=$("srd-img-dl");if(dl)dl.onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(out.blob);a.download="token.png";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000);};
       }
-    },(err)=>{status.innerHTML='<span style="color:#e74c3c">'+err+'</span>';});};
+    },(err)=>{status.innerHTML='<span style="color:var(--danger)">'+err+'</span>';});};
   $("srd-img-savebtn").onclick=()=>{
     const name=$("srd-img-savename").value.trim();const code=$("srd-img-code").textContent;
     if(!name){showError("Enter a name to save this token as");return;}
@@ -5359,14 +5296,14 @@ function setup(){
       html+='<div style="font-size:9px;color:var(--fg3);text-transform:uppercase;padding:4px 6px 2px;letter-spacing:.5px">Saved Tokens</div>';
       html+=regular.map(t=>{
         const isPending=S.tokenSaves.find(s=>s.name===t.name);
-        return`<div class="srd-row srd-saved-row" data-code="${t.shortcode}" style="display:flex;align-items:center;gap:8px;padding:5px 6px;cursor:pointer;border-radius:4px;font-size:11px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><img src="https://token.otfbm.io/img/${t.shortcode}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--fg3);flex-shrink:0" onerror="this.style.display='none'"><span style="flex:1;color:var(--fg)">${t.name}${isPending?' <span style="color:var(--accent);font-size:9px">(pending save)</span>':""}</span><span style="color:var(--fg3);font-family:monospace;font-size:9px">${t.shortcode}</span><button class="btn btn-s srd-saved-del" data-delname="${t.name}" style="font-size:9px;padding:1px 5px;color:#e74c3c" title="Delete saved token">✕</button></div>`;}).join("");}
+        return`<div class="srd-row srd-saved-row" data-code="${t.shortcode}" style="display:flex;align-items:center;gap:8px;padding:5px 6px;cursor:pointer;border-radius:4px;font-size:11px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><img src="https://token.otfbm.io/img/${t.shortcode}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--fg3);flex-shrink:0" onerror="this.style.display='none'"><span style="flex:1;color:var(--fg)">${t.name}${isPending?' <span style="color:var(--accent);font-size:9px">(pending save)</span>':""}</span><span style="color:var(--fg3);font-family:monospace;font-size:9px">${t.shortcode}</span><button class="btn btn-s srd-saved-del" data-delname="${t.name}" style="font-size:9px;padding:1px 5px;color:var(--danger)" title="Delete saved token">✕</button></div>`;}).join("");}
     if(baked.length){
       html+='<div style="font-size:9px;color:var(--fg3);text-transform:uppercase;padding:8px 6px 2px;letter-spacing:.5px">Baked Tokens 🎨</div>';
       html+=baked.map(t=>{
         const meta=labelMap[t.name];
         const isPending=S.tokenLabelSaves.find(s=>s.name===t.name)||S.tokenSaves.find(s=>s.name===t.name);
         const labelHint=meta&&meta.labelText?' <span style="color:var(--fg3);font-size:9px">"'+meta.labelText+'"</span>':"";
-        return`<div class="srd-row srd-baked-row" data-name="${t.name}" data-code="${t.shortcode}" style="display:flex;align-items:center;gap:8px;padding:5px 6px;cursor:pointer;border-radius:4px;font-size:11px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><img src="https://token.otfbm.io/img/${t.shortcode}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--fg3);flex-shrink:0" onerror="this.style.display='none'"><span style="flex:1;color:var(--fg)">${t.name}${labelHint}${isPending?' <span style="color:var(--accent);font-size:9px">(pending save)</span>':""}</span><span style="color:var(--fg3);font-family:monospace;font-size:9px">${t.shortcode}</span><button class="btn btn-s srd-baked-edit" data-editname="${t.name}" style="font-size:9px;padding:1px 5px" title="Re-edit label">✏️</button><button class="btn btn-s srd-baked-del" data-delname="${t.name}" style="font-size:9px;padding:1px 5px;color:#e74c3c" title="Delete baked token">✕</button></div>`;}).join("");}
+        return`<div class="srd-row srd-baked-row" data-name="${t.name}" data-code="${t.shortcode}" style="display:flex;align-items:center;gap:8px;padding:5px 6px;cursor:pointer;border-radius:4px;font-size:11px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><img src="https://token.otfbm.io/img/${t.shortcode}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--fg3);flex-shrink:0" onerror="this.style.display='none'"><span style="flex:1;color:var(--fg)">${t.name}${labelHint}${isPending?' <span style="color:var(--accent);font-size:9px">(pending save)</span>':""}</span><span style="color:var(--fg3);font-family:monospace;font-size:9px">${t.shortcode}</span><button class="btn btn-s srd-baked-edit" data-editname="${t.name}" style="font-size:9px;padding:1px 5px" title="Re-edit label">✏️</button><button class="btn btn-s srd-baked-del" data-delname="${t.name}" style="font-size:9px;padding:1px 5px;color:var(--danger)" title="Delete baked token">✕</button></div>`;}).join("");}
     list.innerHTML=html;}
   $("srd-saved-list").onclick=e=>{
     // Baked token edit (pencil icon)
@@ -5507,7 +5444,7 @@ function setup(){
       $("srd-bake-status").innerHTML="";
       renderBakePreview();
     }).catch(err=>{
-      $("srd-bake-status").innerHTML='<span style="color:#e74c3c">⚠ Could not load source image: '+err.message+'</span>';
+      $("srd-bake-status").innerHTML='<span style="color:var(--danger)">⚠ Could not load source image: '+err.message+'</span>';
     });
   }
 
@@ -5612,9 +5549,9 @@ function setup(){
   $("srd-bake-go").onclick=async()=>{
     if(!_bakeState.srcImage){return;}
     const text=(_bakeState.text||"").trim();
-    if(!text){$("srd-bake-status").innerHTML='<span style="color:#e74c3c">⚠ Enter label text first</span>';return;}
+    if(!text){$("srd-bake-status").innerHTML='<span style="color:var(--danger)">⚠ Enter label text first</span>';return;}
     const saveName=$("srd-bake-savename").value.trim();
-    if(!saveName){$("srd-bake-status").innerHTML='<span style="color:#e74c3c">⚠ Enter a save name</span>';return;}
+    if(!saveName){$("srd-bake-status").innerHTML='<span style="color:var(--danger)">⚠ Enter a save name</span>';return;}
     const btn=$("srd-bake-go");btn.disabled=true;
     const status=$("srd-bake-status");
     try{
@@ -5659,7 +5596,7 @@ function setup(){
       pushU();applySrdCode(newCode);
       renderCmd();
     }catch(err){
-      status.innerHTML='<span style="color:#e74c3c">⚠ Bake failed: '+(err.message||err)+'</span>';
+      status.innerHTML='<span style="color:var(--danger)">⚠ Bake failed: '+(err.message||err)+'</span>';
     }
     btn.disabled=false;
   };
@@ -5804,7 +5741,7 @@ function pt2g(x,y){const g=S.grid,px=x-PAD,py=y-PAD;return{col:Math.max(0,Math.m
 function showError(msg){
   // Uses smartModal so errors share the same visual style as other dialogs (border, shadow, ESC,
   // backdrop-to-dismiss). The red title text and warning glyph still signal it's an error.
-  const M=smartModal({title:`<span style="color:#e74c3c">⚠ Error</span>`,size:"sm"});
+  const M=smartModal({title:`<span style="color:var(--danger)">⚠ Error</span>`,size:"sm"});
   M.body.innerHTML=`<div style="color:var(--fg);font-size:12px;margin-bottom:14px;line-height:1.5">${msg}</div><button class="btn btn-p" style="padding:6px 18px;font-size:12px">OK</button>`;
   M.body.querySelector("button").onclick=M.close;
 }
@@ -6222,25 +6159,25 @@ function showLoadModalStep1(title,kind,warning){return new Promise(resolve=>{
   d.querySelector("#lm1-cancel").onclick=()=>{d.remove();resolve(false);};
   d.querySelector("#lm1-ok").onclick=()=>{d.remove();resolve(true);};});}
 function showLoadModalStep2(name,cmd,kind){
-  const d=document.createElement("div");d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:2px solid #22c55e;border-radius:8px;padding:20px 24px;z-index:9999;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)";
-  d.innerHTML=`<div style="color:#22c55e;font-weight:700;font-size:14px;margin-bottom:10px">✅ Step 1 complete!</div>
+  const d=document.createElement("div");d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:2px solid var(--success);border-radius:8px;padding:20px 24px;z-index:9999;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)";
+  d.innerHTML=`<div style="color:var(--success);font-weight:700;font-size:14px;margin-bottom:10px">✅ Step 1 complete!</div>
     <div style="color:var(--fg);font-size:12px;margin-bottom:12px;line-height:1.8;padding-left:4px">
-      <div style="color:#22c55e">✓  Step 1: Copy command to your clipboard</div>
+      <div style="color:var(--success)">✓  Step 1: Copy command to your clipboard</div>
       <div>Step 2: Paste in Discord, click the BattleScry link</div></div>
     <div style="color:var(--fg2);font-size:11px;margin-bottom:4px">Your clipboard now has:</div>
     <div style="background:var(--bg3);color:var(--fg);font-size:11px;padding:8px 10px;border-radius:4px;margin-bottom:12px;font-family:monospace;word-break:break-all">${cmd}</div>
     <div style="color:var(--fg);font-size:11px;margin-bottom:14px;line-height:1.4">Switch to Discord, paste the command (Ctrl+V), and click the BattleScry link in Avrae's response to finish loading.</div>
     <div style="display:flex;gap:6px">
-      <button class="btn btn-s" id="lm2-ok" style="flex:1;color:#22c55e;font-weight:700">Got it!</button></div>`;
+      <button class="btn btn-s" id="lm2-ok" style="flex:1;color:var(--success);font-weight:700">Got it!</button></div>`;
   document.body.appendChild(d);
   d.querySelector("#lm2-ok").onclick=()=>d.remove();}
 function showLoadSuccessModal(kind,name){
-  const d=document.createElement("div");d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:2px solid #22c55e;border-radius:8px;padding:20px 24px;z-index:9999;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)";
+  const d=document.createElement("div");d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:2px solid var(--success);border-radius:8px;padding:20px 24px;z-index:9999;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)";
   const what=kind==="battle"?"battle":"map";
-  d.innerHTML=`<div style="color:#22c55e;font-weight:700;font-size:14px;margin-bottom:10px">✅ Success! Saved ${what} loaded</div>
+  d.innerHTML=`<div style="color:var(--success);font-weight:700;font-size:14px;margin-bottom:10px">✅ Success! Saved ${what} loaded</div>
     <div style="color:var(--fg);font-size:12px;margin-bottom:14px;line-height:1.5">Loaded <b>"${name}"</b> into BattleScry. Edit freely - your changes will sync back to Avrae on the next export.</div>
     <div style="display:flex;gap:6px">
-      <button class="btn btn-s" id="lm3-ok" style="flex:1;color:#22c55e;font-weight:700">OK</button></div>`;
+      <button class="btn btn-s" id="lm3-ok" style="flex:1;color:var(--success);font-weight:700">OK</button></div>`;
   document.body.appendChild(d);
   d.querySelector("#lm3-ok").onclick=()=>d.remove();}
 // Browse Saved Maps gallery. Shows thumbnails (or placeholders) for each saved map.
@@ -6292,7 +6229,7 @@ function showSaveConflictModal(kind,existingName,suggestedSuffix){
       </div></div>
     <div style="padding:12px 20px;border-top:1px solid var(--bg3);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
       <button class="btn btn-s" id="scm-cancel" style="font-size:11px;padding:6px 12px">Cancel</button>
-      <button class="btn btn-s" id="scm-replace" style="font-size:11px;padding:6px 12px;color:#e74c3c">Replace existing</button>
+      <button class="btn btn-s" id="scm-replace" style="font-size:11px;padding:6px 12px;color:var(--danger)">Replace existing</button>
       <button class="btn btn-p" id="scm-suffix" style="font-size:11px;padding:6px 12px">Save as ${suggestedSuffix}</button>
     </div>`;
     bd.appendChild(d);document.body.appendChild(bd);
@@ -6334,7 +6271,7 @@ function showBrowseMapsModal(){
            <svg width="60%" height="60%" viewBox="0 0 100 100" style="opacity:.35"><use href="#bscry-logo"/></svg>
          </div>`;
     card.innerHTML=`${thumbHtml}
-      <button class="bm-del" data-mapname="${name}" title="Delete this saved map" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);color:#e74c3c;border:none;border-radius:50%;width:24px;height:24px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1">✕</button>
+      <button class="bm-del" data-mapname="${name}" title="Delete this saved map" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);color:var(--danger);border:none;border-radius:50%;width:24px;height:24px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1">✕</button>
       <div style="padding:8px 10px 10px;display:flex;flex-direction:column;gap:6px">
         <div style="font-size:12px;font-weight:600;color:var(--fg);word-break:break-all;line-height:1.3" title="${name}">${name}${isPending?' <span style="color:var(--accent);font-size:9px;font-weight:normal">(pending)</span>':""}</div>
         <button class="btn btn-p bm-load" data-mapname="${name}" style="font-size:11px;padding:5px;width:100%">Load</button>
@@ -6395,6 +6332,87 @@ function smartModal(opts){
   if(closeBtn)closeBtn.onclick=close;
   if(opts.dismissOnBackdrop!==false){bd.addEventListener("click",e=>{if(e.target===bd)close();});}
   return{backdrop:bd,body,footer,close};
+}
+function openAbout(){
+  const M=smartModal({title:`<svg width="20" height="20" style="vertical-align:middle;margin-right:2px" aria-hidden="true"><use href="#bscry-logo"/></svg>About BattleScry`,size:"md"});
+  M.body.innerHTML=`<div style="font-size:13px;line-height:1.7">
+      <div style="font-weight:bold;color:var(--accent);margin-top:6px;margin-bottom:6px">What is this?</div>
+      <div>BattleScry is a free interactive battlemap tool for D&amp;D, designed to work seamlessly with Discord, Avrae, and OTFBM.</div>
+      <div style="font-weight:bold;color:var(--accent);margin-top:18px;margin-bottom:6px">How do I use it?</div>
+      <div>In Discord, run <code style="background:var(--bg3);color:var(--accent);padding:1px 5px;border-radius:3px">!bscry</code> during an active combat. Click the link generated to load the current map into BattleScry. Edit tokens, map settings, overlays and other objects as much as you like, and click <b>Export Updated Map</b> when finished.<br><br>Paste the command back into Discord, and your map will be updated with all your changes! If someone else updated the map in Discord while you were editing, don't worry... BattleScry will apply a smart merge of all changes and flag any conflicts. The most recent changes to the Avrae map will take precedence.</div>
+      <div style="font-weight:bold;color:var(--accent);margin-top:18px;margin-bottom:6px">How do I learn more?</div>
+      <div>Click the <b>? Help</b> button in the top right for more detailed instructions. Visit <a href="https://avrae.io" target="_blank" rel="noopener" style="color:var(--accent)">avrae.io</a> to learn more about the D&amp;D bot for Discord, and visit <a href="https://otfbm.io" target="_blank" rel="noopener" style="color:var(--accent)">otfbm.io</a> for more information about the awesome On The Fly Battle Maps tool.</div>
+      <div style="font-weight:bold;color:var(--accent);margin-top:18px;margin-bottom:6px">This is cool! How can I support you?</div>
+      <div>This tool is offered free to the D&amp;D community to make it easier for players and DMs to play this game we all love. If you want to throw me a few gold pieces, feel free to <a href="https://ko-fi.com/battlescry" target="_blank" rel="noopener" style="color:var(--accent)"><b>buy me a healing potion</b></a> and enjoy your free Heroic Inspiration for doing a kind deed. <a href="https://ko-fi.com/battlescry" target="_blank" rel="noopener" style="text-decoration:none">💖</a><br><br>If you want to help me improve BattleScry, check out the <a href="https://github.com/ryanhigman/battlescry" target="_blank" rel="noopener" style="color:var(--accent)"><b>open source code on GitHub</b></a>.</div>
+      <div style="font-weight:bold;color:var(--accent);margin-top:18px;margin-bottom:6px">Credits</div>
+      <div>Default monster token art is from <a href="https://game-icons.net" target="_blank" rel="noopener" style="color:var(--accent)">game-icons.net</a>, used under the <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener" style="color:var(--accent)">CC BY 3.0</a> license, by Lorc, Delapouite, Skoll, Cathelineau, Caro Asercion, Carl Olsen, and Faithtoken. Icons were exported to PNG for use as tokens. See the <a href="ATTRIBUTIONS.md" target="_blank" rel="noopener" style="color:var(--accent)">full per-icon credits</a> for details.</div>
+      <div style="margin-top:22px;padding-top:14px;border-top:1px solid var(--bg3);font-size:10px;color:var(--fg4);text-align:center">Made with care for the D&amp;D community. Check out the <a href="https://discord.gg/sBsx4BrdT" target="_blank" rel="noopener" style="color:var(--accent)">Avalor server on Discord!</a></div></div>`;
+}
+function openHelp(){
+  const M=smartModal({title:`<svg width="20" height="20" style="vertical-align:middle;margin-right:2px" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry - Quick Start`,size:"md"});
+  M.body.innerHTML=`<div style="font-size:12px;line-height:1.6">
+  <div style="font-weight:bold;color:var(--accent);margin-top:8px">Getting Started</div>
+  <div>1. Run <code style="background:var(--bg3);padding:1px 4px;border-radius:2px">!bscry</code> in Discord during combat</div>
+  <div>2. Click the <b>🗺️ Click here to open current map in BattleScry</b> link in the response to auto-load your map</div>
+  <div>3. Make your changes - move tokens, draw walls, edit overlays</div>
+  <div>4. Click the glowing <b>Export Updated Map</b> button in the top toolbar and paste it back in Discord</div>
+  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Map Navigation</div>
+  <div>• <b>Drag tokens</b> to move them on the grid</div>
+  <div>• <b>Scroll wheel</b> to zoom in/out</div>
+  <div>• <b>Hold Space + drag</b> to pan around the map</div>
+  <div>• <b>Ctrl+Z</b> to undo, <b>Ctrl+Shift+Z</b> to redo</div>
+  <div>• <b>Ctrl+Click</b> (Cmd on Mac) to multi-select any objects - tokens, overlays, walls, FOW regions</div>
+  <div>• <b>Delete</b> key to remove selected walls, overlays, or FOW regions</div>
+  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Tokens Tab</div>
+  <div>• Click a token on the map or in the list to select and edit properties</div>
+  <div>• <b>Customize Token Image</b> - browse 334 SRD monsters, enter shortcodes, or upload custom images</div>
+  <div>• Upload images directly - hosted permanently on imgbb.com</div>
+  <div>• Two crop options: Default (full token image) and Face (AI face crop, shown only when a face is detected)</div>
+  <div>• Click a non-default crop → <b>Use this crop</b> re-uploads it as the token's default</div>
+  <div>• Save tokens by name for reuse across sessions</div>
+  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Overlays Tab</div>
+  <div>• <b>Add New Overlay</b> - choose type (circle, cone, line, arrow, square), size, and color</div>
+  <div>• <b>Attach to (-t)</b> makes overlays persist on a combatant</div>
+  <div>• <b>{targ}</b> makes origin follow the attached token dynamically</div>
+  <div>• <b>Aim at (-aim)</b> makes end follow another token</div>
+  <div>• Drag overlay handles on the map to reposition</div>
+  <div>• Click coordinates fields then click the map for precise placement</div>
+  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Map Tab</div>
+  <div>• Background image - paste a URL or <b>Upload Image</b> directly</div>
+  <div>• Grid size, cell size, dark mode, grid color, and transparency controls</div>
+  <div>• <b>Fog of War</b> - click <b>Add New Revealed Region</b> then drag-select grid cells</div>
+  <div>• <b>Save / Load Battlemap</b> (background + grid + walls + FOW + objects) and <b>Save / Load Battle</b> (everything plus tokens + initiative)</div>
+  <div>• Advanced - Manual Import section (collapsed) for pasting data strings directly</div>
+  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Structures Tab</div>
+  <div>• <b>Walls subtab</b> - click <b>Add New Wall</b> then click grid intersections to draw wall segments</div>
+  <div>• <b>Hold Shift</b> while clicking to chain consecutive wall segments</div>
+  <div>• Click a wall on the map to select - change type (Wall, Open/Closed/Secret/Double Door) and color</div>
+  <div>• <b>Map Objects subtab</b> - place icons (chests, traps, fire, stairs, columns, etc.) on the grid</div>
+  <div>• Use the 👁 toggles to hide walls or objects from the BS preview (doesn't affect the exported map)</div>
+  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Saved Tokens, Maps, and Battles</div>
+  <div>• <b>Saved Tokens</b> store token image shortcodes by name - reuse across all campaigns</div>
+  <div>• <b>Saved Maps</b> store background + grid + walls + FOW - load any time</div>
+  <div>• <b>Saved Battles</b> store the complete combat state (map + combatants + initiative)</div>
+  <div>• All three persist in your Avrae user variables across sessions</div>
+  <div>• <b>Only names are loaded</b> in your <code style="background:var(--bg3);padding:1px 4px;border-radius:2px">!bscry</code> link - the full data is fetched on demand when you click Load</div>
+  <div>• This keeps URLs short and BattleScry fast even with dozens of saved items</div>
+  <div>• To save: type a name in the input field and click Save (queued - applies when you paste the !bscry apply command)</div>
+  <div>• To load: click Load next to a name (generates an <code style="background:var(--bg3);padding:1px 4px;border-radius:2px">!map -loadbattle</code> command to paste back)</div>
+  <div>• To delete: click ✕ next to a name (queued for removal)</div>
+  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Round-Trip with Avrae</div>
+  <div>• All changes go through <code style="background:var(--bg3);padding:1px 4px;border-radius:2px">!bscry apply</code> - one paste does everything</div>
+  <div>• Token moves, overlay changes, wall edits, and map settings in a single command</div>
+  <div>• The alias reads walls, FOW, overlays, and saved tokens/maps/battles from Avrae</div>
+  <div>• Run <code style="background:var(--bg3);padding:1px 4px;border-radius:2px">!bscry</code> again anytime to refresh</div>
+  <div style="font-weight:bold;color:var(--accent);margin-top:12px">Tips & Prompts</div>
+  <div>• Re-enable prompts you've dismissed with "Don't show this again":</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+    <button class="btn btn-s" id="hr-welcome" style="font-size:11px;padding:4px 10px">Show welcome screen again</button>
+    <button class="btn btn-s" id="hr-bgwiz" style="font-size:11px;padding:4px 10px">Show "Add map background" guide again</button>
+  </div>
+  <div id="hr-msg" style="font-size:11px;color:var(--accent);margin-top:6px;min-height:14px"></div></div>`;
+  M.body.querySelector("#hr-welcome").onclick=()=>{setPromptDismissed("welcomeDismissed",false);M.body.querySelector("#hr-msg").textContent="✓ The welcome screen will show next time you open BattleScry with an empty map.";};
+  M.body.querySelector("#hr-bgwiz").onclick=()=>{setPromptDismissed("bgWizardDismissed",false);M.body.querySelector("#hr-msg").textContent="✓ The Add Map Background guide will show next time you add a background.";};
 }
 // ===== Creator registry (shared by the map library, full-size preview, and the future token library) =====
 // Attribution for every hosted asset is driven from here so names/links live in one place.
@@ -6578,12 +6596,10 @@ renderAll();
 // Welcome modal handlers
 function closeWelcome(){if($("welcome-dontshow").checked)try{localStorage.setItem("welcomeDismissed","1");}catch(e){}$("welcome-modal").style.display="none";}
 $("welcome-ok").onclick=closeWelcome;
-$("welcome-more").onclick=()=>{closeWelcome();$("about-modal").style.display="flex";};
+$("welcome-more").onclick=()=>{closeWelcome();openAbout();};
 $("welcome-create").onclick=()=>{closeWelcome();S.tab="map";document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab==="map"));S._uiBgOpen=true;renderSB();setTimeout(()=>$("m-bgurl")?.focus(),60);};
-$("about-close").onclick=()=>{$("about-modal").style.display="none";};
-$("btn-about").onclick=()=>{$("about-modal").style.display="flex";};
-// Click outside about modal to close
-$("about-modal").addEventListener("click",e=>{if(e.target.id==="about-modal")$("about-modal").style.display="none";});
+$("btn-about").onclick=openAbout;
+
 // Built-in starter sample - loads a curated battlemap directly into the user's session as a real
 // editable scene. They can save it, modify it, export it normally. Used from the welcome modal's
 // "show me an example" link.
@@ -6797,7 +6813,7 @@ function bgUploadScreen(nav){
             hostBtn.disabled=true;st.textContent="Uploading...";
             bscryHostBlob(converted.blob, origName+".jpg",
               (url)=>{st.innerHTML='<span style="color:var(--accent)">Hosted. Loading map...</span>';nav.close();openBgPanel();setTimeout(()=>{const i=$("m-bgurl");if(i)i.value=url;const up=$("m-bgupdate");if(up)up.click();},120);},
-              (err)=>{hostBtn.disabled=false;st.innerHTML='<span style="color:#e74c3c">'+err+'</span>';});
+              (err)=>{hostBtn.disabled=false;st.innerHTML='<span style="color:var(--danger)">'+err+'</span>';});
           };
         }else{
           actions.innerHTML='<div style="font-size:12px;color:var(--fg3);line-height:1.6;margin-bottom:10px">Log in with Discord to host it on BattleScry automatically, or download the cleaned-up file and host it yourself.</div><button class="btn btn-p" id="bgu-login" style="width:100%;padding:11px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px">'+discordLogo(16,12)+'Log in to host it here</button><button class="btn btn-s" id="bgu-dl" style="width:100%;padding:10px;font-size:12px;margin-top:8px">Download cleaned-up image</button>';
@@ -6813,7 +6829,7 @@ function bgUploadScreen(nav){
         info.textContent="Processing "+file.name+"...";
         bscryConvertToJpeg(file,5000,0.85,
           (out)=>{converted=out;const kb=Math.round(out.bytes/1024);info.innerHTML='<span style="color:var(--accent)">Ready:</span> '+out.w+' × '+out.h+' px, '+(kb>=1024?(kb/1024).toFixed(1)+" MB":kb+" KB")+' (JPEG)';const im=document.createElement("img");im.src=URL.createObjectURL(out.blob);im.style.cssText="max-width:100%;max-height:160px;border-radius:5px;border:1px solid var(--bg3)";im.onload=()=>setTimeout(()=>URL.revokeObjectURL(im.src),5000);prev.innerHTML="";prev.appendChild(im);renderActions();},
-          (err)=>{info.innerHTML='<span style="color:#e74c3c">'+err+'</span>';prev.innerHTML="";});
+          (err)=>{info.innerHTML='<span style="color:var(--danger)">'+err+'</span>';prev.innerHTML="";});
       };
     },
     unmount(){bscryOnSessionChange=null;}};
@@ -7393,7 +7409,7 @@ try{
   const bc=new BroadcastChannel("battlescry_"+chId);
   bc.onmessage=(e)=>{if(e.data==="new_instance"){
     const banner=document.createElement("div");
-    banner.style.cssText="position:fixed;top:0;left:0;right:0;z-index:999;background:#e74c3c;color:#fff;text-align:center;padding:8px 12px;font-size:13px;font-weight:bold;cursor:pointer";
+    banner.style.cssText="position:fixed;top:0;left:0;right:0;z-index:999;background:var(--danger);color:#fff;text-align:center;padding:8px 12px;font-size:13px;font-weight:bold;cursor:pointer";
     banner.textContent="⚠ A newer BattleScry session for this channel is open. Click to close this tab.";
     banner.onclick=()=>window.close()||location.replace("about:blank");
     document.body.prepend(banner);}};
