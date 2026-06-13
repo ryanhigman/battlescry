@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.166                                      https://battlescry.com
+BattleScry v0.1.171                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,31 +19,29 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.166 - Added: a responsive top bar for small screens. On narrow windows (under 768px) the toolbar
-            collapses to the logo, Save / Export, and a "more" (...) button that opens a dropdown holding
-            the rest: undo/redo, map view, secret mode, sign-in, help, and about. Closes on Escape or an
-            outside click. Desktop is unchanged. First step of the mobile layout pass; the sidebar becomes
-            a bottom sheet next.
-  v0.1.165 - Changed: the About and Quick Start (Help) dialogs now use the same modal style as the rest
-            of the app: matching border, header, and close button, and they can be dismissed with the
-            Escape key or by clicking outside. No content changes.
-  v0.1.164 - Changed: continued the color cleanup. Destructive actions (delete and clear buttons),
-            error messages, input warnings, and the revert-all dialog now all use one consistent red,
-            and success confirmations one consistent green. The gold button hover and the warning
-            banner now match the accent exactly. The map's own selection and handle colors are
-            unchanged (a separate pass). No layout or behavior changes.
-  v0.1.163 - Changed: unified the color system. The warm dark surfaces, text grays, and gold accent are
-            now defined as a single set of design tokens, with clearer depth between the canvas, panels,
-            and cards. Foundation-only change (no layout or behavior changes); the first step of a broader
-            visual and mobile pass.
-  v0.1.162 - Changed: Token Library usability pass. Tokens are now listed A-Z by name, the first one is
-            selected on open, and you can move around with the arrow keys (plus PageUp/PageDown, Home/End)
-            and press Enter to use the highlighted token. The search and filter bar is now locked in place
-            so only the gallery scrolls, and the modal no longer has its own extra scrollbar. Removed the
-            CR and Size filters (too little real data to be useful as filters).
+  v0.1.171 - Fixed: tapping or clicking a token without moving it no longer consumes an undo step. The
+            undo snapshot taken when a drag begins is now discarded if the token did not actually change
+            cells, so selecting tokens on a touch screen stops quietly flushing your undo history.
+  v0.1.170 - Changed: starting a two-finger gesture no longer disturbs the map. If a finger briefly
+            lands first, the second finger now cancels that touch cleanly, so the map keeps its current
+            selection and does not start a stray selection box or pick up a token. One-finger actions
+            are unchanged.
+  v0.1.169 - Added: two-finger map navigation on touch screens. Two fingers pan the map as they move
+            and pinch to zoom centered on the point between them, matching map and design apps. One
+            finger still moves tokens and draws, as before. Native page zoom and scroll are suppressed
+            over the map so the gestures feel direct.
+  v0.1.168 - Changed: made the mobile layout comfortable to use by touch. Bigger tab and sub-tab targets,
+            a minimum tap size on every button and input, more breathing room in the panels, larger color
+            swatches, and a more readable pending-changes bar. Inside the sheet, the properties and list
+            now scroll together instead of using the desktop drag-splitter. Desktop is unchanged.
+  v0.1.167 - Added: the sidebar becomes a bottom sheet on small screens (under 768px). It rises from the
+            bottom over a full-width map; drag the handle to move between peek, half, and full, tap the
+            handle to toggle peek and full, tap a tab to raise it, and use the menu button to hide or show
+            it. Desktop keeps the fixed side panel. Sheet shell only; making the tab content comfortable
+            inside it comes next.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.166"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.171"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -144,7 +142,7 @@ input,select,textarea,button{font-family:inherit}
 .logo{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:1px;white-space:nowrap}
 .sep{border-left:1px solid var(--border);height:20px;margin:0 1px}
 #main{flex:1;display:flex;overflow:hidden}
-#map-vp{overflow:auto;background:var(--map-bg);position:absolute;inset:0}
+#map-vp{overflow:auto;background:var(--map-bg);position:absolute;inset:0;touch-action:none}
 #map-container{position:relative;transform-origin:0 0}
 #map-container img{position:absolute;pointer-events:none}
 #map-container svg{position:absolute}
@@ -201,6 +199,35 @@ body.drawing #map-svg,body.drawing #map-svg *{cursor:crosshair!important}
 body.panning,body.panning *{cursor:grab!important}
 body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 #sidebar.collapsed{display:none}
+/* Bottom sheet (<=768px): the sidebar becomes a draggable sheet rising from the bottom. */
+#sheet-handle{display:none}
+@media (max-width:768px){
+  #sidebar{position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;height:88dvh;max-height:88dvh;border-left:none;border-top:1px solid var(--line);border-radius:14px 14px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.5);z-index:8000;transform:translateY(calc(88dvh - 60px));transition:transform .3s cubic-bezier(.32,.72,0,1)}
+  #sidebar.collapsed{display:flex}
+  #sheet-handle{display:flex;align-items:center;justify-content:center;height:26px;flex-shrink:0;cursor:grab;touch-action:none;background:var(--bg-1);border-radius:14px 14px 0 0}
+  #sheet-handle::before{content:"";width:38px;height:4px;border-radius:2px;background:var(--ink-4)}
+  #sheet-handle:active{cursor:grabbing}
+}
+@media (max-width:768px){
+  /* Comfortable touch sizing inside the sheet and the top-bar menu. */
+  #tabs button{font-size:13px;padding:12px 4px;letter-spacing:.3px}
+  .subtabs button{font-size:12px;padding:9px 4px}
+  .btn{min-height:36px}
+  .inp{min-height:38px}
+  #props-area{padding:12px;flex:0 0 auto;min-height:0;overflow:visible}
+  #list-area{padding:0 12px 14px;flex:0 0 auto;min-height:0;overflow:visible;flex-basis:auto!important}
+  #sidebar-splitter{display:none}
+  #tab-content{overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .sec{padding:12px;gap:8px}
+  .sec-title{font-size:12px}
+  .lbl{font-size:11px}
+  #cmd-bar{padding:10px 12px}
+  #cmd-bar .cmd{font-size:11px;max-height:64px}
+  .cswatch{width:24px;height:24px}
+  .cb-colors{max-width:none;gap:6px}
+  .cb-colors .cswatch{width:30px;height:30px}
+  #tb-overflow{gap:10px}
+}
 
 </style></head><body>
 <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><symbol id="bscry-logo" viewBox="0 0 236 236"><style>
@@ -245,7 +272,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.166</span>
+  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg>BattleScry</span><span style="font-size:10px;color:var(--fg2);margin-left:6px;align-self:flex-end;font-family:monospace">v0.1.171</span>
   <div id="tb-overflow">
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
@@ -290,7 +317,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
     <hr style="border:0;border-top:1px solid rgba(255,255,255,0.2);margin:2px 0;width:100%">
     <button id="btn-ruler" class="btn btn-s" style="padding:2px 0;width:28px;height:24px;display:inline-flex;align-items:center;justify-content:center" onmousedown="event.preventDefault()" title="Ruler - measure distances between points or tokens"><svg viewBox="0 0 122.88 122.88" width="16" height="16" fill="currentColor"><path d="M0.92,32.82l31.9-31.9C33.44,0.3,34.24,0,35.05,0c0.8,0,1.61,0.3,2.22,0.92l84.69,84.69c0.61,0.61,0.92,1.42,0.92,2.23c0,0.8-0.31,1.6-0.92,2.21l-0.01,0.01l0.01,0.01l-31.9,31.9c-0.62,0.62-1.42,0.92-2.23,0.92c-0.8,0-1.61-0.3-2.23-0.92L0.92,37.27C0.3,36.65,0,35.84,0,35.05C0,34.24,0.3,33.44,0.92,32.82L0.92,32.82z M105.32,77.15L90.84,91.63c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l14.48-14.48L90.12,61.94l-6.86,6.85c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l6.86-6.86L75.88,47.71L61.4,62.19c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l14.48-14.48L61.09,32.91l-6.86,6.85c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l6.86-6.86L46.43,18.26L31.95,32.74c-1.13,1.13-2.83,1.25-3.8,0.29c-0.97-0.97-0.84-2.67,0.29-3.8l14.48-14.48l-7.87-7.87L6.87,35.05l80.96,80.96l28.17-28.17C102.8,74.62,118.53,90.36,105.32,77.15L105.32,77.15z"/></svg></button>
   </div></div>
-  <div id="sidebar"><div id="tabs"><button class="active" data-tab="map">Map</button><button data-tab="tokens">Tokens</button><button data-tab="overlays">Overlays</button><button data-tab="other">Other</button></div><div id="tab-content"><div id="props-area"></div><div id="sidebar-splitter" title="Drag to resize"></div><div id="list-area"></div></div><div id="cmd-bar"><div style="font-size:10px;color:var(--fg3);margin-bottom:3px">Pending changes:</div><div class="cmd" id="cmd-text" style="color:var(--fg4);font-size:10px;line-height:1.4">None - make edits to enable Export Updated Map</div></div></div>
+  <div id="sidebar"><div id="sheet-handle" aria-hidden="true"></div><div id="tabs"><button class="active" data-tab="map">Map</button><button data-tab="tokens">Tokens</button><button data-tab="overlays">Overlays</button><button data-tab="other">Other</button></div><div id="tab-content"><div id="props-area"></div><div id="sidebar-splitter" title="Drag to resize"></div><div id="list-area"></div></div><div id="cmd-bar"><div style="font-size:10px;color:var(--fg3);margin-bottom:3px">Pending changes:</div><div class="cmd" id="cmd-text" style="color:var(--fg4);font-size:10px;line-height:1.4">None - make edits to enable Export Updated Map</div></div></div>
 </div>
 <div id="tooltip"></div><div id="popup"></div>
 <div id="welcome-modal" class="smart-modal-backdrop" style="display:none;z-index:9999">
@@ -3623,8 +3650,8 @@ function setup(){
   window.fitHeightZoom=function(){const vp=$("map-vp");const vpH=vp.clientHeight-(vp.scrollWidth>vp.clientWidth?17:0)-4;const mapH=S.grid.rows*S.grid.cellSize+PAD*2;return vpH&&mapH?Math.max(.1,Math.min(3,vpH/mapH)):1;}
   // "Fit" fills the constraining dimension: for a tall map that's width (scroll down), for a wide map height (scroll across).
   window.fitSmartZoom=function(){return Math.max(fitZoom(),fitHeightZoom());};
-  window.zoomAt=function(newZ){const oldZ=S.zoom;newZ=Math.max(.1,Math.min(3,newZ));if(newZ===oldZ&&!S._fitRecheck)return;
-    const r=vp.getBoundingClientRect(),cx=r.width/2,cy=r.height/2;
+  window.zoomAt=function(newZ,ax,ay){const oldZ=S.zoom;newZ=Math.max(.1,Math.min(3,newZ));if(newZ===oldZ&&!S._fitRecheck)return;
+    const r=vp.getBoundingClientRect(),cx=(ax==null?r.width/2:ax),cy=(ay==null?r.height/2:ay);
     // Find the map point currently at viewport center
     const mapW=(S.grid.cols*S.grid.cellSize+PAD*2),mapH=(S.grid.rows*S.grid.cellSize+PAD*2);
     const mapVisW=mapW*oldZ,mapVisH=mapH*oldZ;
@@ -4462,7 +4489,7 @@ function setup(){
       S.overlays.forEach(o=>{if(S.sel.ids.has(o.id)&&o.coord){
         ovOffs[o.id]={dc:o.coord.col-gp.col,dr:o.coord.row-gp.row,
           dc2:o.coord2?o.coord2.col-gp.col:0,dr2:o.coord2?o.coord2.row-gp.row:0};}});}
-    S.drag={offs,ovOffs,act:new Set(Object.keys(offs).map(Number)),ovAct:new Set(Object.keys(ovOffs).map(Number))};
+    S.drag={offs,ovOffs,act:new Set(Object.keys(offs).map(Number)),ovAct:new Set(Object.keys(ovOffs).map(Number)),startGp:gp,moved:false};
     renderAll();}
 
   // Unified multi-select toggle: works across all object types
@@ -4871,6 +4898,7 @@ function setup(){
       const ov=S.overlays.find(o=>o.id===S.resize.ovId);if(ov)ov.size=newFt;
       renderSVG();renderCmd();return;}
     if(S.drag){const pt=svgPt(e),gp=pt2g(pt.x,pt.y);
+      if(gp.col!==S.drag.startGp.col||gp.row!==S.drag.startGp.row)S.drag.moved=true;
       S.tokens.forEach(t=>{if(!S.drag.act.has(t.id))return;const o=S.drag.offs[t.id]||{dc:0,dr:0};t.col=Math.max(0,Math.min(gp.col+o.dc,S.grid.cols-1));t.row=Math.max(0,Math.min(gp.row+o.dr,S.grid.rows-1));});
       S.overlays.forEach(o=>{if(!S.drag.ovAct.has(o.id))return;const off=S.drag.ovOffs[o.id];if(!off||!o.coord)return;
         o.coord={col:Math.max(0,Math.min(gp.col+off.dc,S.grid.cols-1)),row:Math.max(0,Math.min(gp.row+off.dr,S.grid.rows-1))};
@@ -4933,7 +4961,7 @@ function setup(){
     if(S.moveCoord){S.moveCoord=null;renderAll();return;}
     if(S.aimDrag){S.aimDrag=null;document.body.classList.remove("grabbing");renderAll();return;}
     if(S.resize){S.resize=null;document.body.classList.remove("resizing");renderAll();return;}
-    if(S.drag){S.drag=null;renderSB();return;}
+    if(S.drag){if(!S.drag.moved)undoStack.pop();S.drag=null;renderSB();return;}
     if(S.marquee){
       // Find tokens + objects in marquee
       const mx1=Math.min(S.marquee.x1,S.marquee.x2),my1=Math.min(S.marquee.y1,S.marquee.y2);
@@ -5615,7 +5643,26 @@ function setup(){
   $("srd-code-input")?.addEventListener("input",refreshLabelWarn);
 
   // Sidebar toggle
+  // ---- Bottom sheet (mobile): the sidebar rises from the bottom; drag the handle to resize. ----
+  const sheetMQ=window.matchMedia("(max-width:768px)");
+  const isSheet=()=>sheetMQ.matches;
+  let sheetState="peek";
+  function sheetSnaps(){const sb=$("sidebar");const h=sb.offsetHeight||Math.round(window.innerHeight*0.88);
+    return{full:0,half:Math.max(0,h-Math.round(window.innerHeight*0.46)),peek:Math.max(0,h-60),hidden:h};}
+  function setSheet(st){const sb=$("sidebar");sheetState=st;sb.style.transition="transform .3s cubic-bezier(.32,.72,0,1)";sb.style.transform="translateY("+sheetSnaps()[st]+"px)";}
+  (function wireSheet(){const sb=$("sidebar"),hd=$("sheet-handle");if(!sb||!hd)return;
+    let drag=null;
+    hd.addEventListener("pointerdown",e=>{if(!isSheet())return;drag={y:e.clientY,t:sheetSnaps()[sheetState],moved:false};sb.style.transition="none";try{hd.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
+    hd.addEventListener("pointermove",e=>{if(!drag)return;const dy=e.clientY-drag.y;if(Math.abs(dy)>4)drag.moved=true;const max=sheetSnaps().hidden;const y=Math.min(max,Math.max(0,drag.t+dy));drag.cur=y;sb.style.transform="translateY("+y+"px)";});
+    const end=()=>{if(!drag)return;const moved=drag.moved;const cur=(drag.cur!=null)?drag.cur:sheetSnaps()[sheetState];drag=null;
+      if(!moved){setSheet(sheetState==="full"?"peek":"full");return;}
+      const sn=sheetSnaps();let best="peek",bd=1/0;["full","half","peek"].forEach(k=>{const d=Math.abs(sn[k]-cur);if(d<bd){bd=d;best=k;}});setSheet(best);};
+    hd.addEventListener("pointerup",end);hd.addEventListener("pointercancel",end);
+    $("tabs").addEventListener("click",()=>{if(isSheet()&&(sheetState==="peek"||sheetState==="hidden"))setSheet("half");});
+    window.addEventListener("resize",()=>{if(isSheet())setSheet(sheetState);else sb.style.transform="";});
+  })();
   function toggleSB(){
+    if(isSheet()){setSheet(sheetState==="hidden"?"peek":"hidden");return;}
     const wasFit=Math.abs(S.zoom-fitZoom())<.02;const wasFitH=Math.abs(S.zoom-fitHeightZoom())<.02;const wasFitAll=Math.abs(S.zoom-fitAllZoom())<.02;
     S.sidebarOpen=!S.sidebarOpen;$("sidebar").classList.toggle("collapsed",!S.sidebarOpen);
     $("btn-hamburger").textContent=S.sidebarOpen?"☰":"☰";
@@ -5647,9 +5694,10 @@ function setup(){
     renderAll();}
 
   // TOUCH EVENTS - bridge touch to mouse handlers
-  let touchDragActive=false;
+  let touchDragActive=false,preGestureSel=null;
   $("map-svg").addEventListener("touchstart",e=>{
     if(e.touches.length===1){const te=touchPt(e);
+      preGestureSel={type:S.sel.type,ids:new Set(S.sel.ids)};
       // Simulate mousedown
       const me=new MouseEvent("mousedown",{clientX:te.clientX,clientY:te.clientY,bubbles:true});
       te.target.dispatchEvent(me);touchDragActive=true;e.preventDefault();}
@@ -5664,16 +5712,23 @@ function setup(){
       const me=new MouseEvent("mouseup",{clientX:te.clientX,clientY:te.clientY,bubbles:true});
       vp.dispatchEvent(me);touchDragActive=false;e.preventDefault();}
   },{passive:false});
-  // Pinch zoom
-  let pinchDist=0;
+  // Two-finger gesture: pinch to zoom (anchored at the finger midpoint) and drag to pan.
+  let pinchDist=0,pinchMid=null;
+  function twoFingerMid(e){const r=vp.getBoundingClientRect();
+    return{x:(e.touches[0].clientX+e.touches[1].clientX)/2-r.left,y:(e.touches[0].clientY+e.touches[1].clientY)/2-r.top};}
   vp.addEventListener("touchstart",e=>{if(e.touches.length===2){
+    if(touchDragActive){touchDragActive=false;
+      if(preGestureSel)S.sel={type:preGestureSel.type,ids:new Set(preGestureSel.ids)};
+      mStart=null;S.marquee=null;if(S.drag){undoStack.pop();S.drag=null;}renderAll();}
     const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;
-    pinchDist=Math.sqrt(dx*dx+dy*dy);e.preventDefault();}},{passive:false});
+    pinchDist=Math.sqrt(dx*dx+dy*dy);pinchMid=twoFingerMid(e);e.preventDefault();}},{passive:false});
   vp.addEventListener("touchmove",e=>{if(e.touches.length===2&&pinchDist>0){
     const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;
-    const newDist=Math.sqrt(dx*dx+dy*dy);const scale=newDist/pinchDist;
-    zoomAt(S.zoom*scale);pinchDist=newDist;e.preventDefault();}},{passive:false});
-  vp.addEventListener("touchend",e=>{if(e.touches.length<2)pinchDist=0;});
+    const newDist=Math.sqrt(dx*dx+dy*dy),mid=twoFingerMid(e);
+    if(pinchMid){vp.scrollLeft-=mid.x-pinchMid.x;vp.scrollTop-=mid.y-pinchMid.y;}
+    if(Math.abs(newDist-pinchDist)>0.5)zoomAt(S.zoom*(newDist/pinchDist),mid.x,mid.y);
+    pinchDist=newDist;pinchMid=mid;e.preventDefault();}},{passive:false});
+  vp.addEventListener("touchend",e=>{if(e.touches.length<2){pinchDist=0;pinchMid=null;}});
   document.addEventListener("keydown",e=>{if(e.key===" "&&!["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName)){e.preventDefault();if(!S.spaceHeld){S.spaceHeld=true;document.body.classList.add("panning");}return;}
     if(e.key==="Escape"&&S.rulerMode){S.rulerMode=false;$("btn-ruler").classList.remove("active");S.rulerStart=null;S.rulerEnd=null;S.rulerDist=null;S.rulerLabel=null;S.rulerDrag=null;document.body.classList.remove("drawing");closeDistPopup();renderSVG();return;}
     if(e.key==="Escape"&&(S.wallDraw||S.fowDraw)){
