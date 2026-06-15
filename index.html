@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.202                                      https://battlescry.com
+BattleScry v0.1.206                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,21 +19,24 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.206 - Changed: the mobile bottom sheet now opens to about half the screen when you tap the handle,
+            and you can drag the handle to make it taller or shorter. Tapping the handle again minimizes
+            it and remembers the height, so the next tap reopens it where you left it.
+  v0.1.205 - Fixed: typing coordinates into the Map View fields and tapping Update now crops the view.
+            The fields were reverting to the current view the moment they lost focus (which happens as
+            you tap Update), so Update saw the old values. They now keep what you typed until applied.
+  v0.1.204 - Added: a Token Image section in the Add/Edit combatant form. Paste an OTFBM shortcode or an
+            image URL and Apply it inline, or use the quick buttons to open the SRD browser, token
+            library, upload, saved tokens, or label baker. The preview pencil still opens the picker too.
+  v0.1.203 - Changed: the Help button is now a compact icon pinned to the top-right corner and always
+            visible (on every screen size), and the three-dot overflow menu was removed since it no
+            longer held anything that needed hiding.
   v0.1.202 - Changed: moved the Map View controls (visible-area coordinates, Update, Reset, and the Solid
             border toggle) out of the top bar into a new Map View section on the Map panel, just above
             Grid Properties. The drag-to-crop and click-to-set behavior on the map is unchanged.
-  v0.1.201 - Changed: moved Discord login out of the top bar. When you are signed in, a compact line
-            showing your name with a Log out button now appears by the upload buttons on the Map and
-            Tokens panels; when signed out there is no login chrome, since the upload button handles it.
-  v0.1.200 - Changed: the BattleScry logo in the top bar now opens the About dialog, and the separate
-            About button was removed to save toolbar space.
-  v0.1.199 - Changed: removed the instructional hint text from the full-screen map preview toolbar to
-            reduce clutter (the zoom, fit, and close controls remain).
-  v0.1.198 - Added: a Load to Map button in the full-screen map preview, so you can load the map you
-            are previewing (or have navigated to) without closing the preview to find its card.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.202"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.206"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -120,17 +123,14 @@ input,select,textarea,button{font-family:inherit}
 .tclib-pop .tclib-opt:hover,.tclib-pop .tclib-all:hover{background:var(--bg4)}
 .tclib-allmaps:disabled,.tclib-random:disabled{opacity:.45;cursor:default}
 #toolbar{border-bottom:1px solid var(--border);padding:5px 8px;display:flex;gap:5px;align-items:center;flex-wrap:wrap;background:var(--bg2);flex-shrink:0;position:relative}
-/* Responsive top bar (<=768px): collapse the secondary controls into a tap-to-open menu. */
-#tb-overflow{display:contents}
+/* Responsive top bar: secondary controls (status, help) float right via .tbo-right; sep + spacer hide on mobile. */
 .tbo-right{order:1}
 #hide-toggle-label{background:var(--bg2);color:var(--fg3)}
 .secret-icon{display:none}
 .login-id{display:inline-flex;align-items:center;gap:4px;min-width:0}
 #bscry-login{align-items:center}
-#tb-more{display:none;padding:4px 8px;align-items:center;justify-content:center}
 @media (max-width:768px){
   #toolbar{flex-wrap:wrap;gap:6px}
-  #tb-more{display:inline-flex}
   #btn-copy{margin-left:auto}
   #hide-toggle-label{padding:4px 9px;margin-right:0;min-height:36px;box-sizing:border-box}
   #hide-toggle-label #cmd-hidden{display:none}
@@ -139,13 +139,10 @@ input,select,textarea,button{font-family:inherit}
   #hide-toggle-label #cmd-hidden:checked ~ .secret-icon{color:var(--gold)}
   #hide-toggle-label:has(#cmd-hidden:checked){background:var(--gold)}
   #hide-toggle-label:has(#cmd-hidden:checked) .secret-icon{color:var(--on-gold)}
-  #tb-helpabout button{flex:1}
   #bscry-login{flex-direction:column;align-items:flex-start;gap:4px;width:100%}
   #bscry-login .login-id{max-width:100%}
   #bscry-login .login-name-wrap{overflow:hidden;text-overflow:ellipsis;min-width:0}
-  #tb-overflow{display:none;position:absolute;top:calc(100% + 1px);right:6px;z-index:9000;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg-1);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.55);padding:10px;min-width:215px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 56px);overflow:auto}
-  #tb-overflow.open{display:flex}
-  #tb-overflow .sep,#tb-spacer{display:none}
+  #tb-sep,#tb-spacer{display:none}
 }
 .logo{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:1px;white-space:nowrap}
 .sep{border-left:1px solid var(--border);height:20px;margin:0 1px}
@@ -236,7 +233,6 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   .cswatch{width:24px;height:24px}
   .cb-colors{max-width:none;gap:6px}
   .cb-colors .cswatch{width:30px;height:30px}
-  #tb-overflow{gap:10px}
 }
 
 </style></head><body>
@@ -282,22 +278,17 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.202</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.206</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
-  <div id="tb-overflow">
-  <div class="sep"></div>
+  <div id="tb-sep" class="sep"></div>
   <div id="tb-spacer" class="tbo-right" style="flex:1"></div>
   <div id="status-msg" class="tbo-right" style="font-size:10px;color:var(--fg3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;text-align:right;padding:0 8px"></div>
   <span id="partial-view" class="tbo-right" style="display:none;font-size:9px;color:var(--fg3);margin-right:4px"></span>
-  <div id="tb-helpabout" class="tbo-right" style="display:flex;gap:6px">
-  <button id="btn-help" class="btn btn-s" style="font-size:10px;padding:3px 8px" title="Quick start guide">? Help</button>
-  </div>
-  </div>
+  <button id="btn-help" class="btn btn-s tbo-right" style="padding:3px 7px;display:inline-flex;align-items:center" title="Quick start guide" aria-label="Quick start guide"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg></button>
   <label id="hide-toggle-label" style="display:flex;align-items:center;gap:4px;font-size:10px;cursor:pointer;padding:3px 6px;border-radius:4px;margin-right:2px" title="When Secret Mode is enabled, the export command will update the map normally, but players won't see the list of changes (token moves, Fog of War reveals, etc)."><input type="checkbox" id="cmd-hidden" style="accent-color:var(--accent);cursor:pointer"><svg class="secret-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg><span class="secret-text">Secret Mode</span></label>
   <button class="btn btn-p" id="btn-copy" style="font-size:11px;padding:5px 14px;font-weight:bold" title="Save your changes: copies the !bscry apply command to the clipboard, then paste it in Discord to apply">Save / Export</button>
-  <button id="tb-more" class="btn btn-s" title="More controls" aria-label="More controls" aria-haspopup="true" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
 </div>
 <div id="main">
   <div id="map-wrap" style="flex:1;position:relative;overflow:hidden"><div id="map-vp"><div id="map-container"><img id="map-img" style="display:none" alt=""><svg id="map-svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
@@ -1834,7 +1825,6 @@ function renderCombatantForm(opts){
   h+=`<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
     <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0">
       <div id="cb-prev-container">${renderCombatantPreview(previewToken,{totalPx:100,placeholder,editIcon})}</div>
-      ${editIcon?`<button type="button" class="btn-customize-img" id="cb-customize-img" title="Choose a token image, upload your own, or browse the library">Customize image</button>`:""}
     </div>
     <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
       <div><span class="lbl">${mode==="add"?"Name *":"Name"}</span>
@@ -1849,6 +1839,28 @@ function renderCombatantForm(opts){
       </div>
     </div>
   </div>`;
+  // Token Image controls (inline; mirrors the Map panel Background section). editIcon gates it to the
+  // modes where art can be set. The richer pickers (SRD browse, upload + crop, saved, bake) still open
+  // the focused modal; the field here is the quick shortcode/URL path.
+  if(editIcon){h+=`<div style="margin:0 0 10px 0;padding:9px;border:1px solid var(--line);border-radius:6px;background:var(--bg2)">
+    <div class="sec-title" style="margin-bottom:6px;font-size:11px">Token Image</div>
+    <div id="cb-img-info" style="font-size:10px;color:var(--fg3);margin-bottom:6px">${tokenImage?`Current code: <span style="font-family:monospace;color:var(--fg)">${escAttr(tokenImage.replace(/~$/,""))}</span>`:"No custom image - using a colored token"}</div>
+    <div class="row" style="gap:4px;align-items:center;margin-bottom:6px">
+      <input class="inp" id="cb-img-input" placeholder="Paste OTFBM shortcode or image URL" style="flex:1;min-width:0;font-family:monospace;font-size:10px">
+      <button type="button" class="btn btn-s" id="cb-img-apply" style="font-size:10px;padding:4px 12px;white-space:nowrap">Apply</button>
+    </div>
+    <div class="row" style="gap:4px;flex-wrap:wrap;margin-bottom:6px">
+      <button type="button" class="btn btn-s" id="cb-img-srd" style="flex:1;min-width:78px;font-size:10px">🐉 SRD</button>
+      <button type="button" class="btn btn-s" id="cb-img-lib" style="flex:1;min-width:78px;font-size:10px">👤 Library</button>
+      <button type="button" class="btn btn-s" id="cb-img-upload" style="flex:1;min-width:78px;font-size:10px">⬆️ Upload</button>
+      <button type="button" class="btn btn-s" id="cb-img-saved" style="flex:1;min-width:78px;font-size:10px">💾 Saved</button>
+      <button type="button" class="btn btn-s" id="cb-img-bake" style="flex:1;min-width:78px;font-size:10px">🏷 Bake</button>
+    </div>
+    <div class="row" style="gap:4px;align-items:center">
+      <input class="inp" id="cb-img-savename" placeholder="Save this token as..." style="flex:1;min-width:0;font-size:10px">
+      <button type="button" class="btn btn-s" id="cb-img-save" style="font-size:10px;padding:4px 12px;white-space:nowrap">Save</button>
+    </div>
+  </div>`;}
   // ROW 2: Size + Color
   h+=`<div class="row" style="align-items:flex-start;gap:8px">
     <div style="width:104px;flex-shrink:0"><span class="lbl">Size</span>
@@ -4141,6 +4153,37 @@ function setup(){
     if(t.classList.contains("ov-del-btn")){const oid=+t.dataset.delov;pushU();S.overlays=S.overlays.filter(o=>o.id!==oid);if(S.sel.type==="overlay")clearSel();renderAll();return;}
     // Remove all overlays
     if(t.id==="ov-clearall"){if(!confirm("⚠ You are about to remove ALL overlays from the map. This cannot be undone. OK to proceed?"))return;pushU();S.overlays=[];clearSel();renderAll();return;}
+    // Inline Token Image controls (quick path in the Add/Edit form; mirrors the Map Background section).
+    if(t.id==="cb-img-apply"){
+      const tk=srdTargetToken();if(!tk){showError("Select a token first");return;}
+      const v=($("cb-img-input").value||"").trim();
+      if(!v){showError("Paste a shortcode or image URL first");return;}
+      if(/^[a-zA-Z0-9]{1,6}~?$/.test(v)){pushU();tk.tokenImage=v.replace(/~$/,"")+"~";renderAll();}
+      else{const info=$("cb-img-info");if(info)info.innerHTML='<span style="color:var(--accent)">⏳ Uploading to OTFBM...</span>';
+        fetch(PROXY_URL.replace("?url=","?token=")+encodeURIComponent(v)).then(r=>r.json()).then(d=>{
+          if(d&&d.shortcode){pushU();tk.tokenImage=d.shortcode.replace(/~$/,"")+"~";renderAll();}
+          else{const i2=$("cb-img-info");if(i2)i2.innerHTML='<span style="color:var(--danger)">⚠ '+((d&&d.error)||"Could not tokenize that URL")+'</span>';}
+        }).catch(()=>{const i2=$("cb-img-info");if(i2)i2.innerHTML='<span style="color:var(--danger)">⚠ Request failed - check the URL</span>';});}
+      return;}
+    if(t.id==="cb-img-srd"){openSrdModal();if($("srd-modal").style.display!=="none"){const b=document.querySelector('.srd-tab[data-tab="browse"]');if(b)b.click();}return;}
+    if(t.id==="cb-img-upload"){openSrdModal();if($("srd-modal").style.display!=="none"){const b=document.querySelector('.srd-tab[data-tab="upload"]');if(b)b.click();}return;}
+    if(t.id==="cb-img-saved"){openSrdModal();if($("srd-modal").style.display!=="none"){const b=document.querySelector('.srd-tab[data-tab="saved"]');if(b)b.click();}return;}
+    if(t.id==="cb-img-bake"){openSrdModal();if($("srd-modal").style.display!=="none"){const b=document.querySelector('.srd-tab[data-tab="bake"]');if(b)b.click();}return;}
+    if(t.id==="cb-img-lib"){openSrdModal();if($("srd-modal").style.display!=="none"){const lb=$("srd-toklib-open");if(lb)lb.click();}return;}
+    if(t.id==="cb-img-save"){
+      const tk=srdTargetToken();if(!tk){showError("Select a token first");return;}
+      const name=($("cb-img-savename").value||"").trim();
+      const code=(tk.tokenImage||"").replace(/~$/,"").replace(/[^a-zA-Z0-9]/g,"");
+      if(!name){showError("Enter a name to save this token as");return;}
+      if(!code){showError("Apply a token image first, then save it");return;}
+      const existing=S.savedTokens.find(x=>x.name.toLowerCase()===name.toLowerCase());
+      if(existing)existing.shortcode=code;else S.savedTokens.push({name,shortcode:code});
+      S.tokenSaves=S.tokenSaves.filter(x=>x.name.toLowerCase()!==name.toLowerCase());
+      S.tokenSaves.push({name,shortcode:code});
+      S.tokenDeletes=S.tokenDeletes.filter(n=>n.toLowerCase()!==name.toLowerCase());
+      const sn=$("cb-img-savename");if(sn)sn.value="";renderCmd();
+      showError("✅ Token '"+name+"' will be saved when you paste the command");
+      return;}
     if(t.id==="p-srd-browse"||t.id==="p-nptokdialog"||t.id==="cb-customize-img"||(t.closest&&t.closest(".cb-portrait-btn"))){openSrdModal();return;}
   });
   tc.addEventListener("change",e=>{
@@ -5045,13 +5088,6 @@ function setup(){
 
   // Help modal
   $("btn-help").onclick=openHelp;
-  // Responsive top bar: the ... button opens the overflow dropdown (mobile); Escape or an outside click closes it.
-  {const mb=$("tb-more"),ov=$("tb-overflow");if(mb&&ov){
-    const setOpen=o=>{ov.classList.toggle("open",o);mb.setAttribute("aria-expanded",o?"true":"false");};
-    mb.onclick=e=>{e.stopPropagation();setOpen(!ov.classList.contains("open"));};
-    document.addEventListener("click",e=>{if(ov.classList.contains("open")&&!ov.contains(e.target)&&!mb.contains(e.target))setOpen(false);});
-    document.addEventListener("keydown",e=>{if(e.key==="Escape"&&ov.classList.contains("open"))setOpen(false);});
-  }}
   // View controls - new design with input focus → coord pick, button states, and drag-to-crop
   window.syncViewInputs=function(){
     if(!$("vw-start")||!$("vw-end")||!$("btn-vw-reset"))return;
@@ -5109,14 +5145,14 @@ function setup(){
     if(sInp&&!sInp.dataset.vwWired){
       sInp.dataset.vwWired="1";
       sInp.addEventListener("focus",()=>enterCoordPick("start"));
-      sInp.addEventListener("blur",()=>{if(S.coordPick==="vw1"){S.coordPick=null;$("map-svg").style.cursor="";cropOverlay&&(cropOverlay.style.display="none");cropStart=null;cropAnchor=null;}syncViewInputs();});
+      sInp.addEventListener("blur",()=>{if(S.coordPick==="vw1"){S.coordPick=null;$("map-svg").style.cursor="";cropOverlay&&(cropOverlay.style.display="none");cropStart=null;cropAnchor=null;}});
       sInp.addEventListener("input",syncUpdateBtnState);
       sInp.addEventListener("keydown",e=>{if(e.key==="Enter")applyViewChange();else if(e.key==="Escape"){e.target.blur();syncViewInputs();}});
     }
     if(eInp&&!eInp.dataset.vwWired){
       eInp.dataset.vwWired="1";
       eInp.addEventListener("focus",()=>enterCoordPick("end"));
-      eInp.addEventListener("blur",()=>{if(S.coordPick==="vw2"){S.coordPick=null;$("map-svg").style.cursor="";cropOverlay&&(cropOverlay.style.display="none");cropStart=null;cropAnchor=null;}syncViewInputs();});
+      eInp.addEventListener("blur",()=>{if(S.coordPick==="vw2"){S.coordPick=null;$("map-svg").style.cursor="";cropOverlay&&(cropOverlay.style.display="none");cropStart=null;cropAnchor=null;}});
       eInp.addEventListener("input",syncUpdateBtnState);
       eInp.addEventListener("keydown",e=>{if(e.key==="Enter")applyViewChange();else if(e.key==="Escape"){e.target.blur();syncViewInputs();}});
     }
@@ -5193,21 +5229,22 @@ function setup(){
 
   // SRD Monster Token Browser Modal
   let srdTok=null;// token being edited
-  function openSrdModal(){
-    let tk;
+  // Resolve the token that token-image actions target: the draft combatant in Add mode (snapshotting the
+  // current form fields first so a re-render keeps what the user typed), else the single selected token.
+  function srdTargetToken(){
     if(S.addingCombatant){
-      // Add mode: target the draft combatant. Snapshot current form fields into it first so the
-      // renderAll fired on apply rebuilds the Add form with everything the user already typed.
       const g=id=>document.getElementById(id)?.value||"";
       const a=S.addingCombatant;
       a.name=g("cb-name");a.initStr=g("cb-init");a.size=g("cb-size")||"M";
       a.hpCur=g("cb-hpcur");a.hp=g("cb-hpmax");a.ac=g("cb-ac");
       a.note=g("cb-note");a.location=g("cb-loc");a.group=g("cb-group");
       a.hideStats=document.getElementById("cb-hide")?.checked||false;
-      tk=a;
-    }else{
-      tk=S.sel.type==="token"&&S.sel.ids.size===1?S.tokens.find(x=>x.id===[...S.sel.ids][0]):null;
+      return a;
     }
+    return S.sel.type==="token"&&S.sel.ids.size===1?S.tokens.find(x=>x.id===[...S.sel.ids][0]):null;
+  }
+  function openSrdModal(){
+    const tk=srdTargetToken();
     if(!tk){showError("Select a token first");return;}
     srdTok=tk;const m=$("srd-modal");m.style.display="flex";
     // Current token display
@@ -5725,23 +5762,32 @@ function setup(){
   // ---- Bottom sheet (mobile): the sidebar rises from the bottom; drag the handle to resize. ----
   const sheetMQ=window.matchMedia("(max-width:768px)");
   const isSheet=()=>sheetMQ.matches;
-  let sheetState="peek";  // mobile sheet is binary: "full" = open, "peek" = closed (slim handle strip)
+  // Mobile bottom sheet: open (expanded to a remembered height, ~50% by default) vs minimized to the peek
+  // strip. Tapping the handle toggles; dragging the handle freely resizes and remembers the height, and
+  // dragging it (almost) to the bottom minimizes. The height is kept as a fraction of the viewport so it
+  // survives orientation changes.
+  let sheetOpen=false;
+  let sheetOpenFrac=0.5;
   function sheetSnaps(){const sb=$("sidebar");const h=sb.offsetHeight||Math.round(window.innerHeight*0.88);
-    return{full:0,half:Math.max(0,h-Math.round(window.innerHeight*0.46)),peek:Math.max(0,h-60),hidden:h};}
-  function setSheet(st){const sb=$("sidebar");sheetState=st;sb.style.transition="transform .3s cubic-bezier(.32,.72,0,1)";sb.style.transform="translateY("+sheetSnaps()[st]+"px)";}
+    return{full:0,peek:Math.max(0,h-60),h};}
+  function sheetOpenOffset(){const sn=sheetSnaps();const want=sn.h-Math.round(sheetOpenFrac*window.innerHeight);return Math.min(sn.peek,Math.max(0,want));}
+  function applySheet(animate){const sb=$("sidebar");sb.style.transition=animate?"transform .3s cubic-bezier(.32,.72,0,1)":"none";sb.style.transform="translateY("+(sheetOpen?sheetOpenOffset():sheetSnaps().peek)+"px)";}
+  function setSheetOpen(open){sheetOpen=open;applySheet(true);}
   (function wireSheet(){const sb=$("sidebar"),hd=$("sheet-handle");if(!sb||!hd)return;
     let drag=null;
-    hd.addEventListener("pointerdown",e=>{if(!isSheet())return;drag={y:e.clientY,t:sheetSnaps()[sheetState],moved:false};sb.style.transition="none";try{hd.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
-    hd.addEventListener("pointermove",e=>{if(!drag)return;const dy=e.clientY-drag.y;if(Math.abs(dy)>4)drag.moved=true;const max=sheetSnaps().peek;const y=Math.min(max,Math.max(0,drag.t+dy));drag.cur=y;sb.style.transform="translateY("+y+"px)";});
-    const end=()=>{if(!drag)return;const moved=drag.moved;const cur=(drag.cur!=null)?drag.cur:sheetSnaps()[sheetState];drag=null;
-      if(!moved){setSheet(sheetState==="full"?"peek":"full");return;}
-      const sn=sheetSnaps();let best="peek",bd=1/0;["full","peek"].forEach(k=>{const d=Math.abs(sn[k]-cur);if(d<bd){bd=d;best=k;}});setSheet(best);};
+    hd.addEventListener("pointerdown",e=>{if(!isSheet())return;drag={y:e.clientY,t:(sheetOpen?sheetOpenOffset():sheetSnaps().peek),moved:false};sb.style.transition="none";try{hd.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
+    hd.addEventListener("pointermove",e=>{if(!drag)return;const dy=e.clientY-drag.y;if(Math.abs(dy)>4)drag.moved=true;const peek=sheetSnaps().peek;const y=Math.min(peek,Math.max(0,drag.t+dy));drag.cur=y;sb.style.transform="translateY("+y+"px)";});
+    const end=()=>{if(!drag)return;const moved=drag.moved;const cur=(drag.cur!=null)?drag.cur:(sheetOpen?sheetOpenOffset():sheetSnaps().peek);drag=null;
+      if(!moved){setSheetOpen(!sheetOpen);return;}
+      const sn=sheetSnaps();
+      if(cur>=sn.peek-40){setSheetOpen(false);return;}
+      sheetOpenFrac=Math.max(0.12,Math.min(0.96,(sn.h-cur)/window.innerHeight));sheetOpen=true;applySheet(true);};
     hd.addEventListener("pointerup",end);hd.addEventListener("pointercancel",end);
-    $("tabs").addEventListener("click",()=>{if(isSheet()&&sheetState!=="full")setSheet("full");});
-    window.addEventListener("resize",()=>{if(isSheet())setSheet(sheetState);else sb.style.transform="";});
+    $("tabs").addEventListener("click",()=>{if(isSheet()&&!sheetOpen)setSheetOpen(true);});
+    window.addEventListener("resize",()=>{if(isSheet())applySheet(false);else sb.style.transform="";});
   })();
   function toggleSB(){
-    if(isSheet()){setSheet(sheetState==="full"?"peek":"full");return;}
+    if(isSheet()){setSheetOpen(!sheetOpen);return;}
     const wasFit=Math.abs(S.zoom-fitZoom())<.02;const wasFitH=Math.abs(S.zoom-fitHeightZoom())<.02;const wasFitAll=Math.abs(S.zoom-fitAllZoom())<.02;
     S.sidebarOpen=!S.sidebarOpen;$("sidebar").classList.toggle("collapsed",!S.sidebarOpen);
     $("btn-hamburger").textContent=S.sidebarOpen?"☰":"☰";
@@ -5790,7 +5836,7 @@ function setup(){
     if(S.wallDrag){undoStack.pop();S.wallDrag=null;}
     if(S.objMove){undoStack.pop();S.objMove=null;}
     mStart=null;S.marquee=null;
-    if(isSheet()&&sheetState!=="full")setSheet("full");
+    if(isSheet()&&!sheetOpen)setSheetOpen(true);
     if(navigator.vibrate){try{navigator.vibrate(20);}catch(_){}}
     renderAll();
   }
