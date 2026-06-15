@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.197                                      https://battlescry.com
+BattleScry v0.1.201                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,25 +19,21 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.201 - Changed: moved Discord login out of the top bar. When you are signed in, a compact line
+            showing your name with a Log out button now appears by the upload buttons on the Map and
+            Tokens panels; when signed out there is no login chrome, since the upload button handles it.
+  v0.1.200 - Changed: the BattleScry logo in the top bar now opens the About dialog, and the separate
+            About button was removed to save toolbar space.
+  v0.1.199 - Changed: removed the instructional hint text from the full-screen map preview toolbar to
+            reduce clutter (the zoom, fit, and close controls remain).
+  v0.1.198 - Added: a Load to Map button in the full-screen map preview, so you can load the map you
+            are previewing (or have navigated to) without closing the preview to find its card.
   v0.1.197 - Improved: when you load a map smaller than your current one, any token, map object, wall,
             overlay, or FOW region that would fall off the new map is now shifted fully onto the
             nearest edge instead of ending up off the map.
-  v0.1.196 - Fixed: loading a map from the Map Library no longer warns about or clears your placed
-            tokens, overlays, walls, objects, and initiative. They now carry over onto the new map at
-            the same grid coordinates.
-  v0.1.195 - Added: an Upload Token Image button next to Browse Token Library on the Tokens panel. It
-            uses the same login and one-time content check, hosts your image, and starts a new
-            combatant using it as the token art.
-  v0.1.194 - Added: an Upload Map Image button next to Browse Map Library in the Background panel, so
-            you can host your own map art on BattleScry. Uploading asks you to log in with Discord and
-            confirm once that you have the rights to the image, then applies it as the background.
-  v0.1.193 - Fixed: the Token Library gallery now keeps every card full size and scrolls, the way the
-            map library does, instead of squeezing the cards thinner (down to bare labels, then
-            nothing) as more tokens are shown. Also widened image preloading so thumbnails load
-            further ahead while scrolling.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.197"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.201"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -286,7 +282,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" style="display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.197</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.201</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -305,10 +301,8 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   <div id="tb-spacer" class="tbo-right" style="flex:1"></div>
   <div id="status-msg" class="tbo-right" style="font-size:10px;color:var(--fg3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;text-align:right;padding:0 8px"></div>
   <span id="partial-view" class="tbo-right" style="display:none;font-size:9px;color:var(--fg3);margin-right:4px"></span>
-  <span id="bscry-login" class="tbo-right" style="display:inline-flex;gap:4px;margin-right:2px"></span>
   <div id="tb-helpabout" class="tbo-right" style="display:flex;gap:6px">
   <button id="btn-help" class="btn btn-s" style="font-size:10px;padding:3px 8px" title="Quick start guide">? Help</button>
-  <button id="btn-about" class="btn btn-s" style="font-size:10px;padding:3px 8px" title="About BattleScry">ℹ About</button>
   </div>
   </div>
   <label id="hide-toggle-label" style="display:flex;align-items:center;gap:4px;font-size:10px;cursor:pointer;padding:3px 6px;border-radius:4px;margin-right:2px" title="When Secret Mode is enabled, the export command will update the map normally, but players won't see the list of changes (token moves, Fog of War reveals, etc)."><input type="checkbox" id="cmd-hidden" style="accent-color:var(--accent);cursor:pointer"><svg class="secret-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg><span class="secret-text">Secret Mode</span></label>
@@ -719,6 +713,7 @@ function bscryOnLoginMessage(e){
   try{if(bscryLoginPopup&&!bscryLoginPopup.closed)bscryLoginPopup.close();}catch(err){}
   bscryLoginPopup=null;
   renderLoginUI();
+  try{if(typeof renderSB==="function")renderSB();}catch(e){}
   if(bscryOnSessionChange){try{bscryOnSessionChange();}catch(err){}}
 }
 function bscryStartLogin(){
@@ -730,7 +725,7 @@ function bscryStartLogin(){
   }catch(e){bscryLoginPopup=null;}
   if(!bscryLoginPopup){location.href=AUTH_LOGIN_URL;}
 }
-function bscryLogout(){BSCRY_SESSION=null;try{localStorage.removeItem(BSCRY_SESSION_KEY);}catch(e){}renderLoginUI();if(bscryOnSessionChange){try{bscryOnSessionChange();}catch(e){}}try{setStatus("Logged out.");}catch(e){}}
+function bscryLogout(){BSCRY_SESSION=null;try{localStorage.removeItem(BSCRY_SESSION_KEY);}catch(e){}renderLoginUI();try{if(typeof renderSB==="function")renderSB();}catch(e){}if(bscryOnSessionChange){try{bscryOnSessionChange();}catch(e){}}try{setStatus("Logged out.");}catch(e){}}
 function discordLogo(w,h){return `<svg width="${w}" height="${h}" viewBox="0 0 126.644 96" fill="#5865f2" aria-hidden="true" style="flex-shrink:0"><path d="M81.15,0c-1.2376,2.1973-2.3489,4.4704-3.3591,6.794-9.5975-1.4396-19.3718-1.4396-28.9945,0-.985-2.3236-2.1216-4.5967-3.3591-6.794-9.0166,1.5407-17.8059,4.2431-26.1405,8.0568C2.779,32.5304-1.6914,56.3725.5312,79.8863c9.6732,7.1476,20.5083,12.603,32.0505,16.0884,2.6014-3.4854,4.8998-7.1981,6.8698-11.0623-3.738-1.3891-7.3497-3.1318-10.8098-5.1523.9092-.6567,1.7932-1.3386,2.6519-1.9953,20.281,9.547,43.7696,9.547,64.0758,0,.8587.7072,1.7427,1.3891,2.6519,1.9953-3.4601,2.0457-7.0718,3.7632-10.835,5.1776,1.97,3.8642,4.2683,7.5769,6.8698,11.0623,11.5419-3.4854,22.3769-8.9156,32.0509-16.0631,2.626-27.2771-4.496-50.9172-18.817-71.8548C98.9811,4.2684,90.1918,1.5659,81.1752.0505l-.0252-.0505ZM42.2802,65.4144c-6.2383,0-11.4159-5.6575-11.4159-12.6535s4.9755-12.6788,11.3907-12.6788,11.5169,5.708,11.4159,12.6788c-.101,6.9708-5.026,12.6535-11.3907,12.6535ZM84.3576,65.4144c-6.2637,0-11.3907-5.6575-11.3907-12.6535s4.9755-12.6788,11.3907-12.6788,11.4917,5.708,11.3906,12.6788c-.101,6.9708-5.026,12.6535-11.3906,12.6535Z"/></svg>`;}
 function renderLoginUI(){
   const el=$("bscry-login");if(!el)return;
@@ -742,6 +737,20 @@ function renderLoginUI(){
     el.innerHTML='<button id="bscry-login-btn" class="btn btn-s" style="font-size:10px;padding:3px 8px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px" title="Log in with your Discord account to host images on BattleScry">'+discordLogo(16,12)+'Log in with Discord</button>';
     const b=$("bscry-login-btn");if(b)b.onclick=bscryStartLogin;
   }
+}
+// Inline "signed in as X / Log out" line shown by the upload areas (Map Background + Tokens panels).
+// Returns empty when signed out, so there is no persistent login chrome - signing in happens through
+// the upload button gate. The Log out button is routed via the main delegated click handler.
+function loginLineHtml(){
+  if(!BSCRY_SESSION)return "";
+  const nm=BSCRY_SESSION.name||"player";
+  const safe=String(nm).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  return '<div class="bscry-login-line" style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--fg2);margin:0 0 8px 0;flex-wrap:wrap">'
+    +discordLogo(13,10)
+    +'<span style="white-space:nowrap">Logged in as <b style="color:var(--fg)">'+safe+'</b></span>'
+    +'<span style="color:var(--fg4)">·</span>'
+    +'<button type="button" class="bscry-logout-link" style="background:none;border:none;color:var(--accent);font-size:10px;padding:0;cursor:pointer;text-decoration:underline;font-family:inherit" title="Log out of BattleScry">Log out</button>'
+    +'</div>';
 }
 // Convert an image file to a clean, hosting-ready JPEG entirely in the browser: decode (webp/png/jpg/gif
 // all accepted as input), downscale so the longest side is <= maxDim, flatten onto black, and re-encode
@@ -2039,6 +2048,7 @@ function rTokenProps(el){
   h+=`<button class="btn btn-p" id="btn-add-monster" ${isAdding?"disabled":""} style="width:100%;font-size:11px;padding:6px;margin:12px 0 6px 0${dimAdd}" title="Add a real SRD monster to initiative with its full stat block (loaded by Avrae via !i madd). Pick the creature, place it, set initiative.">➕ Add SRD Monster</button>`;
   h+=`<button class="btn btn-p" id="btn-add-cb" ${isAdding?"disabled":""} style="width:100%;font-size:10px;padding:5px;margin:0 0 8px 0${dimAdd}" title="Add a non-PC, non-monster combatant to initiative (e.g. brazier, NPC, destructible object) with no stat block.">➕ Add Non-Monster Combatant</button>`;
   h+=`<div style="display:flex;gap:4px;margin:0 0 8px 0;flex-wrap:wrap"><button class="btn btn-s" id="btn-toklib-tab" ${isAdding?"disabled":""} style="flex:1;min-width:90px;font-size:10px;padding:5px${dimAdd}" title="Browse the token art library and add your pick as a new combatant.">👤 Browse Token Library</button><button class="btn btn-s" id="btn-tokupload" ${isAdding?"disabled":""} style="flex:1;min-width:90px;font-size:10px;padding:5px${dimAdd}" title="Upload your own token image, hosted on BattleScry, and add it as a new combatant.">⬆️ Upload Token Image</button></div>`;
+  h+=loginLineHtml();
   h+=`<div id="tok-uploadstatus" style="font-size:10px;line-height:1.4"></div>`;
   if(isAdding){
     // Unified form (mode "add") - same layout as selected-token props for consistency.
@@ -2336,7 +2346,7 @@ function rMapTabContent(){
   const _bgControls=(bgUrl||S._uiBgOpen)?`
   <div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><input class="inp" id="m-bgurl" value="${bgUrl}" placeholder="Paste image URL or browse below" style="flex:1;font-family:monospace;font-size:9px" title="${bgUrl||'No background image'}"><button class="btn btn-s" id="m-bgupdate" style="font-size:9px;padding:3px 8px;white-space:nowrap">${bgUrl?"Update":"Load"}</button>${bgUrl?`<button class="btn btn-s" id="m-bgremove" style="font-size:9px;padding:3px 6px;color:var(--danger)" title="Remove background image">Remove</button>`:""}</div>
   <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap"><button class="btn btn-s" id="m-bgtclib" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Browse the map library">🗺️ Browse Map Library</button><button class="btn btn-s" id="m-bgupload" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Upload your own map image, hosted on BattleScry">⬆️ Upload Map Image</button></div>
-  ${_bgBrowse}`:"";
+  ${loginLineHtml()}${_bgBrowse}`:"";
   if(bgUrl||S._uiBgOpen){
   h+=`<div class="sec" style="border:1px solid var(--accent)"><div class="sec-title" style="display:flex;align-items:center;gap:4px"><span class="vis-eye${S.showBg?'':' off'}" data-vis="bg" style="cursor:pointer;font-size:11px;position:relative" title="${S.showBg?'Hide background':'Show background'}">👁</span>Background</div>
   <div id="m-bginfo" style="font-size:11px;color:var(--fg2);margin-bottom:8px;padding:4px 6px;background:var(--bg);border-radius:3px;min-height:18px">${mapBgInfoHtml()}</div>
@@ -3859,6 +3869,8 @@ function setup(){
     // Upload your own map image: shared login + one-time content gate, then host it and apply as the
     // background via the same path as pasting a URL (set the field, reuse the Update handler).
     if(t.id==="m-bgupload"){beginImageUpload((url)=>{const inp=$("m-bgurl");if(inp)inp.value=url;const up=$("m-bgupdate");if(up)up.click();},$("m-bginfo"));return;}
+    // Log out (from the inline login line by the upload areas) - routed here so it survives panel re-renders
+    {const _lo=t.closest&&t.closest(".bscry-logout-link");if(_lo){bscryLogout();return;}}
     // Browse saved battlemaps (in Background section) - same modal as Save/Load Battlemap section
     if(t.id==="m-bgbrowsesaved"){showBrowseMapsModal();return;}
     // Background Update button - load image, then analyze for dimensions and grid suggestions
@@ -6604,6 +6616,7 @@ function d8Icon(px){return `<svg viewBox="0 0 512 512" width="${px}" height="${p
 function showFullscreenThumb(url,meta,nav){
   const hasNav=!!(nav&&nav.items&&nav.items.length>1&&typeof nav.render==="function");
   let navIdx=hasNav?(nav.index||0):0;
+  const canLoad=!!(nav&&typeof nav.onLoad==="function");
   const bd=document.createElement("div");bd.id="fs-thumb-bd";bd.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;display:flex;flex-direction:column;padding:0;overflow:hidden";
   bd.innerHTML=`<div style="padding:8px 14px;display:flex;align-items:center;gap:8px;background:var(--bg2);border-bottom:1px solid var(--bg3);flex-shrink:0">
     <div id="fst-meta" style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center"></div>
@@ -6613,9 +6626,8 @@ function showFullscreenThumb(url,meta,nav){
       <button id="fst-zoomin" class="btn btn-s" style="font-size:14px;padding:4px 10px" title="Zoom in (or scroll up)">+</button>
       <button id="fst-fit" class="btn btn-s" style="font-size:10px;padding:4px 10px;margin-left:6px" title="Fit image to window">Fit</button>
       <button id="fst-100" class="btn btn-s" style="font-size:10px;padding:4px 10px" title="100% (actual pixel size)">100%</button>
-      <span style="font-size:10px;color:var(--fg3);font-style:italic;margin-left:6px">Scroll to zoom · drag to pan${hasNav?" · arrow keys to browse":""} · ESC to close</span>
     </div>
-    <div style="flex:1 1 0;display:flex;justify-content:flex-end;align-items:center;gap:12px"><div id="fst-cred" style="font-size:12px;color:var(--fg2);white-space:nowrap"></div><button id="fst-close" class="btn btn-s" style="font-size:11px;padding:4px 10px">✕ Close</button></div>
+    <div style="flex:1 1 0;display:flex;justify-content:flex-end;align-items:center;gap:12px"><div id="fst-cred" style="font-size:12px;color:var(--fg2);white-space:nowrap"></div>${canLoad?`<button id="fst-load" class="btn btn-p" style="font-size:11px;padding:4px 12px;white-space:nowrap" title="Load this map onto your board (your tokens and overlays are kept)">🗺️ Load to Map</button>`:""}<button id="fst-close" class="btn btn-s" style="font-size:11px;padding:4px 10px">✕ Close</button></div>
   </div>
   <div id="fst-stage" style="flex:1;overflow:hidden;position:relative;cursor:grab;background:#000">
     <img id="fst-img" src="${url}" draggable="false" style="position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none">
@@ -6698,6 +6710,8 @@ function showFullscreenThumb(url,meta,nav){
   const close=()=>{bd.remove();document.removeEventListener("keydown",onKey);};
   const onKey=(e)=>{if(e.key==="Escape"){close();}else if(hasNav&&e.key==="ArrowLeft"){e.preventDefault();showItem(navIdx-1);}else if(hasNav&&e.key==="ArrowRight"){e.preventDefault();showItem(navIdx+1);}};
   bd.querySelector("#fst-close").onclick=close;
+  const loadBtn=bd.querySelector("#fst-load");
+  if(loadBtn)loadBtn.onclick=()=>{const it=(nav&&nav.items)?nav.items[navIdx]:null;close();if(it&&typeof nav.onLoad==="function")nav.onLoad(it);};
   document.addEventListener("keydown",onKey);
 }
 // Auto-load from URL hash on page load
@@ -6752,7 +6766,7 @@ function closeWelcome(){if($("welcome-dontshow").checked)try{localStorage.setIte
 $("welcome-ok").onclick=closeWelcome;
 $("welcome-more").onclick=()=>{closeWelcome();openAbout();};
 $("welcome-create").onclick=()=>{closeWelcome();S.tab="map";document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab==="map"));S._uiBgOpen=true;renderSB();setTimeout(()=>$("m-bgurl")?.focus(),60);};
-$("btn-about").onclick=openAbout;
+{const _lg=$("bscry-logo-btn");if(_lg){_lg.onclick=openAbout;_lg.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAbout();}};}}
 
 // Built-in starter sample - loads a curated battlemap directly into the user's session as a real
 // editable scene. They can save it, modify it, export it normally. Used from the welcome modal's
@@ -7399,8 +7413,9 @@ function tcCard(m,M,st,apply,gcount,onFav,navList,navIdx){
   const credA=card.querySelector(".tclib-cred");if(credA)credA.onclick=(e)=>e.stopPropagation();
   card.querySelector(".tclib-thumb").onclick=(e)=>{e.stopPropagation();
     const render=mm=>({url:tcImgUrl(mm.img),meta:{title:tcDisplayName(mm),w:mm.w,h:mm.h,cell:mm.cell,creator:creatorOf(mm)}});
+    const items=(navList&&navList.length)?navList:[m],idx=(navList&&navList.length)?navIdx:0;
     const f=render(m);
-    showFullscreenThumb(f.url,f.meta,(navList&&navList.length>1)?{items:navList,index:navIdx,render}:null);};
+    showFullscreenThumb(f.url,f.meta,{items,index:idx,render,onLoad:mm=>{M.close();setTimeout(()=>loadTCMap(mm),50);}});};
   card.querySelector(".tclib-load").onclick=(e)=>{e.stopPropagation();M.close();setTimeout(()=>loadTCMap(m),50);};
   const relBtn=card.querySelector(".tclib-rel");if(relBtn)relBtn.onclick=(e)=>{e.stopPropagation();tcCloseFacet();st.group=m.group;st.picks=null;st.fav=false;apply();};
   return card;}
