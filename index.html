@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.206                                      https://battlescry.com
+BattleScry v0.1.208                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,12 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.208 - Added: a Select area on map button in the Map View section. Tap it to minimize the bottom sheet
+            and draw a box on the map with your finger or mouse, then confirm the new view (Set map view to
+            B6:F17? OK/Cancel). Tapping outside the map or pressing Esc cancels. Finger-drag cropping now works.
+  v0.1.207 - Changed: the welcome screen Use my own map button now opens the Map panel with the Background
+            section expanded and the image URL field focused; on mobile it also raises the bottom sheet so
+            the field is visible. The field placeholder now mentions the browse and upload options below.
   v0.1.206 - Changed: the mobile bottom sheet now opens to about half the screen when you tap the handle,
             and you can drag the handle to make it taller or shorter. Tapping the handle again minimizes
             it and remembers the height, so the next tap reopens it where you left it.
@@ -28,15 +34,9 @@ RECENT CHANGES
   v0.1.204 - Added: a Token Image section in the Add/Edit combatant form. Paste an OTFBM shortcode or an
             image URL and Apply it inline, or use the quick buttons to open the SRD browser, token
             library, upload, saved tokens, or label baker. The preview pencil still opens the picker too.
-  v0.1.203 - Changed: the Help button is now a compact icon pinned to the top-right corner and always
-            visible (on every screen size), and the three-dot overflow menu was removed since it no
-            longer held anything that needed hiding.
-  v0.1.202 - Changed: moved the Map View controls (visible-area coordinates, Update, Reset, and the Solid
-            border toggle) out of the top bar into a new Map View section on the Map panel, just above
-            Grid Properties. The drag-to-crop and click-to-set behavior on the map is unchanged.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.206"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.208"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -278,7 +278,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.206</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.208</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -2346,7 +2346,7 @@ function rMapTabContent(){
   const _bgAll=[...S.savedMaps,...S.mapSaves.map(x=>x.name).filter(n=>!S.savedMaps.includes(n))].filter(n=>!S.mapDeletes.includes(n));
   const _bgBrowse=_bgAll.length?`<button class="btn btn-s" id="m-bgbrowsesaved" style="width:100%;font-size:10px;padding:4px 8px;margin-bottom:6px" title="View thumbnails and load a previously saved map">🗂 Browse Saved Battlemaps (${_bgAll.length})</button>`:"";
   const _bgControls=(bgUrl||S._uiBgOpen)?`
-  <div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><input class="inp" id="m-bgurl" value="${bgUrl}" placeholder="Paste image URL or browse below" style="flex:1;font-family:monospace;font-size:9px" title="${bgUrl||'No background image'}"><button class="btn btn-s" id="m-bgupdate" style="font-size:9px;padding:3px 8px;white-space:nowrap">${bgUrl?"Update":"Load"}</button>${bgUrl?`<button class="btn btn-s" id="m-bgremove" style="font-size:9px;padding:3px 6px;color:var(--danger)" title="Remove background image">Remove</button>`:""}</div>
+  <div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><input class="inp" id="m-bgurl" value="${bgUrl}" placeholder="Paste image URL here; browse map library or upload your own image below" style="flex:1;font-family:monospace;font-size:9px" title="${bgUrl||'No background image'}"><button class="btn btn-s" id="m-bgupdate" style="font-size:9px;padding:3px 8px;white-space:nowrap">${bgUrl?"Update":"Load"}</button>${bgUrl?`<button class="btn btn-s" id="m-bgremove" style="font-size:9px;padding:3px 6px;color:var(--danger)" title="Remove background image">Remove</button>`:""}</div>
   <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap"><button class="btn btn-s" id="m-bgtclib" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Browse the map library">🗺️ Browse Map Library</button><button class="btn btn-s" id="m-bgupload" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Upload your own map image, hosted on BattleScry">⬆️ Upload Map Image</button></div>
   ${loginLineHtml()}${_bgBrowse}`:"";
   if(bgUrl||S._uiBgOpen){
@@ -2356,7 +2356,7 @@ function rMapTabContent(){
   }
   // Grid section
   h+=`<div class="sec"><div class="sec-title">Map View</div>
-  <div style="font-size:10px;color:var(--fg3);margin-bottom:6px">Visible portion of the grid. Type coordinates, or click a field then click or drag on the map.</div>
+  <div style="font-size:10px;color:var(--fg3);margin-bottom:6px">Visible portion of the grid. Type the coordinates and Update, or use Select area on map to draw a box on the map.</div>
   <div class="row" style="gap:6px;align-items:flex-end;margin-bottom:6px">
     <div style="flex:1"><span class="lbl">Top-left</span><input id="vw-start" class="inp" style="font-family:monospace;text-transform:uppercase" placeholder="A1" title="Top-left coordinate - type, or click then click the map (drag to set both)"></div>
     <span style="color:var(--fg3);padding-bottom:5px">→</span>
@@ -2366,6 +2366,7 @@ function rMapTabContent(){
     <button id="btn-vw-update" class="btn btn-s" style="flex:1;opacity:.4;cursor:default" disabled title="Apply the view coordinates">Update</button>
     <button id="btn-vw-reset" class="btn btn-s" style="flex:1;opacity:.4;cursor:default" disabled title="Reset to the full map view">Reset</button>
   </div>
+  <button id="btn-vw-select" class="btn btn-s" style="width:100%;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px" title="Draw a box on the map to set the visible area"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 3"/></svg>Select area on map</button>
   <label id="tb-border-label" style="display:none;align-items:center;gap:6px;font-size:11px;color:var(--fg2);cursor:pointer" title="Solid border around the map (OTFBM 'e' option). Available when the map view is cropped."><input type="checkbox" id="tb-border" style="accent-color:var(--accent);cursor:pointer"><span>Solid border around map</span></label>
   </div>`;
   h+=`<div class="sec"><div class="sec-title">Grid Properties</div>
@@ -5158,6 +5159,7 @@ function setup(){
     }
     const uBtn=$("btn-vw-update");if(uBtn)uBtn.onclick=applyViewChange;
     const rBtn=$("btn-vw-reset");if(rBtn)rBtn.onclick=resetMapView;
+    const selBtn=$("btn-vw-select");if(selBtn)selBtn.onclick=enterCropSelect;
     if(typeof syncViewInputs==="function")syncViewInputs();
   };
   wireMapViewControls();
@@ -5165,7 +5167,7 @@ function setup(){
   // Crop drag - activates when a Map View field is focused (S.coordPick === "vw1" or "vw2")
   // Click = fill just the focused field; drag = fill both fields and apply view
   let cropStart=null;
-  function isViewPick(){return S.coordPick==="vw1"||S.coordPick==="vw2";}
+  function isViewPick(){return (S.coordPick==="vw1"||S.coordPick==="vw2")&&!S.cropSelect;}
   const svgEl=$("map-svg");
   // Crop overlay element
   const cropOverlay=document.createElement("div");
@@ -5226,6 +5228,75 @@ function setup(){
     setTimeout(()=>{try{S._fitRecheck=true;zoomAt(smartFit());}catch(e){}},50);
     setStatus("✓ View cropped to selection");
   },true);
+
+  // ---- "Select area on map": button-triggered crop. Uses mouse events so it rides the viewport's
+  // touch->mouse translation on mobile; mouseup is on document (not map-svg) so the synthetic touch
+  // mouseup completes the drag. Mutually exclusive with the field-focus crop above (isViewPick checks
+  // !S.cropSelect). ----
+  let cropSelStart=null,cropSelAnchor=null;
+  const cropHint=document.createElement("div");
+  cropHint.textContent="Draw a box on the map to set the view. Tap outside or press Esc to cancel.";
+  cropHint.style.cssText="position:fixed;bottom:72px;left:50%;transform:translateX(-50%);z-index:8050;background:var(--accent);color:#1a1a1a;font-size:11px;font-weight:600;padding:7px 14px;border-radius:7px;box-shadow:0 2px 10px rgba(0,0,0,.45);pointer-events:none;display:none;max-width:88%;text-align:center;line-height:1.4";
+  document.body.appendChild(cropHint);
+  function enterCropSelect(){
+    S.coordPick=null;const a=$("vw-start"),b=$("vw-end");if(a)a.blur();if(b)b.blur();
+    S.cropSelect=true;cropSelStart=null;cropSelAnchor=null;
+    if(typeof isSheet==="function"&&isSheet()&&typeof setSheetOpen==="function")setSheetOpen(false);
+    svgEl.style.cursor="crosshair";cropHint.style.display="block";
+  }
+  function exitCropSelect(){
+    S.cropSelect=false;cropSelStart=null;cropSelAnchor=null;
+    svgEl.style.cursor="";cropHint.style.display="none";cropOverlay.style.display="none";
+  }
+  function cropSelCell(cx,cy){
+    const g=S.grid,rect=svgEl.getBoundingClientRect(),z=S.zoom;
+    const sx=(cx-rect.left)/z-PAD,sy=(cy-rect.top)/z-PAD;
+    return{col:Math.max(0,Math.min(g.cols-1,Math.floor(sx/g.cellSize))),row:Math.max(0,Math.min(g.rows-1,Math.floor(sy/g.cellSize)))};
+  }
+  svgEl.addEventListener("mousedown",function cropSelDown(e){
+    if(!S.cropSelect)return;e.preventDefault();e.stopPropagation();
+    cropSelStart=cropSelCell(e.clientX,e.clientY);cropSelAnchor={x:e.clientX,y:e.clientY};
+    cropOverlay.style.display="block";cropOverlay.style.width="0";cropOverlay.style.height="0";
+  },true);
+  document.addEventListener("mousemove",function cropSelMove(e){
+    if(!S.cropSelect||!cropSelAnchor)return;
+    const vp2=$("map-vp"),vpRect=vp2.getBoundingClientRect();
+    const x1=Math.min(cropSelAnchor.x,e.clientX)-vpRect.left+vp2.scrollLeft;
+    const y1=Math.min(cropSelAnchor.y,e.clientY)-vpRect.top+vp2.scrollTop;
+    cropOverlay.style.left=x1+"px";cropOverlay.style.top=y1+"px";
+    cropOverlay.style.width=Math.abs(e.clientX-cropSelAnchor.x)+"px";cropOverlay.style.height=Math.abs(e.clientY-cropSelAnchor.y)+"px";
+  });
+  document.addEventListener("mouseup",function cropSelUp(e){
+    if(!S.cropSelect||!cropSelStart||!cropSelAnchor)return;
+    const dragDist=Math.hypot(e.clientX-cropSelAnchor.x,e.clientY-cropSelAnchor.y);
+    const end=cropSelCell(e.clientX,e.clientY);cropSelAnchor=null;
+    if(dragDist<8){cropSelStart=null;cropOverlay.style.display="none";return;}
+    const g=S.grid;
+    const c1=Math.min(cropSelStart.col,end.col),r1=Math.min(cropSelStart.row,end.row);
+    const c2=Math.max(cropSelStart.col,end.col),r2=Math.max(cropSelStart.row,end.row);
+    cropSelStart=null;
+    if(c2-c1<1||r2-r1<1){cropOverlay.style.display="none";return;}
+    const aC1=(g.startCol||0)+c1,aR1=(g.startRow||0)+r1,aC2=(g.startCol||0)+c2,aR2=(g.startRow||0)+r2;
+    const label=col2l(aC1).toUpperCase()+(aR1+1)+":"+col2l(aC2).toUpperCase()+(aR2+1);
+    let done=false;
+    const M=smartModal({title:"Crop map view",size:"sm",footer:true,closeBtn:false,onClose:function(){if(!done)cropOverlay.style.display="none";}});
+    M.body.innerHTML='<div style="font-size:13px;line-height:1.6">Set the map view to <b>'+label+'</b>?</div>';
+    M.footer.innerHTML='<button class="btn btn-s" id="cropcfm-cancel">Cancel</button><button class="btn btn-p" id="cropcfm-ok">OK</button>';
+    M.footer.querySelector("#cropcfm-cancel").onclick=function(){M.close();};
+    M.footer.querySelector("#cropcfm-ok").onclick=function(){
+      done=true;M.close();pushU();
+      S.grid.startCol=aC1;S.grid.startRow=aR1;S.grid.cols=c2-c1+1;S.grid.rows=r2-r1+1;
+      exitCropSelect();renderAll();if(typeof syncViewInputs==="function")syncViewInputs();
+      setTimeout(function(){try{S._fitRecheck=true;zoomAt(smartFit());}catch(_){}},50);
+      setStatus("✓ View cropped to "+label);
+    };
+  });
+  document.addEventListener("pointerdown",function(e){
+    if(!S.cropSelect)return;
+    if(e.target.closest&&(e.target.closest("#map-vp")||e.target.closest(".smart-modal-backdrop")))return;
+    exitCropSelect();
+  },true);
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&S.cropSelect)exitCropSelect();});
 
   // SRD Monster Token Browser Modal
   let srdTok=null;// token being edited
@@ -5877,7 +5948,7 @@ function setup(){
       preGestureSel={type:S.sel.type,ids:new Set(S.sel.ids)};
       (e.target||vp).dispatchEvent(new MouseEvent("mousedown",{clientX:e.clientX,clientY:e.clientY,bubbles:true}));
       // Arm long-press only if the tap selected an object and no chooser popup opened.
-      if(S.sel&&S.sel.ids&&S.sel.ids.size&&$("popup").style.display!=="block"){clearLP();lpTimer=setTimeout(longPress,500);}
+      if(!S.cropSelect&&S.sel&&S.sel.ids&&S.sel.ids.size&&$("popup").style.display!=="block"){clearLP();lpTimer=setTimeout(longPress,500);}
       e.preventDefault();
     }
     // Off-map single finger: tracked for a possible pinch, but left to native handling (no capture or
@@ -6832,7 +6903,7 @@ renderAll();
 function closeWelcome(){if($("welcome-dontshow").checked)try{localStorage.setItem("welcomeDismissed","1");}catch(e){}$("welcome-modal").style.display="none";}
 $("welcome-ok").onclick=closeWelcome;
 $("welcome-more").onclick=()=>{closeWelcome();openAbout();};
-$("welcome-create").onclick=()=>{closeWelcome();S.tab="map";document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab==="map"));S._uiBgOpen=true;renderSB();setTimeout(()=>$("m-bgurl")?.focus(),60);};
+$("welcome-create").onclick=()=>{closeWelcome();S.tab="map";document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab==="map"));S._uiBgOpen=true;renderSB();if(typeof isSheet==="function"&&isSheet()&&typeof setSheetOpen==="function")setSheetOpen(true);setTimeout(()=>$("m-bgurl")?.focus(),60);};
 {const _lg=$("bscry-logo-btn");if(_lg){_lg.onclick=openAbout;_lg.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAbout();}};}}
 
 // Built-in starter sample - loads a curated battlemap directly into the user's session as a real
