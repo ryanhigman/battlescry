@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.201                                      https://battlescry.com
+BattleScry v0.1.202                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,9 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.202 - Changed: moved the Map View controls (visible-area coordinates, Update, Reset, and the Solid
+            border toggle) out of the top bar into a new Map View section on the Map panel, just above
+            Grid Properties. The drag-to-crop and click-to-set behavior on the map is unchanged.
   v0.1.201 - Changed: moved Discord login out of the top bar. When you are signed in, a compact line
             showing your name with a Log out button now appears by the upload buttons on the Map and
             Tokens panels; when signed out there is no login chrome, since the upload button handles it.
@@ -28,12 +31,9 @@ RECENT CHANGES
             reduce clutter (the zoom, fit, and close controls remain).
   v0.1.198 - Added: a Load to Map button in the full-screen map preview, so you can load the map you
             are previewing (or have navigated to) without closing the preview to find its card.
-  v0.1.197 - Improved: when you load a map smaller than your current one, any token, map object, wall,
-            overlay, or FOW region that would fall off the new map is now shifted fully onto the
-            nearest edge instead of ending up off the map.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.201"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.202"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -282,21 +282,11 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.201</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.202</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
   <div id="tb-overflow">
-  <div class="sep"></div>
-  <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--fg2)" title="Map View - visible portion of the grid. Type coordinates, drag a crop area on the map, or click a field then click the map.">
-    <span title="Map View" aria-label="Map View" style="display:inline-flex;align-items:center;color:var(--fg3)"><svg width="22" height="14" viewBox="0 0 122.88 78.5" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" aria-hidden="true" style="display:block"><path d="M50.57,17.2C40.73,10.31,31,8.79,20.94,11.42c2.2-5.29,5.51-8.76,9.4-10.39c5.51-2.31,14.53-0.67,18.08,4.27 C50.24,7.82,51.15,11.56,50.57,17.2L50.57,17.2z M83.52,55.32c-0.27-1.12,0.43-2.24,1.55-2.51c1.12-0.27,2.24,0.43,2.51,1.55 c0.54,2.27,1.47,4.03,2.71,5.3c1.27,1.29,2.9,2.12,4.84,2.5c1.13,0.22,1.86,1.31,1.64,2.44c-0.22,1.13-1.31,1.86-2.44,1.64 c-2.76-0.55-5.13-1.76-7-3.67C85.54,60.75,84.24,58.35,83.52,55.32L83.52,55.32z M13.54,55.32c-0.27-1.12,0.43-2.24,1.55-2.51 c1.12-0.27,2.24,0.43,2.51,1.55c0.54,2.27,1.47,4.03,2.71,5.3c1.27,1.29,2.9,2.12,4.84,2.5c1.13,0.22,1.86,1.31,1.64,2.44 c-0.22,1.13-1.31,1.86-2.44,1.64c-2.76-0.55-5.13-1.76-7-3.67C15.56,60.75,14.26,58.35,13.54,55.32L13.54,55.32z M61.3,47.71 c2.8,0,5.07,2.21,5.07,4.93c0,2.72-2.27,4.93-5.07,4.93c-2.8,0-5.07-2.21-5.07-4.93C56.23,49.92,58.5,47.71,61.3,47.71L61.3,47.71z M26.66,34.57c10,0,18.11,7.88,18.11,17.61c0,9.72-8.11,17.61-18.11,17.61c-10,0-18.11-7.88-18.11-17.61 C8.55,42.45,16.65,34.57,26.66,34.57L26.66,34.57z M96.64,34.57c10,0,18.11,7.88,18.11,17.61c0,9.72-8.11,17.61-18.11,17.61 c-10,0-18.11-7.88-18.11-17.61C78.53,42.45,86.63,34.57,96.64,34.57L96.64,34.57z M72.31,17.2c9.84-6.89,19.57-8.41,29.62-5.78 c-2.2-5.29-5.51-8.76-9.4-10.39C87.02-1.28,78,0.36,74.46,5.3C72.64,7.82,71.73,11.56,72.31,17.2L72.31,17.2z M107.57,17.4 c-3.42-3.52-8.96-5.11-16.63-4.77c-8.69,0.43-17.87,4.06-20.82,12.29c-2.47-5.42-14.89-5.42-17.35,0 c-2.95-8.23-12.13-11.87-20.82-12.29c-7.67-0.34-13.2,1.26-16.63,4.77C10.5,23.86,0.96,40.74,0.16,48.99 C-3.1,82.47,44.92,90.87,52.62,56.3c4.37,7.75,13.27,7.75,17.64,0c7.7,34.58,55.72,26.17,52.46-7.31 C121.92,40.74,112.38,23.86,107.57,17.4L107.57,17.4z"/></svg></span>
-    <input id="vw-start" class="inp" style="width:36px;font-size:10px;padding:1px 3px;font-family:monospace;text-transform:uppercase" placeholder="A1" title="Top-left coordinate - type or click then click the map (drag to set both)">
-    <span style="color:var(--fg3)">→</span>
-    <input id="vw-end" class="inp" style="width:36px;font-size:10px;padding:1px 3px;font-family:monospace;text-transform:uppercase" placeholder="J10" title="Bottom-right coordinate - type or click then click the map (drag to set both)">
-    <button id="btn-vw-update" class="btn btn-s" style="font-size:9px;padding:2px 5px;opacity:.4;cursor:default" disabled title="Apply view coordinates">Update</button>
-    <button id="btn-vw-reset" class="btn btn-s" style="font-size:9px;padding:2px 5px;opacity:.4;cursor:default" disabled title="Reset to full map view">Reset</button>
-    <label id="tb-border-label" style="display:none;align-items:center;gap:3px;font-size:9px;color:var(--fg2);cursor:pointer;margin-left:6px" title="Solid border around the map (OTFBM 'e' option). Available when the map view is cropped."><input type="checkbox" id="tb-border" style="accent-color:var(--accent);cursor:pointer"><span>Solid border</span></label>
-  </div>
   <div class="sep"></div>
   <div id="tb-spacer" class="tbo-right" style="flex:1"></div>
   <div id="status-msg" class="tbo-right" style="font-size:10px;color:var(--fg3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;text-align:right;padding:0 8px"></div>
@@ -1929,7 +1919,7 @@ function setSidebarLayout(hasList){
 function renderSB(){
   const pa=$("props-area"),la=$("list-area");
   switch(S.tab){
-    case"map":rMapTab(pa);la.innerHTML="";setSidebarLayout(false);break;
+    case"map":rMapTab(pa);if(typeof wireMapViewControls==="function")wireMapViewControls();la.innerHTML="";setSidebarLayout(false);break;
     case"tokens":rTokenProps(pa);rTokenList(la);setSidebarLayout(true);break;
     case"overlays":rOverlayProps(pa);rOverlayList(la);setSidebarLayout(true);break;
     case"other":rOtherTab(pa,la);setSidebarLayout(true);break;
@@ -2353,6 +2343,19 @@ function rMapTabContent(){
   ${_bgControls}</div>`;
   }
   // Grid section
+  h+=`<div class="sec"><div class="sec-title">Map View</div>
+  <div style="font-size:10px;color:var(--fg3);margin-bottom:6px">Visible portion of the grid. Type coordinates, or click a field then click or drag on the map.</div>
+  <div class="row" style="gap:6px;align-items:flex-end;margin-bottom:6px">
+    <div style="flex:1"><span class="lbl">Top-left</span><input id="vw-start" class="inp" style="font-family:monospace;text-transform:uppercase" placeholder="A1" title="Top-left coordinate - type, or click then click the map (drag to set both)"></div>
+    <span style="color:var(--fg3);padding-bottom:5px">→</span>
+    <div style="flex:1"><span class="lbl">Bottom-right</span><input id="vw-end" class="inp" style="font-family:monospace;text-transform:uppercase" placeholder="J10" title="Bottom-right coordinate - type, or click then click the map (drag to set both)"></div>
+  </div>
+  <div class="row" style="gap:6px;align-items:center;margin-bottom:6px">
+    <button id="btn-vw-update" class="btn btn-s" style="flex:1;opacity:.4;cursor:default" disabled title="Apply the view coordinates">Update</button>
+    <button id="btn-vw-reset" class="btn btn-s" style="flex:1;opacity:.4;cursor:default" disabled title="Reset to the full map view">Reset</button>
+  </div>
+  <label id="tb-border-label" style="display:none;align-items:center;gap:6px;font-size:11px;color:var(--fg2);cursor:pointer" title="Solid border around the map (OTFBM 'e' option). Available when the map view is cropped."><input type="checkbox" id="tb-border" style="accent-color:var(--accent);cursor:pointer"><span>Solid border around map</span></label>
+  </div>`;
   h+=`<div class="sec"><div class="sec-title">Grid Properties</div>
   <div id="m-gridsuggestions" style="margin-bottom:6px">${mapGridPickerHtml()}</div>
   <div class="row" style="gap:6px;margin-bottom:6px;align-items:flex-end">
@@ -5051,6 +5054,7 @@ function setup(){
   }}
   // View controls - new design with input focus → coord pick, button states, and drag-to-crop
   window.syncViewInputs=function(){
+    if(!$("vw-start")||!$("vw-end")||!$("btn-vw-reset"))return;
     const g=S.grid;
     const startLabel=col2l(g.startCol).toUpperCase()+(g.startRow+1);
     const endLabel=col2l(g.startCol+g.cols-1).toUpperCase()+(g.startRow+g.rows);
@@ -5064,6 +5068,7 @@ function setup(){
     eInp.style.borderColor=isPartial?"var(--accent)":"";
     syncUpdateBtnState();}
   function syncUpdateBtnState(){
+    if(!$("vw-start")||!$("vw-end")||!$("btn-vw-update"))return;
     const g=S.grid;
     const curStart=col2l(g.startCol).toUpperCase()+(g.startRow+1);
     const curEnd=col2l(g.startCol+g.cols-1).toUpperCase()+(g.startRow+g.rows);
@@ -5087,23 +5092,39 @@ function setup(){
     setStatus("✓ View set to "+sVal+" → "+eVal);}
   // Click coord field → enter coord-pick mode
   function enterCoordPick(which){S.coordPick=which==="start"?"vw1":"vw2";$("map-svg").style.cursor="crosshair";setStatus(which==="start"?"Click map to set start (drag for full view)":"Click map to set end (drag for full view)");}
-  $("vw-start").addEventListener("focus",()=>enterCoordPick("start"));
-  $("vw-end").addEventListener("focus",()=>enterCoordPick("end"));
-  $("vw-start").addEventListener("blur",()=>{if(S.coordPick==="vw1"){S.coordPick=null;$("map-svg").style.cursor="";cropOverlay&&(cropOverlay.style.display="none");cropStart=null;cropAnchor=null;}syncViewInputs();});
-  $("vw-end").addEventListener("blur",()=>{if(S.coordPick==="vw2"){S.coordPick=null;$("map-svg").style.cursor="";cropOverlay&&(cropOverlay.style.display="none");cropStart=null;cropAnchor=null;}syncViewInputs();});
-  $("vw-start").addEventListener("input",syncUpdateBtnState);
-  $("vw-end").addEventListener("input",syncUpdateBtnState);
-  $("vw-start").addEventListener("keydown",e=>{if(e.key==="Enter")applyViewChange();else if(e.key==="Escape"){e.target.blur();syncViewInputs();}});
-  $("vw-end").addEventListener("keydown",e=>{if(e.key==="Enter")applyViewChange();else if(e.key==="Escape"){e.target.blur();syncViewInputs();}});
-  $("btn-vw-update").onclick=applyViewChange;
-  $("btn-vw-reset").onclick=()=>{
-    if($("btn-vw-reset").disabled)return;
+  // Reset the Map View to the full map (used by the Reset button).
+  function resetMapView(){
+    const rb=$("btn-vw-reset");if(rb&&rb.disabled)return;
     pushU();S.grid.startCol=0;S.grid.startRow=0;
     S.grid.cols=S.grid.fullCols||S.grid.cols;S.grid.rows=S.grid.fullRows||S.grid.rows;
     renderAll();syncViewInputs();
     setTimeout(()=>{try{S._fitRecheck=true;zoomAt(smartFit());}catch(e){}},50);
     setStatus("✓ View reset to full map");
+  }
+  // The Map View coordinate fields + Update/Reset now live on the Map panel, which re-renders on most
+  // edits. Bind their listeners here and have renderSB call this after each render. A per-element flag
+  // keeps re-binding idempotent; the buttons use onclick so they never stack. Crop-drag stays on map-svg.
+  window.wireMapViewControls=function(){
+    const sInp=$("vw-start"),eInp=$("vw-end");
+    if(sInp&&!sInp.dataset.vwWired){
+      sInp.dataset.vwWired="1";
+      sInp.addEventListener("focus",()=>enterCoordPick("start"));
+      sInp.addEventListener("blur",()=>{if(S.coordPick==="vw1"){S.coordPick=null;$("map-svg").style.cursor="";cropOverlay&&(cropOverlay.style.display="none");cropStart=null;cropAnchor=null;}syncViewInputs();});
+      sInp.addEventListener("input",syncUpdateBtnState);
+      sInp.addEventListener("keydown",e=>{if(e.key==="Enter")applyViewChange();else if(e.key==="Escape"){e.target.blur();syncViewInputs();}});
+    }
+    if(eInp&&!eInp.dataset.vwWired){
+      eInp.dataset.vwWired="1";
+      eInp.addEventListener("focus",()=>enterCoordPick("end"));
+      eInp.addEventListener("blur",()=>{if(S.coordPick==="vw2"){S.coordPick=null;$("map-svg").style.cursor="";cropOverlay&&(cropOverlay.style.display="none");cropStart=null;cropAnchor=null;}syncViewInputs();});
+      eInp.addEventListener("input",syncUpdateBtnState);
+      eInp.addEventListener("keydown",e=>{if(e.key==="Enter")applyViewChange();else if(e.key==="Escape"){e.target.blur();syncViewInputs();}});
+    }
+    const uBtn=$("btn-vw-update");if(uBtn)uBtn.onclick=applyViewChange;
+    const rBtn=$("btn-vw-reset");if(rBtn)rBtn.onclick=resetMapView;
+    if(typeof syncViewInputs==="function")syncViewInputs();
   };
+  wireMapViewControls();
   // Crop drag mode - always active when not in another mode (drag on map to set view)
   // Crop drag - activates when a Map View field is focused (S.coordPick === "vw1" or "vw2")
   // Click = fill just the focused field; drag = fill both fields and apply view
