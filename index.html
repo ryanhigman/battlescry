@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.224                                      https://battlescry.com
+BattleScry v0.1.225                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,9 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.225 - Changed: on mobile, the Map Library filters collapse into a single Filters button that opens a
+            full-screen panel with one expandable section per filter group, so the gallery is no longer
+            crowded by a long scrolling row of filter buttons.
   v0.1.224 - Fixed: on mobile, the Map panel now scrolls all the way to the bottom at any sheet height, not
             only when the sheet is dragged fully to the top.
   v0.1.223 - Changed: on mobile, the Map Library now opens near full-screen with a 2-column gallery and a
@@ -27,10 +30,9 @@ RECENT CHANGES
             just left of the zoom tools instead of underneath them.
   v0.1.221 - Changed: on mobile, the "Pending changes" export preview moved out of the always-visible
             bottom bar and into Advanced map settings (collapsed), freeing room so the Map panel scrolls.
-  v0.1.220 - Changed: the hosted-image URL field now reads "Paste hosted image URL here".
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.224"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.225"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -115,6 +117,7 @@ input,select,textarea,button{font-family:inherit}
 .tclib-facet-btn.tclib-facet-active{outline:1px solid var(--accent);color:var(--accent)}
 .tclib-facet-btn.tclib-facet-open{background:#55504a}
 .tclib-pop .tclib-opt:hover,.tclib-pop .tclib-all:hover{background:var(--bg4)}
+.tclib-filters-all.tclib-facet-active{outline:1px solid var(--accent);color:var(--accent)}
 .tclib-allmaps:disabled,.tclib-random:disabled{opacity:.45;cursor:default}
 #toolbar{border-bottom:1px solid var(--border);padding:5px 8px;display:flex;gap:5px;align-items:center;flex-wrap:wrap;background:var(--bg2);flex-shrink:0;position:relative}
 /* Responsive top bar: secondary controls (status, help) float right via .tbo-right; sep + spacer hide on mobile. */
@@ -128,6 +131,9 @@ input,select,textarea,button{font-family:inherit}
   #tclib-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
   .tclib-bar{flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
   .tclib-favbtn{margin-left:0!important}
+  .tclib-fs .tclib-facet-btn{display:none!important}
+  .tclib-fs .tclib-filters-label{display:none!important}
+  .tclib-fs .tclib-filters-all{display:inline-flex!important;align-items:center;gap:3px;white-space:nowrap}
   #toolbar{flex-wrap:wrap;gap:6px}
   #btn-copy{margin-left:auto}
   #hide-toggle-label{padding:4px 9px;margin-right:0;min-height:36px;box-sizing:border-box}
@@ -277,7 +283,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.224</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.225</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -7290,7 +7296,7 @@ let TC_POP=null, TC_FACET_OPEN=null, TC_POP_CLEANUP=null;
 function tcCloseFacet(){
   if(TC_POP){TC_POP.remove();TC_POP=null;}
   if(TC_POP_CLEANUP){TC_POP_CLEANUP();TC_POP_CLEANUP=null;}
-  if(TC_FACET_OPEN){const b=document.querySelector(`.tclib-facet-btn[data-facet="${TC_FACET_OPEN}"]`);if(b)b.classList.remove("tclib-facet-open");}
+  if(TC_FACET_OPEN){const b=document.querySelector(`[data-facet="${TC_FACET_OPEN}"]`);if(b)b.classList.remove("tclib-facet-open");}
   TC_FACET_OPEN=null;
 }
 // True if map m passes every facet except `exceptKey`, plus the search. Each facet ALWAYS
@@ -7311,6 +7317,7 @@ function tcApplyFilters(maps,st,facets,exceptKey){return maps.filter(m=>tcMatch(
 // Build + open a dropdown anchored under its trigger button. `panelId` matches the button's
 // data-facet; `panelFacets` is the list of facet descriptors to render as sections.
 function tcOpenFacet(panelId,panelFacets,btn,ctx){
+  const mob=window.matchMedia("(max-width:768px)").matches&&panelFacets.length>1;
   const wasOpen=(TC_FACET_OPEN===panelId);
   tcCloseFacet();
   if(wasOpen)return; // clicking the open panel toggles it closed
@@ -7337,23 +7344,51 @@ function tcOpenFacet(panelId,panelFacets,btn,ctx){
     // grid fills DOWN each column (alphabetical reads top-to-bottom), then over to the next.
     const n=f.allValues.length,cols=n>26?3:n>13?2:1,rowCount=Math.ceil(n/cols);
     const info=f.info?` <span class="tclib-infoicon" title="${esc(f.info)}" style="display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border:1px solid var(--fg3);border-radius:50%;color:var(--fg3);font-size:9px;font-weight:700;font-style:italic;cursor:help">i</span>`:"";
+    const allLabelHTML=`<label class="tclib-all" style="display:flex;align-items:center;gap:6px;padding:3px 4px;margin-bottom:4px;cursor:pointer;font-size:11px;font-weight:600;color:var(--fg)">
+        <input type="checkbox" style="margin:0;cursor:pointer;accent-color:var(--accent)"><span>${f.allLabel}</span>
+      </label>`;
+    const optsHTML=`<div class="tclib-opts" style="display:grid;grid-auto-flow:column;grid-template-rows:repeat(${rowCount},auto);grid-template-columns:repeat(${cols},max-content);gap:1px 16px;width:max-content;max-width:100%">${opts}</div>`;
+    if(mob){
+      const act=f.selected().length!==f.allValues.length;
+      return `<div class="tclib-section tclib-sec-coll" data-fkey="${f.key}"${i>0?' style="margin-top:6px"':''}>
+        <button type="button" class="tclib-sec-head" style="width:100%;display:flex;align-items:center;gap:8px;background:var(--bg-1);border:1px solid var(--bg3);border-radius:6px;padding:11px 12px;cursor:pointer;color:var(--fg);font:inherit;text-align:left">
+          <span class="tclib-sec-chev" style="font-size:10px;color:var(--fg3);width:10px;flex:0 0 auto">${act?"▾":"▸"}</span>
+          <span style="flex:1;font-size:13px;font-weight:700;color:var(--accent)">${f.title}</span>${info}
+          <span class="tclib-sec-actcount" style="font-size:10px;color:var(--accent);white-space:nowrap"></span>
+        </button>
+        <div class="tclib-sec-body" style="display:${act?"block":"none"};padding:8px 4px 4px">${allLabelHTML}${optsHTML}</div>
+      </div>`;
+    }
     return `<div class="tclib-section" data-fkey="${f.key}"${i>0?' style="margin-top:8px;border-top:1px solid var(--bg3);padding-top:8px"':''}>
       <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:5px;display:flex;align-items:center">${f.title}${info}</div>
-      <label class="tclib-all" style="display:flex;align-items:center;gap:6px;padding:3px 4px;margin-bottom:4px;cursor:pointer;font-size:11px;font-weight:600;color:var(--fg)">
-        <input type="checkbox" style="margin:0;cursor:pointer;accent-color:var(--accent)"><span>${f.allLabel}</span>
-      </label>
-      <div class="tclib-opts" style="display:grid;grid-auto-flow:column;grid-template-rows:repeat(${rowCount},auto);grid-template-columns:repeat(${cols},max-content);gap:1px 16px;width:max-content;max-width:100%">${opts}</div>
+      ${allLabelHTML}
+      ${optsHTML}
     </div>`;
   }).join("");
   const pop=document.createElement("div");
   pop.className="tclib-pop";
-  pop.style.cssText="position:fixed;z-index:10001;background:var(--bg2);border:1px solid var(--accent);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.55);padding:10px 12px;width:max-content;max-width:min(520px,92vw);max-height:60vh;overflow-y:auto";
-  pop.innerHTML=sections;
+  if(mob){
+    pop.classList.add("tclib-pop-fs");
+    pop.style.cssText="position:fixed;inset:0;z-index:10001;background:var(--bg2);display:flex;flex-direction:column;overflow:hidden";
+    pop.innerHTML=`<div class="tclib-pop-head" style="flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:12px;border-bottom:1px solid var(--bg3);background:var(--bg-1)">
+        <span style="font-weight:700;color:var(--accent);font-size:15px">Filters</span>
+        <span id="tclib-pop-count" style="font-size:11px;color:var(--fg3)"></span>
+        <span style="flex:1"></span>
+        <button type="button" class="tclib-pop-reset btn btn-s" style="font-size:12px">Reset</button>
+        <button type="button" class="tclib-pop-done btn btn-p" style="font-size:13px">Done</button>
+      </div>
+      <div class="tclib-pop-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px 28px">${sections}</div>`;
+  }else{
+    pop.style.cssText="position:fixed;z-index:10001;background:var(--bg2);border:1px solid var(--accent);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.55);padding:10px 12px;width:max-content;max-width:min(520px,92vw);max-height:60vh;overflow-y:auto";
+    pop.innerHTML=sections;
+  }
   document.body.appendChild(pop);
-  // Position under the button, nudged left if it would overflow the viewport.
-  const r=btn.getBoundingClientRect(),pw=pop.offsetWidth;
-  pop.style.top=(r.bottom+4)+"px";
-  pop.style.left=Math.max(8,Math.min(r.left,window.innerWidth-pw-8))+"px";
+  if(!mob){
+    // Position under the button, nudged left if it would overflow the viewport.
+    const r=btn.getBoundingClientRect(),pw=pop.offsetWidth;
+    pop.style.top=(r.bottom+4)+"px";
+    pop.style.left=Math.max(8,Math.min(r.left,window.innerWidth-pw-8))+"px";
+  }
   const facetByKey={};panelFacets.forEach(f=>facetByKey[f.key]=f);
   const sectionEls=[...pop.querySelectorAll(".tclib-section")];
   const syncChecks=()=>{
@@ -7361,11 +7396,13 @@ function tcOpenFacet(panelId,panelFacets,btn,ctx){
       const f=facetByKey[sec.dataset.fkey],s=f.selected(),total=f.allValues.length;
       [...sec.querySelectorAll(".tclib-opt")].forEach(l=>{l.querySelector("input").checked=s.includes(l.dataset.val);});
       const all=sec.querySelector(".tclib-all input");all.checked=s.length===total;all.indeterminate=s.length>0&&s.length<total;
+      const ac=sec.querySelector(".tclib-sec-actcount");if(ac)ac.textContent=(s.length!==total)?`${s.length}/${total}`:"";
     });
   };
-  syncChecks();
+  const updPopCount=()=>{const c=pop.querySelector("#tclib-pop-count");if(c){const n=tcApplyFilters(ctx.maps,ctx.st,ctx.facets,null).length;c.textContent=n+" map"+(n===1?"":"s")+" match";}};
+  syncChecks();updPopCount();
   // Any change to a filter exits the related-maps group / random-pick view and re-applies live.
-  const changed=()=>{ctx.st.group=null;ctx.st.picks=null;ctx.st.fav=false;syncChecks();ctx.apply();};
+  const changed=()=>{ctx.st.group=null;ctx.st.picks=null;ctx.st.fav=false;syncChecks();updPopCount();ctx.apply();};
   sectionEls.forEach(sec=>{
     const f=facetByKey[sec.dataset.fkey];
     // "All" is a true select-all / select-none toggle.
@@ -7378,13 +7415,20 @@ function tcOpenFacet(panelId,panelFacets,btn,ctx){
       only.onclick=(e)=>{e.preventDefault();e.stopPropagation();f.setSelected([val]);changed();};
     });
   });
+  if(mob){
+    sectionEls.forEach(sec=>{const head=sec.querySelector(".tclib-sec-head"),body=sec.querySelector(".tclib-sec-body"),chev=sec.querySelector(".tclib-sec-chev");if(head&&body)head.onclick=()=>{const open=body.style.display!=="none";body.style.display=open?"none":"block";if(chev)chev.textContent=open?"▸":"▾";};});
+    const doneB=pop.querySelector(".tclib-pop-done");if(doneB)doneB.onclick=()=>tcCloseFacet();
+    const resetB=pop.querySelector(".tclib-pop-reset");if(resetB)resetB.onclick=()=>{panelFacets.forEach(f=>f.setSelected(f.allValues.slice()));changed();};
+  }
   TC_POP=pop;TC_FACET_OPEN=panelId;btn.classList.add("tclib-facet-open");
   const onDocDown=(e)=>{if(!pop.contains(e.target)&&!btn.contains(e.target))tcCloseFacet();};
   const onScroll=()=>tcCloseFacet();
-  setTimeout(()=>document.addEventListener("mousedown",onDocDown),0);
-  ctx.body.addEventListener("scroll",onScroll);
-  window.addEventListener("resize",onScroll);
-  TC_POP_CLEANUP=()=>{document.removeEventListener("mousedown",onDocDown);ctx.body.removeEventListener("scroll",onScroll);window.removeEventListener("resize",onScroll);};
+  if(!mob){
+    setTimeout(()=>document.addEventListener("mousedown",onDocDown),0);
+    ctx.body.addEventListener("scroll",onScroll);
+    window.addEventListener("resize",onScroll);
+    TC_POP_CLEANUP=()=>{document.removeEventListener("mousedown",onDocDown);ctx.body.removeEventListener("scroll",onScroll);window.removeEventListener("resize",onScroll);};
+  }
 }
 function renderTCLib(M,maps){
   const st={q:"",group:null,picks:null,fav:false}; // per-facet selections added below; picks = random-maps view (array of img keys); fav = favorites view
@@ -7426,7 +7470,8 @@ function renderTCLib(M,maps){
     {id:"size",facets:[fByKey.size]},
     {id:"light",facets:[fByKey.light]},
     {id:"weather",facets:[fByKey.weather]},
-    {id:"feat",facets:[fByKey.feat]}
+    {id:"feat",facets:[fByKey.feat]},
+    {id:"all",facets:facets.slice()}
   ];
   // A facet is "active" (a real filter) when it is not at its default of everything selected.
   const isActive=f=>f.selected().length!==f.allValues.length;
@@ -7434,7 +7479,8 @@ function renderTCLib(M,maps){
   M.body.innerHTML=`
     <div style="margin-bottom:8px"><input id="tclib-q" class="inp" placeholder="Search name, set, or location..." style="width:100%;font-size:11px"></div>
     <div class="tclib-bar" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
-      <span style="font-size:11px;color:var(--fg3);font-weight:600;margin-right:2px">Filters:</span>
+      <span class="tclib-filters-label" style="font-size:11px;color:var(--fg3);font-weight:600;margin-right:2px">Filters:</span>
+      <button class="btn btn-s tclib-filters-all" data-facet="all" style="font-size:11px;display:none">Filters<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>
       <button class="btn btn-s tclib-facet-btn" data-facet="env" style="font-size:11px">Environments<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>
       ${multiCreator?`<button class="btn btn-s tclib-facet-btn" data-facet="creator" style="font-size:11px">Creators<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>`:""}
       <button class="btn btn-s tclib-facet-btn" data-facet="size" style="font-size:11px">Sizes<span class="tclib-facet-badge" style="color:var(--accent)"></span> ▾</button>
