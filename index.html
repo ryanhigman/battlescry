@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.227                                      https://battlescry.com
+BattleScry v0.1.234                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,20 +19,18 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.227 - Changed: the full-screen map preview is now mobile-friendly ... the header reflows so the
-            Close button is always visible and the map name and details no longer wrap awkwardly.
-  v0.1.226 - Fixed: in the mobile Filters panel, each filter group's options now fit the screen width
-            instead of overflowing sideways.
-  v0.1.225 - Changed: on mobile, the Map Library filters collapse into a single Filters button that opens a
-            full-screen panel with one expandable section per filter group, so the gallery is no longer
-            crowded by a long scrolling row of filter buttons.
-  v0.1.224 - Fixed: on mobile, the Map panel now scrolls all the way to the bottom at any sheet height, not
-            only when the sheet is dragged fully to the top.
-  v0.1.223 - Changed: on mobile, the Map Library now opens near full-screen with a 2-column gallery and a
-            single scrolling filter row, so the maps get the room instead of the filters.
+  v0.1.234 - Added: a "Place on map" button on the combatant form. On mobile it minimizes the panel so you
+            can tap the map to place or move the token, without the keyboard covering the map.
+  v0.1.233 - Changed: the Token Image area is reorganized with Browse Token Library and Upload Token Image
+            buttons, a login line, and Load Token / Save Token (Save asks for a name in a popup). Removed
+            the SRD and Bake buttons.
+  v0.1.232 - Removed: the "Add default token art" checkbox on the Add SRD Monster form.
+  v0.1.231 - Fixed: on mobile, scrolling a short Tokens, Overlays, or Other panel (one with little content)
+            no longer drags the map behind it.
+  v0.1.230 - Changed: in the mobile Filters panel, the Sizes and Lighting groups show as a single column.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.227"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.234"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -119,6 +117,7 @@ input,select,textarea,button{font-family:inherit}
 .tclib-pop .tclib-opt:hover,.tclib-pop .tclib-all:hover{background:var(--bg4)}
 .tclib-filters-all.tclib-facet-active{outline:1px solid var(--accent);color:var(--accent)}
 .tclib-pop-fs .tclib-opts{grid-auto-flow:row!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:none!important;width:auto!important;max-width:100%!important;gap:2px 12px!important}
+.tclib-pop-fs .tclib-section[data-fkey="size"] .tclib-opts,.tclib-pop-fs .tclib-section[data-fkey="light"] .tclib-opts{grid-template-columns:1fr!important}
 .tclib-allmaps:disabled,.tclib-random:disabled{opacity:.45;cursor:default}
 #toolbar{border-bottom:1px solid var(--border);padding:5px 8px;display:flex;gap:5px;align-items:center;flex-wrap:wrap;background:var(--bg2);flex-shrink:0;position:relative}
 /* Responsive top bar: secondary controls (status, help) float right via .tbo-right; sep + spacer hide on mobile. */
@@ -230,7 +229,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   #props-area{padding:12px;flex:0 0 auto;min-height:0;overflow:visible}
   #list-area{padding:0 12px 14px;flex:0 0 auto;min-height:0;overflow:visible;flex-basis:auto!important}
   #sidebar-splitter{display:none}
-  #tab-content{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;min-height:0}
+  #tab-content{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;min-height:0}
   .sec{padding:12px;gap:8px}
   .sec-title{font-size:12px}
   .lbl{font-size:11px}
@@ -284,7 +283,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.227</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.234</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -1819,7 +1818,6 @@ function renderCombatantForm(opts){
       <datalist id="cb-srdlist">${SRD_MONSTERS.map(m=>`<option value="${escAttr(m[0])}">${m[1]} · ${escAttr(m[2])} · CR ${escAttr(m[3])}</option>`).join("")}</datalist>
       <div style="font-size:9px;color:var(--fg3);margin-top:3px">${metaLine}</div>
     </div></div>`;
-    h+=`<label style="display:flex;align-items:center;gap:6px;font-size:10px;cursor:pointer;margin:-2px 0 8px 0;color:var(--fg2)" title="When checked, picking a stat block fills the token with a matching generic icon (game-icons.net). Leave unchecked for a plain colored token; you can always set a custom image from the preview."><input type="checkbox" id="cb-defart" ${S.addingCombatant&&S.addingCombatant.useDefaultArt?"checked":""} style="accent-color:var(--accent)"><span>Add default token art</span></label>`;
   }
   // ROW 1: preview (left) + Name, then Location + Height (right)
   h+=`<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
@@ -1839,6 +1837,10 @@ function renderCombatantForm(opts){
       </div>
     </div>
   </div>`;
+  // Place-on-map button: enter coord-pick and minimize the sheet (mobile) so the map is tappable, instead
+  // of focusing the Location field (which pops the keyboard and hides the map). add commits+drops, unplaced
+  // places, token moves.
+  h+=`<button type="button" id="cb-place-btn" class="btn btn-s" style="width:100%;margin-bottom:10px;font-size:11px;padding:7px;display:flex;align-items:center;justify-content:center;gap:6px" title="Tap this, then tap a cell on the map to ${mode==="token"?"move":"place"} this token">📍 ${mode==="token"?"Move on map":"Place on map"}</button>`;
   // Token Image controls (inline; mirrors the Map panel Background section). editIcon gates it to the
   // modes where art can be set. The richer pickers (SRD browse, upload + crop, saved, bake) still open
   // the focused modal; the field here is the quick shortcode/URL path.
@@ -1846,19 +1848,17 @@ function renderCombatantForm(opts){
     <div class="sec-title" style="margin-bottom:6px;font-size:11px">Token Image</div>
     <div id="cb-img-info" style="font-size:10px;color:var(--fg3);margin-bottom:6px">${tokenImage?`Current code: <span style="font-family:monospace;color:var(--fg)">${escAttr(tokenImage.replace(/~$/,""))}</span>`:"No custom image - using a colored token"}</div>
     <div class="row" style="gap:4px;align-items:center;margin-bottom:6px">
-      <input class="inp" id="cb-img-input" placeholder="Paste OTFBM shortcode or image URL" style="flex:1;min-width:0;font-family:monospace;font-size:10px">
+      <input class="inp" id="cb-img-input" placeholder="Paste shortcode or image URL" style="flex:1;min-width:0;font-family:monospace;font-size:10px">
       <button type="button" class="btn btn-s" id="cb-img-apply" style="font-size:10px;padding:4px 12px;white-space:nowrap">Apply</button>
     </div>
-    <div class="row" style="gap:4px;flex-wrap:wrap;margin-bottom:6px">
-      <button type="button" class="btn btn-s" id="cb-img-srd" style="flex:1;min-width:78px;font-size:10px">🐉 SRD</button>
-      <button type="button" class="btn btn-s" id="cb-img-lib" style="flex:1;min-width:78px;font-size:10px">👤 Library</button>
-      <button type="button" class="btn btn-s" id="cb-img-upload" style="flex:1;min-width:78px;font-size:10px">⬆️ Upload</button>
-      <button type="button" class="btn btn-s" id="cb-img-saved" style="flex:1;min-width:78px;font-size:10px">💾 Saved</button>
-      <button type="button" class="btn btn-s" id="cb-img-bake" style="flex:1;min-width:78px;font-size:10px">🏷 Bake</button>
+    <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:6px">
+      <button type="button" class="btn btn-s" id="cb-img-lib" style="flex:1;min-width:120px;font-size:10px;padding:5px">👤 Browse Token Library</button>
+      <button type="button" class="btn btn-s" id="cb-img-upload" style="flex:1;min-width:120px;font-size:10px;padding:5px">⬆️ Upload Token Image</button>
     </div>
-    <div class="row" style="gap:4px;align-items:center">
-      <input class="inp" id="cb-img-savename" placeholder="Save this token as..." style="flex:1;min-width:0;font-size:10px">
-      <button type="button" class="btn btn-s" id="cb-img-save" style="font-size:10px;padding:4px 12px;white-space:nowrap">Save</button>
+    ${loginLineHtml()}
+    <div class="row" style="gap:6px">
+      <button type="button" class="btn btn-s" id="cb-img-saved" style="flex:1;font-size:10px;padding:5px">📂 Load Token</button>
+      <button type="button" class="btn btn-s" id="cb-img-save" ${tokenImage?"":"disabled"} title="${tokenImage?"Save this token image under a name":"Apply a token image first, then save it"}" style="flex:1;font-size:10px;padding:5px${tokenImage?"":";opacity:.5;cursor:default"}">💾 Save Token</button>
     </div>
   </div>`;}
   // ROW 2: Size + Color
@@ -2050,7 +2050,6 @@ function rTokenProps(el){
   h+=`<button class="btn btn-p" id="btn-add-monster" ${isAdding?"disabled":""} style="width:100%;font-size:11px;padding:6px;margin:12px 0 6px 0${dimAdd}" title="Add a real SRD monster to initiative with its full stat block (loaded by Avrae via !i madd). Pick the creature, place it, set initiative.">➕ Add SRD Monster</button>`;
   h+=`<button class="btn btn-p" id="btn-add-cb" ${isAdding?"disabled":""} style="width:100%;font-size:10px;padding:5px;margin:0 0 8px 0${dimAdd}" title="Add a non-PC, non-monster combatant to initiative (e.g. brazier, NPC, destructible object) with no stat block.">➕ Add Non-Monster Combatant</button>`;
   h+=`<div style="display:flex;gap:4px;margin:0 0 8px 0;flex-wrap:wrap"><button class="btn btn-s" id="btn-toklib-tab" ${isAdding?"disabled":""} style="flex:1;min-width:90px;font-size:10px;padding:5px${dimAdd}" title="Browse the token art library and add your pick as a new combatant.">👤 Browse Token Library</button><button class="btn btn-s" id="btn-tokupload" ${isAdding?"disabled":""} style="flex:1;min-width:90px;font-size:10px;padding:5px${dimAdd}" title="Upload your own token image, hosted on BattleScry, and add it as a new combatant.">⬆️ Upload Token Image</button></div>`;
-  h+=loginLineHtml();
   h+=`<div id="tok-uploadstatus" style="font-size:10px;line-height:1.4"></div>`;
   if(isAdding){
     // Unified form (mode "add") - same layout as selected-token props for consistency.
@@ -4156,6 +4155,11 @@ function setup(){
     // Remove all overlays
     if(t.id==="ov-clearall"){if(!confirm("⚠ You are about to remove ALL overlays from the map. This cannot be undone. OK to proceed?"))return;pushU();S.overlays=[];clearSel();renderAll();return;}
     // Inline Token Image controls (quick path in the Add/Edit form; mirrors the Map Background section).
+    if(t.id==="cb-place-btn"){
+      const f=$("cb-loc");
+      const go=()=>{S.coordPick="cb";const ms=$("map-svg");if(ms)ms.style.cursor="crosshair";if(typeof isSheet==="function"&&isSheet()&&typeof setSheetOpen==="function")setSheetOpen(false);setStatus("Tap a cell on the map to place this token");};
+      if(f&&document.activeElement===f){f.blur();setTimeout(go,230);}else{go();}
+      return;}
     if(t.id==="cb-img-apply"){
       const tk=srdTargetToken();if(!tk){showError("Select a token first");return;}
       const v=($("cb-img-input").value||"").trim();
@@ -4174,17 +4178,23 @@ function setup(){
     if(t.id==="cb-img-lib"){openSrdModal();if($("srd-modal").style.display!=="none"){const lb=$("srd-toklib-open");if(lb)lb.click();}return;}
     if(t.id==="cb-img-save"){
       const tk=srdTargetToken();if(!tk){showError("Select a token first");return;}
-      const name=($("cb-img-savename").value||"").trim();
       const code=(tk.tokenImage||"").replace(/~$/,"").replace(/[^a-zA-Z0-9]/g,"");
-      if(!name){showError("Enter a name to save this token as");return;}
       if(!code){showError("Apply a token image first, then save it");return;}
-      const existing=S.savedTokens.find(x=>x.name.toLowerCase()===name.toLowerCase());
-      if(existing)existing.shortcode=code;else S.savedTokens.push({name,shortcode:code});
-      S.tokenSaves=S.tokenSaves.filter(x=>x.name.toLowerCase()!==name.toLowerCase());
-      S.tokenSaves.push({name,shortcode:code});
-      S.tokenDeletes=S.tokenDeletes.filter(n=>n.toLowerCase()!==name.toLowerCase());
-      const sn=$("cb-img-savename");if(sn)sn.value="";renderCmd();
-      showError("✅ Token '"+name+"' will be saved when you paste the command");
+      const M=smartModal({title:"💾 Save Token",size:"sm"});
+      M.body.innerHTML=`<div style="font-size:12px;color:var(--fg2);line-height:1.5;margin-bottom:12px">Give this token image a name to reuse later. It is stored with your Discord user and saved when you paste the export command.</div>
+        <input class="inp" id="savetok-name" placeholder="Save as (e.g. Goblin Boss)" maxlength="50" style="width:100%;box-sizing:border-box;font-size:13px;padding:8px;margin-bottom:12px">
+        <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn btn-s" id="savetok-cancel" style="font-size:12px;padding:6px 14px">Cancel</button><button type="button" class="btn btn-p" id="savetok-go" style="font-size:12px;padding:6px 18px">Save</button></div>`;
+      const inp=M.body.querySelector("#savetok-name");setTimeout(()=>{try{inp.focus();}catch(_){}},60);
+      M.body.querySelector("#savetok-cancel").onclick=M.close;
+      const doSave=()=>{const name=(inp.value||"").trim();if(!name){inp.style.borderColor="var(--danger)";return;}
+        const existing=S.savedTokens.find(x=>x.name.toLowerCase()===name.toLowerCase());
+        if(existing)existing.shortcode=code;else S.savedTokens.push({name,shortcode:code});
+        S.tokenSaves=S.tokenSaves.filter(x=>x.name.toLowerCase()!==name.toLowerCase());
+        S.tokenSaves.push({name,shortcode:code});
+        S.tokenDeletes=S.tokenDeletes.filter(n=>n.toLowerCase()!==name.toLowerCase());
+        renderCmd();M.close();setStatus("✅ Token '"+name+"' will be saved when you paste the command");};
+      M.body.querySelector("#savetok-go").onclick=doSave;
+      inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();doSave();}});
       return;}
     if(t.id==="p-srd-browse"||t.id==="p-nptokdialog"||t.id==="cb-customize-img"||(t.closest&&t.closest(".cb-portrait-btn"))){openSrdModal();return;}
   });
@@ -4716,7 +4726,7 @@ function setup(){
             pop.style.cssText=`position:fixed;left:${e.clientX-80}px;top:${e.clientY+20}px;background:var(--bg2);border:2px solid var(--accent);border-radius:6px;padding:8px 12px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.4);font-size:12px;display:flex;align-items:center;gap:8px`;
             pop.innerHTML=`<span style="color:var(--accent)">📍</span><span style="color:var(--fg)">Location <b style="font-family:monospace">${coordStr}</b> selected</span><button class="btn btn-p" style="font-size:10px;padding:3px 10px;margin-left:4px">OK</button>`;
             document.body.appendChild(pop);
-            const close=()=>{pop.remove();const f=$("cb-loc");if(f){f.focus();f.select();}};
+            const close=()=>{pop.remove();if(typeof isSheet==="function"&&isSheet())return;const f=$("cb-loc");if(f){f.focus();f.select();}};
             pop.querySelector("button").onclick=close;
             setTimeout(()=>{if(document.body.contains(pop))close();},2500);
           },10);
@@ -5868,6 +5878,10 @@ function setup(){
     $("tabs").addEventListener("click",()=>{if(isSheet()&&!sheetOpen)setSheetOpen(true);});
     window.addEventListener("resize",()=>{if(isSheet())applySheet(false);else{sb.style.transform="";const sp=$("sheet-spacer");if(sp)sp.style.height="0px";}});
   })();
+  // iOS scroll-bleed guard: when the panel content fits (nothing to scroll), a one-finger drag would
+  // otherwise fall through and pan the map behind the sheet. Consume the move in that case so it never
+  // reaches the map. When the panel IS scrollable, do nothing so native vertical scrolling still works.
+  (function(){const tc=$("tab-content");if(tc)tc.addEventListener("touchmove",e=>{if(typeof isSheet==="function"&&isSheet()&&tc.scrollHeight<=tc.clientHeight)e.preventDefault();},{passive:false});})();
   function toggleSB(){
     if(isSheet()){setSheetOpen(!sheetOpen);return;}
     const wasFit=Math.abs(S.zoom-fitZoom())<.02;const wasFitH=Math.abs(S.zoom-fitHeightZoom())<.02;const wasFitAll=Math.abs(S.zoom-fitAllZoom())<.02;
@@ -6783,7 +6797,7 @@ function showFullscreenThumb(url,meta,nav){
     </div>
     <div style="flex:1 1 0;display:flex;justify-content:flex-end;align-items:center;gap:12px"><div id="fst-cred" style="font-size:12px;color:var(--fg2);white-space:nowrap"></div>${canLoad?`<button id="fst-load" class="btn btn-p" style="font-size:11px;padding:4px 12px;white-space:nowrap" title="Load this map onto your board (your tokens and overlays are kept)">🗺️ Load to Map</button>`:""}<button id="fst-close" class="btn btn-s" style="font-size:11px;padding:4px 10px">✕ Close</button></div>
   </div>`)+`
-  <div id="fst-stage" style="flex:1;overflow:hidden;position:relative;cursor:grab;background:#000">
+  <div id="fst-stage" style="flex:1;overflow:hidden;position:relative;cursor:grab;background:#000;touch-action:none">
     <img id="fst-img" src="${url}" draggable="false" style="position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none">
     ${hasNav?`<button id="fst-prev" title="Previous (left arrow)" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:5;width:46px;height:46px;border:none;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button><button id="fst-next" title="Next (right arrow)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:5;width:46px;height:46px;border:none;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>`:""}
   </div>`;
@@ -6848,6 +6862,34 @@ function showFullscreenThumb(url,meta,nav){
     const sw=stage.clientWidth,sh=stage.clientHeight;
     const iw=view.natW*view.zoom,ih=view.natH*view.zoom;
     stage.style.cursor=(iw>sw||ih>sh)?"grab":"default";}});
+  // Touch gestures (pointer events): one finger pans when the image overflows the viewport, two fingers
+  // pinch-zoom centered on the gesture midpoint (and pan with it). Mouse keeps the handlers above.
+  const tPts=new Map();let tPan=null,tPinch=null;
+  const tDist=()=>{const a=[...tPts.values()];return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);};
+  const tMid=()=>{const a=[...tPts.values()],r=stage.getBoundingClientRect();return{x:(a[0].x+a[1].x)/2-r.left,y:(a[0].y+a[1].y)/2-r.top};};
+  stage.addEventListener("pointerdown",e=>{
+    if(e.pointerType==="mouse")return;
+    if(e.target.closest&&e.target.closest("button"))return; // let Prev/Next taps through
+    tPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    try{stage.setPointerCapture(e.pointerId);}catch(_){}
+    if(tPts.size===2){tPan=null;tPinch={dist:tDist(),mid:tMid(),zoom:view.zoom,vx:view.x,vy:view.y};}
+    else if(tPts.size===1){const sw=stage.clientWidth,sh=stage.clientHeight,iw=view.natW*view.zoom,ih=view.natH*view.zoom;tPan=(iw>sw||ih>sh)?{x:e.clientX,y:e.clientY,vx:view.x,vy:view.y}:null;}
+    e.preventDefault();
+  });
+  stage.addEventListener("pointermove",e=>{
+    if(e.pointerType==="mouse"||!tPts.has(e.pointerId))return;
+    tPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(tPts.size>=2&&tPinch){
+      const d=tDist(),m=tMid(),factor=tPinch.dist>0?d/tPinch.dist:1;
+      const ix=(tPinch.mid.x-tPinch.vx)/tPinch.zoom,iy=(tPinch.mid.y-tPinch.vy)/tPinch.zoom;
+      view.zoom=Math.max(0.05,Math.min(10,tPinch.zoom*factor));
+      view.x=m.x-ix*view.zoom;view.y=m.y-iy*view.zoom;apply();e.preventDefault();
+    }else if(tPts.size===1&&tPan){
+      const q=[...tPts.values()][0];view.x=tPan.vx+(q.x-tPan.x);view.y=tPan.vy+(q.y-tPan.y);apply();e.preventDefault();
+    }
+  });
+  const tEnd=e=>{if(e.pointerType==="mouse")return;tPts.delete(e.pointerId);try{stage.releasePointerCapture(e.pointerId);}catch(_){}if(tPts.size<2)tPinch=null;if(tPts.size===0)tPan=null;};
+  stage.addEventListener("pointerup",tEnd);stage.addEventListener("pointercancel",tEnd);
   // Toolbar buttons
   bd.querySelector("#fst-zoomout").onclick=()=>{const oldZ=view.zoom;view.zoom=Math.max(0.05,view.zoom/1.25);const sw=stage.clientWidth/2,sh=stage.clientHeight/2;view.x=sw-(sw-view.x)*(view.zoom/oldZ);view.y=sh-(sh-view.y)*(view.zoom/oldZ);apply();};
   bd.querySelector("#fst-zoomin").onclick=()=>{const oldZ=view.zoom;view.zoom=Math.min(10,view.zoom*1.25);const sw=stage.clientWidth/2,sh=stage.clientHeight/2;view.x=sw-(sw-view.x)*(view.zoom/oldZ);view.y=sh-(sh-view.y)*(view.zoom/oldZ);apply();};
