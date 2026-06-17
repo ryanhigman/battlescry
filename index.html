@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.267                                      https://battlescry.com
+BattleScry v0.1.276                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,19 +19,19 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.267 - Changed: the new-combatant export payload now carries the init bonus, so the alias adds custom
-            combatants with "!i add <bonus>" instead of a hardcoded 0 (needs alias v0.2.36).
-  v0.1.266 - Changed: the Initiative placeholder and d20 tooltip now reflect the init bonus (e.g. "Enter or
-            roll (+3 to init)", "Roll for initiative (1d20 + 3)"), and rolling adds the bonus to the d20.
-  v0.1.265 - Changed: picking an SRD monster now auto-fills Current/Max HP, AC, and the DEX-based init bonus
-            (hidden by default, shown when Hide HP/AC is off); the None option clears them.
-  v0.1.264 - Added: an "Init bonus" field next to Initiative Order in the add/edit combatant form (Group moved
-            to its own row); stored per combatant and read on add.
-  v0.1.263 - Added: HP, AC, and initiative-bonus (DEX modifier) data to the SRD monster table (from the SRD
-            bestiary), so picking a monster can auto-fill stats and derive its initiative bonus.
+  v0.1.276 - Changed: the "Add Map Background" button is now a toggle: when no map is loaded, opening the
+            background options flips it to "(minus) Add Map Background" and clicking it collapses them.
+  v0.1.275 - Changed: the "Add New Overlay" button is now a toggle: while the New Overlay form is open it
+            shows "(minus) Add New Overlay" and clicking it cancels and collapses the form.
+  v0.1.274 - Changed: the "Add New Combatant" button is now a toggle: while the form is open it shows
+            "(minus) Add New Combatant" and clicking it cancels and collapses the form (no longer disabled).
+  v0.1.273 - Changed: the token-image button is now "+ / - Custom Token Image" (toggles the section), and
+            hovering either the token circle or the button shows the camera overlay and highlights both.
+  v0.1.272 - Added: a new combatant that joins an existing Init Group auto-fills its Init order from the group;
+            changing it warns that it moves the whole group (OK propagates to all members, Cancel reverts).
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.267"><meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.276"><meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -86,6 +86,9 @@ input,select,textarea,button{font-family:inherit}
 .cb-portrait-btn:hover .cb-prev-disc{box-shadow:0 0 0 2px var(--accent),0 0 9px rgba(245,180,20,.55)}
 .cb-prev-overlay{position:absolute;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:rgba(7,3,26,.55);color:#fff;opacity:0;transition:opacity .12s ease;pointer-events:none;box-sizing:border-box}
 .cb-portrait-btn:hover .cb-prev-overlay{opacity:1}
+.cb-tokbox:hover .cb-prev-disc{box-shadow:0 0 0 2px var(--accent),0 0 9px rgba(245,180,20,.55)}
+.cb-tokbox:hover .cb-prev-overlay{opacity:1}
+.cb-tokbox:hover #cb-customize-toggle{background:var(--gold-dim)}
 .cb-prev-overlay-txt{font-size:10px;font-weight:700}
 .cb-prev-overlay-cam{width:18px;height:18px;background-repeat:no-repeat;background-position:center;background-size:contain;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>')}
 .cb-prev-cam{width:26px;height:26px;background-repeat:no-repeat;background-position:center;background-size:contain;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23999999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>')}
@@ -282,7 +285,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.267</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.276</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -1585,6 +1588,16 @@ function computeCondition(hpCur,hpMax){
 // Re-render only the preview thumbnail without re-rendering the whole sidebar (preserves input
 // focus and avoids flicker). Reads name/size from the form inputs and color/image from state.
 // Called when user types name, changes size, picks color, or sets a custom token image.
+// Enable the add-form submit only when both Name and Initiative order have values. Called live from
+// the Name and Initiative input handlers (and after the d20 roll, which dispatches input on cb-init).
+function syncCbSubmit(){
+  const sub=document.getElementById("cb-submit");if(!sub)return;
+  const nm=(document.getElementById("cb-name")?.value||"").trim();
+  const iv=(document.getElementById("cb-init")?.value||"").trim();
+  const ok=nm.length>0&&iv.length>0;
+  sub.disabled=!ok;sub.style.opacity=ok?"":".5";sub.style.cursor=ok?"":"not-allowed";
+  sub.title=ok?"":(!nm?"Name is required":"Initiative order is required");
+}
 function refreshCombatantPreview(){
   const container=document.getElementById("cb-prev-container");
   if(!container)return;
@@ -1708,13 +1721,13 @@ function renderCombatantForm(opts){
   let h=mode==="add"?`<div class="sec" style="border:1px solid var(--accent);background:var(--bg)">`:`<div class="sec">`;
   if(mode==="add"){h+=`<div class="sec-title" style="color:${headerColor};margin-bottom:6px">${headerTitle}</div>`;}
   // ROW 1: preview (left) + Name, then Location + Height (right)
-  h+=`<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0">
+  h+=`<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:9px">
+    <div class="cb-tokbox" style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0">
       <div id="cb-prev-container">${renderCombatantPreview(previewToken,{totalPx:100,placeholder,editIcon})}</div>
-      ${editIcon?`<button type="button" id="cb-customize-toggle" class="btn btn-p" aria-expanded="${S.customizeOpen?"true":"false"}" style="width:100px;font-size:9px;padding:4px 2px;line-height:1.2;white-space:normal" title="Show or hide the token image options">Customize Token</button>`:""}
+      ${editIcon?`<button type="button" id="cb-customize-toggle" class="btn btn-p" aria-expanded="${S.customizeOpen?"true":"false"}" style="width:100px;font-size:9px;padding:4px 2px;line-height:1.2;white-space:normal" title="Customize the token image">${S.customizeOpen?"- ":"+ "}Custom Token Image</button>`:""}
     </div>
     <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
-      <div><span class="lbl">${mode==="add"?"Name: (required)":"Name"}</span>
+      <div><span class="lbl">${mode==="add"?"Name (required)":"Name"}</span>
         <input class="inp" id="cb-name" value="${escAttr(name)}" maxlength="50" placeholder="${mode==="add"?"e.g. Goblin Boss":""}" style="width:100%;box-sizing:border-box;font-size:14px;font-weight:600;padding:6px 8px"${(mode==="add"||isNewLocal)?(mode==="add"?"":" title=\"Rename this combatant (not yet applied to Avrae)\""):" readonly title=\"Renaming a combatant already in Avrae needs the Avrae rename command\""}>
         ${isMoved?`<div style="font-size:9px;color:var(--accent);font-family:monospace;margin-top:2px">Moved: ${fmtU(opts.token.originalCol,opts.token.originalRow)} → ${fmtU(opts.token.col,opts.token.row)}</div>`:""}
       </div>
@@ -1759,7 +1772,7 @@ function renderCombatantForm(opts){
     const picked=(mon&&mon.srd)||"";
     const meta=picked?SRD_MONSTERS.find(m=>m[0].toLowerCase()===picked.toLowerCase()):null;
     const metaLine=meta?`${SIZES[meta[1]]?SIZES[meta[1]].l:meta[1]} · ${escAttr(meta[2])} · CR ${escAttr(meta[3])} · Avrae loads HP/AC/attacks`:"Optional: load a monster's stat block (HP, AC, attacks via Avrae). Leave blank for a custom combatant.";
-    h+=`<div class="row" style="margin-bottom:8px"><div style="flex:1;position:relative"><span class="lbl" title="Optional. Load an SRD creature's stat block (HP, AC, attacks) via Avrae on add. Leave blank for a custom combatant.">SRD Monster (optional)</span>
+    h+=`<div class="row" style="margin-bottom:8px"><div style="flex:1;position:relative"><span class="lbl" title="Optional. Load an SRD creature's stat block (HP, AC, attacks) via Avrae on add. Leave blank for a custom combatant.">Add SRD Monster to combat (optional)</span>
       <input class="inp" id="cb-srd" value="${escAttr(picked)}" placeholder="Tap to search... e.g. Goblin" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:600;padding:6px 8px">
       <div id="cb-srd-list" role="listbox" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:2px;max-height:240px;overflow-y:auto;background:var(--bg2);border:1px solid var(--accent);border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.5);z-index:50;-webkit-overflow-scrolling:touch"></div>
       <div style="font-size:9px;color:var(--fg3);margin-top:3px">${metaLine}</div>
@@ -1786,16 +1799,14 @@ function renderCombatantForm(opts){
   const ibNum=(initBonus===""||initBonus==null)?0:(parseInt(initBonus)||0);
   const ibSigned=(ibNum>=0?"+":"")+ibNum;
   const ibOp=ibNum<0?("- "+Math.abs(ibNum)):("+ "+ibNum);
-  // ROW 4: Initiative Order + Init bonus (the DEX-derived modifier; monsters auto-fill it)
-  h+=`<div class="row" style="gap:8px;align-items:flex-end">
-    <div style="flex:1;min-width:0"><span class="lbl" title="${memberOfGroup?`Set by group "${escAttr(group)}" - select the group folder to change it`:(mode==="add"?"Where this combatant sits in the initiative order":"Local edit - Avrae round-trip pending")}">Initiative Order</span>
-      <div style="display:flex;align-items:center;gap:6px">${!memberOfGroup?`<button type="button" class="d20-btn" id="cb-init-roll" title="Roll for initiative (1d20 ${ibOp})" aria-label="Roll for random initiative">${D20_SVG}</button>`:""}<div style="flex:1;min-width:0">${spinNum("cb-init",memberOfGroup?grpInitVal:initStr,{min:-50,max:200,placeholder:!memberOfGroup?`Enter or roll (${ibSigned} to init)`:undefined,readonly:memberOfGroup,istyle:memberOfGroup?"opacity:.55;cursor:not-allowed":""})}</div></div></div>
-    <div style="flex:1;min-width:0"><span class="lbl" title="Initiative modifier added to the d20 when rolling. Monsters auto-fill this from their DEX; set it for PCs and NPCs.">Init bonus</span>
+  // ROW 4: Initiative order (required) + Init bonus + Group, all on one row. Init/Bonus stay narrow
+  // (values are at most a few characters); Group takes the remaining width.
+  h+=`<div class="row" style="gap:6px;align-items:flex-end;margin-top:12px">
+    <div style="flex:1.2;min-width:0"><span class="lbl" title="${memberOfGroup?`Set by group "${escAttr(group)}" - select the group folder to change it`:(mode==="add"?"Where this combatant sits in the initiative order (required). Roll or enter a value; it is passed to Avrae so it is not re-rolled.":"Local edit - Avrae round-trip pending")}">${mode==="add"?"Init order (required)":"Init order"}</span>
+      <div style="display:flex;align-items:center;gap:4px">${!memberOfGroup?`<button type="button" class="d20-btn" id="cb-init-roll" title="Roll for initiative (1d20 ${ibOp})" aria-label="Roll for random initiative">${D20_SVG}</button>`:""}<div style="flex:1;min-width:0">${spinNum("cb-init",memberOfGroup?grpInitVal:initStr,{min:-50,max:200,placeholder:!memberOfGroup?`Enter or roll (${ibSigned} to init)`:undefined,readonly:memberOfGroup,istyle:memberOfGroup?"opacity:.55;cursor:not-allowed":""})}</div></div></div>
+    <div style="flex:0.8;min-width:0"><span class="lbl" title="Initiative modifier added to the d20 when rolling. Monsters auto-fill this from their DEX; set it for PCs and NPCs.">Init bonus</span>
       ${spinNum("cb-initbonus",initBonus,{min:-20,max:30,placeholder:"0"})}</div>
-  </div>`;
-  // ROW 4b: Group (combobox: type a new group or pick one already in the encounter)
-  h+=`<div class="row" style="gap:8px;align-items:flex-end;margin-top:6px">
-    <div style="flex:1;min-width:0"><span class="lbl" title="Type a new group name or pick one already in the encounter">Group</span>
+    <div style="flex:1.4;min-width:0"><span class="lbl" title="Type a new group name or pick one already in the encounter">Init Group</span>
       <input class="inp" id="cb-group" list="cb-grouplist" value="${escAttr(group)}" placeholder="none" maxlength="40" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 6px">
       <datalist id="cb-grouplist">${existingGroups.map(g=>`<option value="${escAttr(g)}"></option>`).join("")}</datalist></div>
   </div>`;
@@ -1805,8 +1816,9 @@ function renderCombatantForm(opts){
   // Mode-specific buttons
   if(mode==="add"){
     const needSrd=isMon&&!(mon&&mon.srd&&mon.srd.trim());
-    const disable=!name.trim()||needSrd;
-    const disTitle=needSrd?' title="Pick a stat block"':(!name.trim()?' title="Name is required"':'');
+    const noInit=!String(initStr).trim();
+    const disable=!name.trim()||needSrd||noInit;
+    const disTitle=needSrd?' title="Pick a stat block"':(!name.trim()?' title="Name is required"':(noInit?' title="Initiative order is required"':''));
     h+=`<div class="row" style="gap:4px;margin-top:8px"><button class="btn btn-s" id="cb-cancel" style="flex:1;font-size:11px;padding:6px">Cancel</button><button class="btn btn-p" id="cb-submit"${disable?' disabled'+disTitle:''} style="flex:1;font-size:11px;padding:6px${disable?";opacity:.5;cursor:not-allowed":""}">${isMon?"Add Monster":"Add Combatant"}</button></div>`;
   }else if(mode==="token"){
     h+=`<div class="row" style="gap:4px;margin-top:8px">
@@ -1951,10 +1963,9 @@ function rTokenProps(el){
   // stays a custom combatant (NPC, object, hazard) or, via the optional SRD picker inside, loads a
   // monster's stat block (Avrae !i madd). PCs are still added in Avrae via the usual workflow.
   const isAdding=!!S.addingCombatant;
-  const dimAdd=isAdding?";opacity:.5;cursor:default":"";
   // Single entry point. Starts a blank custom combatant; the optional SRD picker inside the form can tag
   // it as a monster (mon.srd set -> !i madd, HP/AC hidden). Left blank -> custom combatant via !i add.
-  h+=`<button class="btn btn-p" id="btn-add-cb" ${isAdding?"disabled":""} style="width:100%;font-size:11px;padding:6px;margin:12px 0 8px 0${dimAdd}" title="Add a new combatant to initiative. Optionally load an SRD monster's stat block (HP, AC, attacks via Avrae) from inside the form, or leave it blank for a custom combatant, NPC, or object.">➕ Add New Combatant</button>`;
+  h+=`<button class="btn btn-p" id="btn-add-cb" style="width:100%;font-size:11px;padding:6px;margin:12px 0 8px 0" title="${isAdding?"Cancel and collapse this New Combatant form":"Add a new combatant to initiative. Optionally load an SRD monster's stat block (HP, AC, attacks via Avrae) from inside the form, or leave it blank for a custom combatant, NPC, or object."}">${isAdding?"➖":"➕"} Add New Combatant</button>`;
   if(isAdding){
     // Unified form (mode "add") - same layout as selected-token props for consistency.
     h+=renderCombatantForm({mode:"add",data:S.addingCombatant});
@@ -2067,7 +2078,7 @@ function rOverlayProps(el){
   let h="";
   // Add New Overlay button always at top
   const ovFull=S.overlays.length>=10;
-  h+=`<button class="btn btn-p" id="btn-add-ov" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0${ovFull?";opacity:.4;cursor:default":""}" ${ovFull?"disabled":""} title="${ovFull?"OTFBM limit: 10 overlays max - delete one to add another":"Create a new overlay with default settings"}">➕ Add New Overlay</button>`;
+  h+=`<button class="btn btn-p" id="btn-add-ov" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0${(ovFull&&!S.addingOverlay)?";opacity:.4;cursor:default":""}" ${(ovFull&&!S.addingOverlay)?"disabled":""} title="${S.addingOverlay?"Cancel and collapse the New Overlay form":(ovFull?"OTFBM limit: 10 overlays max - delete one to add another":"Create a new overlay with default settings")}">${S.addingOverlay?"➖":"➕"} Add New Overlay</button>`;
   if(ovFull)h+=`<div style="font-size:9px;color:var(--danger);margin:-2px 0 4px;text-align:center">OTFBM limit reached (10/10) - remove an overlay to add more</div>`;
   // Add New Overlay form
   if(S.addingOverlay){
@@ -2244,7 +2255,7 @@ function rMapTabContent(){
   const bgUrl=S.loadedUrl||"";
   // Yellow "Add New X" button at top - visual consistency across tabs (Map/Tokens/Overlays/Other all have one).
   // Clicking focuses the URL input below; when a bg is already loaded, label switches to "Change".
-  h+=`<button class="btn btn-p" id="btn-add-bg" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0" title="Add or change the battlemap background image - paste a URL, browse the Map Library, or pick a saved map below">${bgUrl?"✏️ Change Map Background":"➕ Add Map Background"}</button>`;
+  h+=`<button class="btn btn-p" id="btn-add-bg" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0" title="${(!bgUrl&&S._uiBgOpen)?"Cancel and collapse the background options":"Add or change the battlemap background image - paste a URL, browse the Map Library, or pick a saved map below"}">${bgUrl?"✏️ Change Map Background":((S._uiBgOpen?"➖":"➕")+" Add Map Background")}</button>`;
   // Background section. The URL / upload / sample / browse controls collapse until the user clicks
   // "Add New Map Background" (S._uiBgOpen); once an image is loaded they stay expanded so the URL
   // stays visible. The image-info line is always shown.
@@ -2629,7 +2640,7 @@ function renderCombatantPreview(token,opts){
   if(sizeKey==="T")fontPx*=0.80;
   fontPx=Math.max(9,Math.round(fontPx));
   // Container is the disc box (totalPx square) plus a scale-marker strip beneath it.
-  let html=`<div class="${editIcon?"tok-edit-wrap cb-portrait-btn":""}"${editIcon?' title="Click to change the token image"':''} style="position:relative;width:${totalPx}px;height:${totalPx+markerH}px;flex-shrink:0">`;
+  let html=`<div class="${editIcon?"tok-edit-wrap cb-portrait-btn":""}"${editIcon?' title="Customize the token image"':''} style="position:relative;width:${totalPx}px;height:${totalPx+markerH}px;flex-shrink:0">`;
   // No box background - the disc sits on the transparent form surface (no black box look).
   // Token disc
   if(token&&token.tokenImage&&!placeholder){
@@ -3715,11 +3726,11 @@ function setup(){
       if(g==="fow"){S.sel={type:"fow",ids:new Set(S.fowRegions.map(x=>x.id))};S.tab="other";S.structSubTab="fow";}
       renderAll();return;}
     // Add New Overlay button (dynamically rendered in overlays tab)
-    if(t.id==="btn-add-ov"){if(S.overlays.length>=10){setStatus("⚠ OTFBM limit: 10 overlays max");return;}openAddOverlayForm();return;}
+    if(t.id==="btn-add-ov"){if(S.addingOverlay){S.addingOverlay=null;renderSB();return;}if(S.overlays.length>=10){setStatus("⚠ OTFBM limit: 10 overlays max");return;}openAddOverlayForm();return;}
     // Yellow Add New Map Background button - focuses the URL input for paste; user can also use the
     // upload / sample / browse buttons below it. No actual form expansion (the controls are always visible).
     if(t.id==="btn-add-bg"){
-      if(!S.loadedUrl){openAddBackground();return;}
+      if(!S.loadedUrl){if(S._uiBgOpen){S._uiBgOpen=false;renderSB();return;}openAddBackground();return;}
       const inp=$("m-bgurl");if(inp){inp.focus();inp.select();}return;}
     // Toggle Add New Combatant form on Tokens tab
     if(t.id==="btn-add-cb"){
@@ -4103,13 +4114,13 @@ function setup(){
     if(t.id==="cb-customize-toggle"||(t.closest&&t.closest("#cb-customize-toggle"))){
       S.customizeOpen=!S.customizeOpen;
       const sec=$("cb-customize-section");if(sec)sec.style.display=S.customizeOpen?"":"none";
-      const tg=$("cb-customize-toggle");if(tg)tg.setAttribute("aria-expanded",S.customizeOpen?"true":"false");
+      const tg=$("cb-customize-toggle");if(tg){tg.setAttribute("aria-expanded",S.customizeOpen?"true":"false");tg.textContent=(S.customizeOpen?"- ":"+ ")+"Custom Token Image";}
       if(S.customizeOpen){const el=$("cb-img-input");if(el){try{el.scrollIntoView({behavior:"smooth",block:"nearest"});}catch(_){}}}
       return;}
     if(t.id==="p-nptokdialog"||t.id==="cb-customize-img"||(t.closest&&t.closest(".cb-portrait-btn"))){
       S.customizeOpen=true;
       const sec=$("cb-customize-section");if(sec)sec.style.display="";
-      const tg=$("cb-customize-toggle");if(tg)tg.setAttribute("aria-expanded","true");
+      const tg=$("cb-customize-toggle");if(tg){tg.setAttribute("aria-expanded","true");tg.textContent="- Custom Token Image";}
       const el=$("cb-img-input");
       if(el){try{el.scrollIntoView({behavior:"smooth",block:"center"});}catch(_){}el.focus();const old=el.style.boxShadow;el.style.transition="box-shadow .2s";el.style.boxShadow="0 0 0 2px var(--accent)";setTimeout(()=>{el.style.boxShadow=old;},900);}
       return;}
@@ -4308,7 +4319,13 @@ function setup(){
     // the same pattern for existing combatants (add mode reads cb-init at submit).
     if(e.target.id==="cb-group"){
       const gv2=e.target.value.trim();
-      if(S.addingCombatant){S.addingCombatant.group=gv2;}
+      if(S.addingCombatant){
+        S.addingCombatant.group=gv2;
+        // Joining an existing initiative group? Adopt the group's init order (the group's init takes
+        // precedence; the first creature to join set it). New group -> groupInit is "" -> no prefill.
+        const gi=gv2?groupInit(gv2):"";
+        if(gi!==""&&gi!=null){S.addingCombatant.initStr=String(gi);const ie=document.getElementById("cb-init");if(ie)ie.value=String(gi);syncCbSubmit();}
+      }
       else if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
         const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk)tk.group=gv2;
         const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb)cmb.group=gv2;}
@@ -4323,7 +4340,27 @@ function setup(){
           const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk)tk.init=iv;
           const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb)cmb.init=iv;}
         else if(S.sel.type==="unplaced"){
-          const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb)cmb.init=iv;}}
+          const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb)cmb.init=iv;}
+      }else{
+        // Add mode: if joining an existing initiative group, changing the init order changes it for
+        // the whole group, so confirm first (and revert to the group's value on cancel).
+        const gv=(document.getElementById("cb-group")?.value||"").trim();
+        const gi=gv?groupInit(gv):"";
+        const nv=e.target.value.trim();
+        if(gv&&gi!==""&&gi!=null&&nv!==""&&String(gi)!==nv){
+          if(confirm('Warning: changing this value will change the initiative order for all creatures in the "'+gv+'" initiative group. OK to proceed?')){
+            const ivNum=parseInt(nv,10)||0;pushU();
+            S.tokens.forEach(x=>{if(x.group===gv)x.init=ivNum;});
+            S.combatants.forEach(c=>{if(c.group===gv)c.init=ivNum;});
+            S.addingCombatant.initStr=nv;
+          }else{
+            e.target.value=String(gi);S.addingCombatant.initStr=String(gi);
+          }
+          syncCbSubmit();
+        }else{
+          S.addingCombatant.initStr=e.target.value;
+        }
+      }
       return;}
     if(e.target.id==="cb-initbonus"){
       const _bn=(e.target.value.trim()===""?0:(parseInt(e.target.value,10)||0));
@@ -4459,17 +4496,14 @@ function setup(){
       return;}
     if(e.target.id==="cb-init"||e.target.id==="cb-initbonus"){
       const cleaned=e.target.value.replace(/[^-\d]/g,"").replace(/(?!^)-/g,"");
-      if(e.target.value!==cleaned)e.target.value=cleaned;return;}
+      if(e.target.value!==cleaned)e.target.value=cleaned;
+      if(e.target.id==="cb-init"&&S.addingCombatant)syncCbSubmit();
+      return;}
     // Live preview update when name field is typed (matches OTFBM-style truncation per token size).
     // Persist on every keystroke so any later re-render (color pick, size change, blur) keeps the
     // typed name. Only add mode has an editable name (token/unplaced fields are readonly).
     if(e.target.id==="cb-name"){
-      if(S.addingCombatant){
-        S.addingCombatant.name=e.target.value;
-        // Enable "Add Combatant" only once a name exists. (Initiative is rolled via the d20 button.)
-        const has=e.target.value.trim().length>0,submit=document.getElementById("cb-submit");
-        if(submit){submit.disabled=!has;submit.style.opacity=has?"":".5";submit.style.cursor=has?"":"not-allowed";submit.title=has?"":"Name is required";}
-      }
+      if(S.addingCombatant){S.addingCombatant.name=e.target.value;syncCbSubmit();}
       refreshCombatantPreview();return;}
     if(e.target.id==="cb-group"){if(S.addingCombatant)S.addingCombatant.group=e.target.value;return;}
     if(e.target.dataset.objplaceHex&&S.placingObject){S.placingObject.color=e.target.value;renderSB();return;}
