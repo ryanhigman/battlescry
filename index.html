@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.241                                      https://battlescry.com
+BattleScry v0.1.243                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,10 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.243 - Removed: the unused SRD default-token-art data (SRD_DEFAULT_ART, SRD_TOKENS) and the dead code
+            that referenced it, left over from the removed default-art option. The monster picker is unaffected.
+  v0.1.242 - Removed: the old multi-tab manage-token modal and all its code. The inline Token Image box, the
+            Token Library, and the Load/Upload popups fully replace it.
   v0.1.241 - Changed: the token portrait/customize button and the unplaced-token art button now jump to the
             inline Token Image box, and Browse Token Library opens the library directly. Nothing opens the
             old multi-tab token modal anymore.
@@ -26,13 +30,9 @@ RECENT CHANGES
             delete button per token), instead of the multi-tab token modal.
   v0.1.239 - Changed: Upload Token Image on the token form now goes straight to the permission prompt and
             file picker, then hosts and tokenizes it, instead of opening the multi-tab token modal.
-  v0.1.238 - Changed: on mobile, tapping a token opens a full-screen preview (creature info, Use this token,
-            favorite, Prev/Next, X to close). Removed the small bottom preview and the Saved Tokens button.
-  v0.1.237 - Changed: the Token Library is now full-screen on mobile with a single Filters button and a wider
-            gallery, matching the Map Library. The selected token shows in a compact bar at the bottom.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.241"><meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.243"><meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -290,7 +290,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.241</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.243</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -346,98 +346,6 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   <div style="font-size:9px;color:var(--fg4);font-style:italic;margin-bottom:6px;line-height:1.3">Surface-to-surface distance (treats each token as its full 3D cube)</div>
   <div id="dist-list" style="overflow-y:auto;max-height:50vh"></div>
 </div>
-<div id="srd-modal" class="smart-modal-backdrop" style="display:none;z-index:9998">
-<div class="smart-modal smart-modal-lg" style="padding:12px;border-color:var(--bg3);border-width:1px">
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-weight:bold;color:var(--fg);font-size:14px">🎨 Manage Token Image</span><span style="margin-left:auto;cursor:pointer;font-size:18px;color:var(--fg3)" id="srd-close">✕</span></div>
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-    <img id="srd-cur-img" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--fg3);flex-shrink:0;background:var(--bg2)">
-    <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:0">
-      <div style="display:flex;gap:6px;align-items:center"><input class="inp" id="srd-code-input" maxlength="6" style="font-family:monospace;flex:1;min-width:0" placeholder="Shortcode (e.g. w2a99)"><button class="btn btn-p" id="srd-code-apply" style="font-size:10px;padding:3px 10px;white-space:nowrap">Apply</button></div>
-      <div style="display:flex;gap:4px;align-items:center"><input class="inp" id="srd-save-name" placeholder="Token name (to save)" style="flex:1;min-width:0;font-size:10px"><button class="btn btn-s" id="srd-save-btn" style="font-size:9px;padding:2px 8px;white-space:nowrap">💾 Save</button></div>
-    </div>
-  </div>
-  <div id="srd-cur-code" style="display:none"></div>
-  <div id="srd-label-warn" style="display:none;background:#3a2618;border:1px solid #a86b2a;color:#fbd46e;font-size:10px;padding:6px 8px;border-radius:4px;margin-bottom:8px;line-height:1.4"></div>
-  <div style="font-size:10px;color:var(--fg3);margin-bottom:4px">Get a shortcode from:</div>
-  <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
-    <button class="btn btn-s srd-tab" data-tab="browse" style="font-size:10px;text-align:left;padding:5px 8px">🐉 Browse SRD Tokens</button>
-    <button class="btn btn-s" id="srd-toklib-open" style="font-size:10px;text-align:left;padding:5px 8px">👤 Browse Token Library</button>
-    <button class="btn btn-s srd-tab" data-tab="upload" style="font-size:10px;text-align:left;padding:5px 8px">⬆ Upload Custom Image</button>
-    <button class="btn btn-s srd-tab" data-tab="saved" style="font-size:10px;text-align:left;padding:5px 8px">💾 Load Saved Token</button>
-    <button class="btn btn-s srd-tab" data-tab="bake" style="font-size:10px;text-align:left;padding:5px 8px">🏷 Bake a Custom Label</button>
-  </div>
-  <div id="srd-tab-browse" style="display:none;flex-direction:column;flex:1;min-height:0">
-    <div style="display:flex;gap:4px;align-items:center;margin-bottom:6px"><input class="inp" id="srd-search" placeholder="Search monsters..." style="flex:1;font-size:11px"><span style="font-size:9px;color:var(--fg3)" id="srd-count"></span></div>
-    <div id="srd-list" style="flex:1;overflow-y:auto;min-height:200px;max-height:40vh"></div>
-  </div>
-  <div id="srd-tab-saved" style="display:none;flex-direction:column;flex:1;min-height:0">
-    <div id="srd-saved-list" style="flex:1;overflow-y:auto;min-height:100px;max-height:40vh"></div>
-  </div>
-  <div id="srd-tab-upload" style="display:none;flex-direction:column;gap:8px;padding:4px 0">
-    <div style="font-size:11px;color:var(--fg2)">Paste a direct image URL or upload your own token image.</div>
-    <div style="font-size:9px;color:var(--fg3)">Supported: .jpg, .jpeg, .gif, .png (max 5MB) - must be publicly accessible</div>
-    <div style="display:flex;gap:4px"><input class="inp" id="srd-img-url" placeholder="https://example.com/my-token.png" style="flex:1;font-family:monospace;font-size:10px"><button class="btn btn-p" id="srd-img-go" style="font-size:10px;padding:3px 10px;white-space:nowrap">Get Shortcode</button></div>
-    <div style="display:flex;gap:4px;align-items:center"><input type="file" id="srd-img-file" accept=".jpg,.jpeg,.png,.gif" style="display:none"><button class="btn btn-s" id="srd-img-filebtn" style="font-size:10px;padding:3px 8px;flex:1">📁 Upload Token Image</button></div>
-    <div id="srd-img-status" style="font-size:10px;min-height:14px"></div>
-    <div id="srd-img-loginbox" style="display:none;margin-top:6px;padding:9px;background:var(--bg2);border:1px solid var(--bg3);border-radius:5px">
-      <div style="font-size:11px;color:var(--fg2);line-height:1.5;margin-bottom:8px">Your image is cleaned up and ready. Log in with Discord to host it on BattleScry (your file is kept), or download it to host yourself and paste the URL above.</div>
-      <button class="btn btn-p" id="srd-img-login" style="width:100%;padding:7px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-bottom:5px"></button>
-      <button class="btn btn-s" id="srd-img-dl" style="width:100%;padding:6px;font-size:10px">Download cleaned image</button>
-    </div>
-    <div id="srd-img-preview" style="display:none;flex-direction:column;gap:8px;padding:6px;background:var(--bg2);border-radius:4px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <img id="srd-img-preview-img" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)">
-        <div style="flex:1"><div style="font-size:10px;color:var(--fg3)">Shortcode</div><div id="srd-img-code" style="font-family:monospace;color:var(--accent);font-weight:bold"></div></div>
-        <button class="btn btn-p" id="srd-img-apply" style="font-size:10px;padding:3px 10px">Apply</button>
-      </div>
-      <div style="font-size:9px;color:var(--fg3);margin-top:2px">Token crop - click to preview:</div>
-      <div style="display:flex;gap:16px;justify-content:center" id="srd-img-crops">
-        <div style="text-align:center;cursor:pointer" class="srd-crop-pick" data-crop="img"><img style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)" id="srd-crop-default"><div style="font-size:9px;color:var(--fg3);margin-top:3px">Default</div></div>
-        <div style="text-align:center;cursor:pointer" class="srd-crop-pick" data-crop="face"><img style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--bg3)" id="srd-crop-face"><div style="font-size:9px;color:var(--fg3);margin-top:3px">Face</div></div>
-      </div>
-      <div style="text-align:center"><button class="btn btn-p" id="srd-crop-use" style="display:none;font-size:10px;padding:3px 12px;margin-top:4px"></button></div>
-    </div>
-    <div id="srd-img-save" style="display:none;flex-direction:row;gap:4px;align-items:center"><input class="inp" id="srd-img-savename" placeholder="Save as name" style="flex:1;font-size:10px"><button class="btn btn-s" id="srd-img-savebtn" style="font-size:9px;padding:2px 8px;white-space:nowrap">💾 Save</button></div>
-    <a href="https://token.otfbm.io/" target="_blank" style="font-size:9px;color:var(--fg3);text-decoration:underline">Or use the OTFBM Token Maker directly ↗</a>
-  </div>
-  <div id="srd-tab-bake" style="display:none;flex-direction:column;gap:8px;padding:4px 0">
-    <div style="font-size:11px;color:var(--fg2)">Bake a permanent label onto the current custom token image. Useful when you want players to identify tokens that share the same image, since OTFBM only shows trailing-digit labels on custom images.</div>
-    <div id="srd-bake-nocode" style="font-size:10px;color:#fbd46e;padding:8px;background:#3a2618;border-radius:4px;border:1px solid #a86b2a">Set a shortcode at the top first (type one, or use Browse / Upload / Load Saved). Then come back here to bake a label onto it.</div>
-    <div id="srd-bake-content" style="display:none;flex-direction:column;gap:8px">
-      <div style="display:flex;gap:10px;align-items:flex-start">
-        <canvas id="srd-bake-preview" width="180" height="180" style="background:var(--bg2);border:1px solid var(--bg3);border-radius:4px;flex-shrink:0"></canvas>
-        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
-          <div><div style="font-size:10px;color:var(--fg3);margin-bottom:2px">Label text</div><input class="inp" id="srd-bake-text" maxlength="20" style="width:100%;font-size:11px;box-sizing:border-box" placeholder="e.g. Goblin1"></div>
-          <div><div style="font-size:10px;color:var(--fg3);margin-bottom:2px">Size</div><select class="inp" id="srd-bake-size" style="width:100%;font-size:11px;padding:3px"><option value="S">Small</option><option value="M" selected>Medium</option><option value="L">Large</option></select></div>
-          <div><div style="font-size:10px;color:var(--fg3);margin-bottom:2px">Position</div>
-            <div id="srd-bake-pos" style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--bg3);padding:2px;border-radius:3px">
-              <button class="srd-pos-btn" data-pos="tl" style="font-size:9px;padding:2px;background:var(--bg2);border:1px solid var(--bg3);color:var(--fg2);cursor:pointer;border-radius:2px">↖</button>
-              <button class="srd-pos-btn" data-pos="tc" style="font-size:9px;padding:2px;background:var(--bg2);border:1px solid var(--bg3);color:var(--fg2);cursor:pointer;border-radius:2px">↑</button>
-              <button class="srd-pos-btn" data-pos="tr" style="font-size:9px;padding:2px;background:var(--bg2);border:1px solid var(--bg3);color:var(--fg2);cursor:pointer;border-radius:2px">↗</button>
-              <button class="srd-pos-btn" data-pos="cl" style="font-size:9px;padding:2px;background:var(--bg2);border:1px solid var(--bg3);color:var(--fg2);cursor:pointer;border-radius:2px">←</button>
-              <button class="srd-pos-btn" data-pos="cc" style="font-size:9px;padding:2px;background:var(--bg2);border:1px solid var(--bg3);color:var(--fg2);cursor:pointer;border-radius:2px">●</button>
-              <button class="srd-pos-btn" data-pos="cr" style="font-size:9px;padding:2px;background:var(--bg2);border:1px solid var(--bg3);color:var(--fg2);cursor:pointer;border-radius:2px">→</button>
-              <button class="srd-pos-btn" data-pos="bl" style="font-size:9px;padding:2px;background:var(--bg2);border:1px solid var(--bg3);color:var(--fg2);cursor:pointer;border-radius:2px">↙</button>
-              <button class="srd-pos-btn" data-pos="bc" data-default="1" style="font-size:9px;padding:2px;background:var(--accent);border:1px solid var(--accent);color:#fff;cursor:pointer;border-radius:2px">↓</button>
-              <button class="srd-pos-btn" data-pos="br" style="font-size:9px;padding:2px;background:var(--bg2);border:1px solid var(--bg3);color:var(--fg2);cursor:pointer;border-radius:2px">↘</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div><div style="font-size:10px;color:var(--fg3);margin-bottom:2px">Text color</div><div id="srd-bake-color" style="display:flex;flex-wrap:wrap;gap:3px"></div></div>
-      <div><div style="font-size:10px;color:var(--fg3);margin-bottom:2px">Background color</div><div id="srd-bake-bg" style="display:flex;flex-wrap:wrap;gap:3px"></div></div>
-      <div style="display:flex;gap:4px;align-items:center">
-        <input class="inp" id="srd-bake-savename" placeholder="Save as (e.g. Tariq Labeled)" style="flex:1;font-size:10px">
-        <button class="btn btn-p" id="srd-bake-go" style="font-size:10px;padding:4px 12px;white-space:nowrap">🎨 Bake & Apply</button>
-      </div>
-      <div id="srd-bake-status" style="font-size:10px;min-height:14px"></div>
-    </div>
-  </div>
-  <details style="margin-bottom:4px"><summary style="cursor:pointer;color:var(--fg3);font-size:10px;padding:2px 0">⚙ Advanced</summary>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:6px"><label style="font-size:10px;display:flex;align-items:center;gap:3px;cursor:pointer;color:var(--fg2)"><input type="checkbox" id="srd-facedet" style="accent-color:var(--accent)">Face Detect</label><button class="btn btn-s" id="srd-clear" style="font-size:9px;padding:2px 6px;color:var(--danger);margin-left:auto">Clear image</button></div>
-    <div style="font-size:9px;color:var(--fg3);margin:4px 0 0;font-style:italic" id="srd-facedet-note"></div>
-  </details>
-</div></div>
 <script>
 const SIZES={T:{l:"Tiny",c:.5},S:{l:"Small",c:1},M:{l:"Medium",c:1},L:{l:"Large",c:2},H:{l:"Huge",c:3},G:{l:"Gargantuan",c:4}};
 const COLORS=[{code:"r",hex:"#e63c3c",n:"Red"},{code:"b",hex:"#1d7cbc",n:"Blue"},{code:"g",hex:"#01c178",n:"Green"},{code:"y",hex:"#fbd46e",n:"Yellow"},{code:"p",hex:"#b75897",n:"Purple"},{code:"c",hex:"#62c1bf",n:"Cyan"},{code:"w",hex:"#f4f6ff",n:"White"},{code:"bk",hex:"#07031a",n:"Black"},{code:"gy",hex:"#808080",n:"Grey"},{code:"o",hex:"#f08237",n:"Orange"},{code:"pk",hex:"#ffc1fa",n:"Pink"},{code:"bn",hex:"#582f29",n:"Brown"}];
@@ -828,15 +736,8 @@ function uploadImage(file,statusEl,onSuccess){
   img.onerror=()=>{URL.revokeObjectURL(objUrl);statusEl.innerHTML='<span style="color:var(--danger)">⚠ Could not read image</span>';};
   img.src=objUrl;}
 // SRD 5.1 monster whitelist (CC-BY 4.0): [name, size, type, CR]. Stat-block picker source;
-// all resolve via Avrae `!i madd <name> (BR; legacy)`. Art is chosen separately (see SRD_DEFAULT_ART).
+// all resolve via Avrae `!i madd <name> (BR; legacy)`. Art is chosen separately.
 const SRD_MONSTERS=[["Aboleth", "L", "Aberration", "10"], ["Acolyte", "M", "Humanoid", "1/4"], ["Adult Black Dragon", "H", "Dragon", "14"], ["Adult Blue Dragon", "H", "Dragon", "16"], ["Adult Brass Dragon", "H", "Dragon", "13"], ["Adult Bronze Dragon", "H", "Dragon", "15"], ["Adult Copper Dragon", "H", "Dragon", "14"], ["Adult Gold Dragon", "H", "Dragon", "17"], ["Adult Green Dragon", "H", "Dragon", "15"], ["Adult Red Dragon", "H", "Dragon", "17"], ["Adult Silver Dragon", "H", "Dragon", "16"], ["Adult White Dragon", "H", "Dragon", "13"], ["Air Elemental", "L", "Elemental", "5"], ["Ancient Black Dragon", "G", "Dragon", "21"], ["Ancient Blue Dragon", "G", "Dragon", "23"], ["Ancient Brass Dragon", "G", "Dragon", "20"], ["Ancient Bronze Dragon", "G", "Dragon", "22"], ["Ancient Copper Dragon", "G", "Dragon", "21"], ["Ancient Gold Dragon", "G", "Dragon", "24"], ["Ancient Green Dragon", "G", "Dragon", "22"], ["Ancient Red Dragon", "G", "Dragon", "24"], ["Ancient Silver Dragon", "G", "Dragon", "23"], ["Ancient White Dragon", "G", "Dragon", "20"], ["Androsphinx", "L", "Monstrosity", "17"], ["Animated Armor", "M", "Construct", "1"], ["Ankheg", "L", "Monstrosity", "2"], ["Ape", "M", "Beast", "1/2"], ["Archmage", "M", "Humanoid", "12"], ["Assassin", "M", "Humanoid", "8"], ["Awakened Shrub", "S", "Plant", "0"], ["Awakened Tree", "H", "Plant", "2"], ["Axe Beak", "L", "Beast", "1/4"], ["Azer", "M", "Elemental", "2"], ["Baboon", "S", "Beast", "0"], ["Badger", "T", "Beast", "0"], ["Balor", "H", "Fiend", "19"], ["Bandit", "M", "Humanoid", "1/8"], ["Bandit Captain", "M", "Humanoid", "2"], ["Barbed Devil", "M", "Fiend", "5"], ["Basilisk", "M", "Monstrosity", "3"], ["Bat", "T", "Beast", "0"], ["Bearded Devil", "M", "Fiend", "3"], ["Behir", "H", "Monstrosity", "11"], ["Berserker", "M", "Humanoid", "2"], ["Black Bear", "M", "Beast", "1/2"], ["Black Dragon Wyrmling", "M", "Dragon", "2"], ["Black Pudding", "L", "Ooze", "4"], ["Blink Dog", "M", "Fey", "1/4"], ["Blood Hawk", "S", "Beast", "1/8"], ["Blue Dragon Wyrmling", "M", "Dragon", "3"], ["Boar", "M", "Beast", "1/4"], ["Bone Devil", "L", "Fiend", "9"], ["Brass Dragon Wyrmling", "M", "Dragon", "1"], ["Bronze Dragon Wyrmling", "M", "Dragon", "2"], ["Brown Bear", "L", "Beast", "1"], ["Bugbear", "M", "Humanoid", "1"], ["Bulette", "L", "Monstrosity", "5"], ["Camel", "L", "Beast", "1/8"], ["Cat", "T", "Beast", "0"], ["Centaur", "L", "Monstrosity", "2"], ["Chain Devil", "M", "Fiend", "8"], ["Chimera", "L", "Monstrosity", "6"], ["Chuul", "L", "Aberration", "4"], ["Clay Golem", "L", "Construct", "9"], ["Cloaker", "L", "Aberration", "8"], ["Cloud Giant", "H", "Giant", "9"], ["Cockatrice", "S", "Monstrosity", "1/2"], ["Commoner", "M", "Humanoid", "0"], ["Constrictor Snake", "L", "Beast", "1/4"], ["Copper Dragon Wyrmling", "M", "Dragon", "1"], ["Couatl", "M", "Celestial", "4"], ["Crab", "T", "Beast", "0"], ["Crocodile", "L", "Beast", "1/2"], ["Cult Fanatic", "M", "Humanoid", "2"], ["Cultist", "M", "Humanoid", "1/8"], ["Darkmantle", "S", "Monstrosity", "1/2"], ["Death Dog", "M", "Monstrosity", "1"], ["Deep Gnome (Svirfneblin)", "S", "Humanoid", "1/2"], ["Deer", "M", "Beast", "0"], ["Deva", "M", "Celestial", "10"], ["Dire Wolf", "L", "Beast", "1"], ["Djinni", "L", "Elemental", "11"], ["Doppelganger", "M", "Monstrosity", "3"], ["Draft Horse", "L", "Beast", "1/4"], ["Dragon Turtle", "G", "Dragon", "17"], ["Dretch", "S", "Fiend", "1/4"], ["Drider", "L", "Monstrosity", "6"], ["Drow", "M", "Humanoid", "1/4"], ["Druid", "M", "Humanoid", "2"], ["Dryad", "M", "Fey", "1"], ["Duergar", "M", "Humanoid", "1"], ["Dust Mephit", "S", "Elemental", "1/2"], ["Eagle", "S", "Beast", "0"], ["Earth Elemental", "L", "Elemental", "5"], ["Efreeti", "L", "Elemental", "11"], ["Elephant", "H", "Beast", "4"], ["Elk", "L", "Beast", "1/4"], ["Erinyes", "M", "Fiend", "12"], ["Ettercap", "M", "Monstrosity", "2"], ["Ettin", "L", "Giant", "4"], ["Fire Elemental", "L", "Elemental", "5"], ["Fire Giant", "H", "Giant", "9"], ["Flesh Golem", "M", "Construct", "5"], ["Flying Snake", "T", "Beast", "1/8"], ["Flying Sword", "S", "Construct", "1/4"], ["Frog", "T", "Beast", "0"], ["Frost Giant", "H", "Giant", "8"], ["Gargoyle", "M", "Elemental", "2"], ["Gelatinous Cube", "L", "Ooze", "2"], ["Ghast", "M", "Undead", "2"], ["Ghost", "M", "Undead", "4"], ["Ghoul", "M", "Undead", "1"], ["Giant Ape", "H", "Beast", "7"], ["Giant Badger", "M", "Beast", "1/4"], ["Giant Bat", "L", "Beast", "1/4"], ["Giant Boar", "L", "Beast", "2"], ["Giant Centipede", "S", "Beast", "1/4"], ["Giant Constrictor Snake", "H", "Beast", "2"], ["Giant Crab", "M", "Beast", "1/8"], ["Giant Crocodile", "H", "Beast", "5"], ["Giant Eagle", "L", "Beast", "1"], ["Giant Elk", "H", "Beast", "2"], ["Giant Fire Beetle", "S", "Beast", "0"], ["Giant Frog", "M", "Beast", "1/4"], ["Giant Goat", "L", "Beast", "1/2"], ["Giant Hyena", "L", "Beast", "1"], ["Giant Lizard", "L", "Beast", "1/4"], ["Giant Octopus", "L", "Beast", "1"], ["Giant Owl", "L", "Beast", "1/4"], ["Giant Poisonous Snake", "M", "Beast", "1/4"], ["Giant Rat", "S", "Beast", "1/8"], ["Giant Rat (Diseased)", "S", "Beast", "1/8"], ["Giant Scorpion", "L", "Beast", "3"], ["Giant Sea Horse", "L", "Beast", "1/2"], ["Giant Shark", "H", "Beast", "5"], ["Giant Spider", "L", "Beast", "1"], ["Giant Toad", "L", "Beast", "1"], ["Giant Vulture", "L", "Beast", "1"], ["Giant Wasp", "M", "Beast", "1/2"], ["Giant Weasel", "M", "Beast", "1/8"], ["Giant Wolf Spider", "M", "Beast", "1/4"], ["Gibbering Mouther", "M", "Aberration", "2"], ["Glabrezu", "L", "Fiend", "9"], ["Gladiator", "M", "Humanoid", "5"], ["Gnoll", "M", "Humanoid", "1/2"], ["Goat", "M", "Beast", "0"], ["Goblin", "S", "Humanoid", "1/4"], ["Gold Dragon Wyrmling", "M", "Dragon", "3"], ["Gorgon", "L", "Monstrosity", "5"], ["Gray Ooze", "M", "Ooze", "1/2"], ["Green Dragon Wyrmling", "M", "Dragon", "2"], ["Green Hag", "M", "Fey", "3"], ["Grick", "M", "Monstrosity", "2"], ["Griffon", "L", "Monstrosity", "2"], ["Grimlock", "M", "Humanoid", "1/4"], ["Guard", "M", "Humanoid", "1/8"], ["Guardian Naga", "L", "Monstrosity", "10"], ["Gynosphinx", "L", "Monstrosity", "11"], ["Half-Red Dragon Veteran", "M", "Humanoid", "5"], ["Harpy", "M", "Monstrosity", "1"], ["Hawk", "T", "Beast", "0"], ["Hell Hound", "M", "Fiend", "3"], ["Hezrou", "L", "Fiend", "8"], ["Hill Giant", "H", "Giant", "5"], ["Hippogriff", "L", "Monstrosity", "1"], ["Hobgoblin", "M", "Humanoid", "1/2"], ["Homunculus", "T", "Construct", "0"], ["Horned Devil", "L", "Fiend", "11"], ["Hunter Shark", "L", "Beast", "2"], ["Hydra", "H", "Monstrosity", "8"], ["Hyena", "M", "Beast", "0"], ["Ice Devil", "L", "Fiend", "14"], ["Ice Mephit", "S", "Elemental", "1/2"], ["Imp", "T", "Fiend", "1"], ["Invisible Stalker", "M", "Elemental", "6"], ["Iron Golem", "L", "Construct", "16"], ["Jackal", "S", "Beast", "0"], ["Killer Whale", "H", "Beast", "3"], ["Knight", "M", "Humanoid", "3"], ["Kobold", "S", "Humanoid", "1/8"], ["Kraken", "G", "Monstrosity", "23"], ["Lamia", "L", "Monstrosity", "4"], ["Lemure", "M", "Fiend", "0"], ["Lich", "M", "Undead", "21"], ["Lion", "L", "Beast", "1"], ["Lizard", "T", "Beast", "0"], ["Lizardfolk", "M", "Humanoid", "1/2"], ["Mage", "M", "Humanoid", "6"], ["Magma Mephit", "S", "Elemental", "1/2"], ["Magmin", "S", "Elemental", "1/2"], ["Mammoth", "H", "Beast", "6"], ["Manticore", "L", "Monstrosity", "3"], ["Marilith", "L", "Fiend", "16"], ["Mastiff", "M", "Beast", "1/8"], ["Medusa", "M", "Monstrosity", "6"], ["Merfolk", "M", "Humanoid", "1/8"], ["Merrow", "L", "Monstrosity", "2"], ["Mimic", "M", "Monstrosity", "2"], ["Minotaur", "L", "Monstrosity", "3"], ["Minotaur Skeleton", "L", "Undead", "2"], ["Mule", "M", "Beast", "1/8"], ["Mummy", "M", "Undead", "3"], ["Mummy Lord", "M", "Undead", "15"], ["Nalfeshnee", "L", "Fiend", "13"], ["Night Hag", "M", "Fiend", "5"], ["Nightmare", "L", "Fiend", "3"], ["Noble", "M", "Humanoid", "1/8"], ["Ochre Jelly", "L", "Ooze", "2"], ["Octopus", "S", "Beast", "0"], ["Ogre", "L", "Giant", "2"], ["Ogre Zombie", "L", "Undead", "2"], ["Oni", "L", "Giant", "7"], ["Orc", "M", "Humanoid", "1/2"], ["Otyugh", "L", "Aberration", "5"], ["Owl", "T", "Beast", "0"], ["Owlbear", "L", "Monstrosity", "3"], ["Panther", "M", "Beast", "1/4"], ["Pegasus", "L", "Celestial", "2"], ["Phase Spider", "L", "Monstrosity", "3"], ["Pit Fiend", "L", "Fiend", "20"], ["Planetar", "L", "Celestial", "16"], ["Plesiosaurus", "L", "Beast", "2"], ["Poisonous Snake", "T", "Beast", "1/8"], ["Polar Bear", "L", "Beast", "2"], ["Pony", "M", "Beast", "1/8"], ["Priest", "M", "Humanoid", "2"], ["Pseudodragon", "T", "Dragon", "1/4"], ["Purple Worm", "G", "Monstrosity", "15"], ["Quasit", "T", "Fiend", "1"], ["Quipper", "T", "Beast", "0"], ["Rakshasa", "M", "Fiend", "13"], ["Rat", "T", "Beast", "0"], ["Raven", "T", "Beast", "0"], ["Red Dragon Wyrmling", "M", "Dragon", "4"], ["Reef Shark", "M", "Beast", "1/2"], ["Remorhaz", "H", "Monstrosity", "11"], ["Rhinoceros", "L", "Beast", "2"], ["Riding Horse", "L", "Beast", "1/4"], ["Roc", "G", "Monstrosity", "11"], ["Roper", "L", "Monstrosity", "5"], ["Rug of Smothering", "L", "Construct", "2"], ["Rust Monster", "M", "Monstrosity", "1/2"], ["Saber-Toothed Tiger", "L", "Beast", "2"], ["Sahuagin", "M", "Humanoid", "1/2"], ["Salamander", "L", "Elemental", "5"], ["Satyr", "M", "Fey", "1/2"], ["Scorpion", "T", "Beast", "0"], ["Scout", "M", "Humanoid", "1/2"], ["Sea Hag", "M", "Fey", "2"], ["Sea Horse", "T", "Beast", "0"], ["Shadow", "M", "Undead", "1/2"], ["Shambling Mound", "L", "Plant", "5"], ["Shield Guardian", "L", "Construct", "7"], ["Shrieker", "M", "Plant", "0"], ["Silver Dragon Wyrmling", "M", "Dragon", "2"], ["Skeleton", "M", "Undead", "1/4"], ["Solar", "L", "Celestial", "21"], ["Specter", "M", "Undead", "1"], ["Spider", "T", "Beast", "0"], ["Spirit Naga", "L", "Monstrosity", "8"], ["Sprite", "T", "Fey", "1/4"], ["Spy", "M", "Humanoid", "1"], ["Steam Mephit", "S", "Elemental", "1/4"], ["Stirge", "T", "Beast", "1/8"], ["Stone Giant", "H", "Giant", "7"], ["Stone Golem", "L", "Construct", "10"], ["Storm Giant", "H", "Giant", "13"], ["Succubus/Incubus", "M", "Fiend", "4"], ["Swarm of Bats", "M", "Swarm of Tiny Beasts", "1/4"], ["Swarm of Beetles", "M", "Swarm of Tiny Beasts", "1/2"], ["Swarm of Centipedes", "M", "Swarm of Tiny Beasts", "1/2"], ["Swarm of Insects", "M", "Swarm of Tiny Beasts", "1/2"], ["Swarm of Poisonous Snakes", "M", "Swarm of Tiny Beasts", "2"], ["Swarm of Quippers", "M", "Swarm of Tiny Beasts", "1"], ["Swarm of Rats", "M", "Swarm of Tiny Beasts", "1/4"], ["Swarm of Ravens", "M", "Swarm of Tiny Beasts", "1/4"], ["Swarm of Spiders", "M", "Swarm of Tiny Beasts", "1/2"], ["Swarm of Wasps", "M", "Swarm of Tiny Beasts", "1/2"], ["Tarrasque", "G", "Monstrosity", "30"], ["Thug", "M", "Humanoid", "1/2"], ["Tiger", "L", "Beast", "1"], ["Treant", "H", "Plant", "9"], ["Tribal Warrior", "M", "Humanoid", "1/8"], ["Triceratops", "H", "Beast", "5"], ["Troll", "L", "Giant", "5"], ["Tyrannosaurus Rex", "H", "Beast", "8"], ["Unicorn", "L", "Celestial", "5"], ["Vampire Spawn", "M", "Undead", "5"], ["Vampire, Bat Form", "M", "Undead", "13"], ["Vampire, Mist Form", "M", "Undead", "13"], ["Vampire, Vampire Form", "M", "Undead", "13"], ["Veteran", "M", "Humanoid", "3"], ["Violet Fungus", "M", "Plant", "1/4"], ["Vrock", "L", "Fiend", "6"], ["Vulture", "M", "Beast", "0"], ["Warhorse", "L", "Beast", "1/2"], ["Warhorse Skeleton", "L", "Undead", "1/2"], ["Water Elemental", "L", "Elemental", "5"], ["Weasel", "T", "Beast", "0"], ["Werebear, Bear Form", "M", "Humanoid", "5"], ["Werebear, Human Form", "M", "Humanoid", "5"], ["Werebear, Hybrid Form", "M", "Humanoid", "5"], ["Wereboar, Boar Form", "M", "Humanoid", "4"], ["Wereboar, Human Form", "M", "Humanoid", "4"], ["Wereboar, Hybrid Form", "M", "Humanoid", "4"], ["Wererat, Human Form", "M", "Humanoid", "2"], ["Wererat, Hybrid Form", "M", "Humanoid", "2"], ["Wererat, Rat Form", "M", "Humanoid", "2"], ["Weretiger, Human Form", "M", "Humanoid", "4"], ["Weretiger, Hybrid Form", "M", "Humanoid", "4"], ["Weretiger, Tiger Form", "M", "Humanoid", "4"], ["Werewolf, Human Form", "M", "Humanoid", "3"], ["Werewolf, Hybrid Form", "M", "Humanoid", "3"], ["Werewolf, Wolf Form", "M", "Humanoid", "3"], ["White Dragon Wyrmling", "M", "Dragon", "2"], ["Wight", "M", "Undead", "3"], ["Will-o'-Wisp", "T", "Undead", "2"], ["Winter Wolf", "L", "Monstrosity", "3"], ["Wolf", "M", "Beast", "1/4"], ["Worg", "L", "Monstrosity", "1/2"], ["Wraith", "M", "Undead", "5"], ["Wyvern", "L", "Dragon", "6"], ["Xorn", "M", "Elemental", "5"], ["Young Black Dragon", "L", "Dragon", "7"], ["Young Blue Dragon", "L", "Dragon", "9"], ["Young Brass Dragon", "L", "Dragon", "6"], ["Young Bronze Dragon", "L", "Dragon", "8"], ["Young Copper Dragon", "L", "Dragon", "7"], ["Young Gold Dragon", "L", "Dragon", "10"], ["Young Green Dragon", "L", "Dragon", "8"], ["Young Red Dragon", "L", "Dragon", "10"], ["Young Silver Dragon", "L", "Dragon", "9"], ["Young White Dragon", "L", "Dragon", "6"], ["Zombie", "M", "Undead", "1/4"]];
-// Default token art for SRD stat blocks: monster name -> OTFBM shortcode (game-icons.net, hosted at
-// battlescry.com/tokens). 334 monsters -> 139 icons. Applied on stat-block pick (see cb-srd handler),
-// tracked via _autoArt so it is non-destructive. Stored without the trailing "~"; the handler adds it.
-const SRD_DEFAULT_ART={"Aboleth":"6dg36","Acolyte":"zrgm8","Adult Black Dragon":"4wnv9","Adult Blue Dragon":"4wnv9","Adult Brass Dragon":"4wnv9","Adult Bronze Dragon":"4wnv9","Adult Copper Dragon":"4wnv9","Adult Gold Dragon":"4wnv9","Adult Green Dragon":"4wnv9","Adult Red Dragon":"4wnv9","Adult Silver Dragon":"4wnv9","Adult White Dragon":"4wnv9","Air Elemental":"4shud","Ancient Black Dragon":"4wnv9","Ancient Blue Dragon":"4wnv9","Ancient Brass Dragon":"4wnv9","Ancient Bronze Dragon":"4wnv9","Ancient Copper Dragon":"4wnv9","Ancient Gold Dragon":"4wnv9","Ancient Green Dragon":"4wnv9","Ancient Red Dragon":"4wnv9","Ancient Silver Dragon":"4wnv9","Ancient White Dragon":"4wnv9","Androsphinx":"2csmg","Animated Armor":"m4wnx","Ankheg":"47gsh","Ape":"nnuy7","Archmage":"8pr82","Assassin":"zxmzx","Awakened Shrub":"ckgdq","Awakened Tree":"rtxqa","Axe Beak":"yhg8j","Azer":"ynxa7","Baboon":"p9rc6","Badger":"vux3d","Balor":"r7ry5","Bandit":"5j4kv","Bandit Captain":"5j4kv","Barbed Devil":"y2m3s","Basilisk":"jbrss","Bat":"zfyff","Bearded Devil":"y2m3s","Behir":"64n5h","Berserker":"5j4kv","Black Bear":"88nj6","Black Dragon Wyrmling":"6zn9f","Black Pudding":"58xww","Blink Dog":"5fhrn","Blood Hawk":"cnnp4","Blue Dragon Wyrmling":"6zn9f","Boar":"pzgp2","Bone Devil":"yyxd3","Brass Dragon Wyrmling":"6zn9f","Bronze Dragon Wyrmling":"6zn9f","Brown Bear":"88nj6","Bugbear":"g4muh","Bulette":"4wnv9","Camel":"bgrrj","Cat":"wqmer","Centaur":"jhng3","Chain Devil":"y2m3s","Chimera":"c7h3a","Chuul":"wygca","Clay Golem":"vghe8","Cloaker":"vag5z","Cloud Giant":"4cr9r","Cockatrice":"9xgjm","Commoner":"nbscu","Constrictor Snake":"nzrtn","Copper Dragon Wyrmling":"6zn9f","Couatl":"wd4fq","Crab":"8uhs7","Crocodile":"c8u2w","Cult Fanatic":"zrgm8","Cultist":"zrgm8","Darkmantle":"9rx59","Death Dog":"5fhrn","Deep Gnome (Svirfneblin)":"gyhgx","Deer":"mqs45","Deva":"9dmdk","Dire Wolf":"2xgtm","Djinni":"n3rep","Doppelganger":"ptmfb","Draft Horse":"rknct","Dragon Turtle":"p4gpx","Dretch":"z54tz","Drider":"jxsnj","Drow":"zxmzx","Druid":"b3h7z","Dryad":"g3mxv","Duergar":"gyhgx","Dust Mephit":"4aune","Eagle":"95h8e","Earth Elemental":"4pu6g","Efreeti":"zxmzx","Elephant":"gvrnd","Elk":"mqs45","Erinyes":"9dmdk","Ettercap":"vpgzr","Ettin":"4cr9r","Fire Elemental":"4shud","Fire Giant":"4cr9r","Flesh Golem":"pur2y","Flying Snake":"nzrtn","Flying Sword":"rmhum","Frog":"r8ghv","Frost Giant":"4cr9r","Gargoyle":"5yms5","Gelatinous Cube":"ybh9u","Ghast":"2fuc2","Ghost":"4jn8c","Ghoul":"2fuc2","Giant Ape":"nnuy7","Giant Badger":"vux3d","Giant Bat":"zfyff","Giant Boar":"pzgp2","Giant Centipede":"ydh9c","Giant Constrictor Snake":"nzrtn","Giant Crab":"8uhs7","Giant Crocodile":"c8u2w","Giant Eagle":"95h8e","Giant Elk":"mqs45","Giant Fire Beetle":"vsrb9","Giant Frog":"r8ghv","Giant Goat":"jkurc","Giant Hyena":"pvhzk","Giant Lizard":"nhgqj","Giant Octopus":"bpnnn","Giant Owl":"v6heq","Giant Poisonous Snake":"nzrtn","Giant Rat":"r5n4w","Giant Rat (Diseased)":"r5n4w","Giant Scorpion":"zaxpe","Giant Sea Horse":"mgnsm","Giant Shark":"wng4y","Giant Spider":"jxsnj","Giant Toad":"r8ghv","Giant Vulture":"gwxhk","Giant Wasp":"vfnje","Giant Weasel":"6esj2","Giant Wolf Spider":"2xgtm","Gibbering Mouther":"6dg36","Glabrezu":"2erzf","Gladiator":"5j4kv","Gnoll":"2erzf","Goat":"jkurc","Goblin":"yqgvg","Gold Dragon Wyrmling":"6zn9f","Gorgon":"v2xqn","Gray Ooze":"ybh9u","Green Dragon Wyrmling":"6zn9f","Green Hag":"8pr82","Grick":"mtnhb","Griffon":"c7h3a","Grimlock":"5j4kv","Guard":"5j4kv","Guardian Naga":"mtnhb","Gynosphinx":"b2ggu","Half-Red Dragon Veteran":"4wnv9","Harpy":"wd4fq","Hawk":"cnnp4","Hell Hound":"2erzf","Hezrou":"jvnw7","Hill Giant":"4cr9r","Hippogriff":"c7h3a","Hobgoblin":"yqgvg","Homunculus":"4aune","Horned Devil":"r7ry5","Hunter Shark":"wng4y","Hydra":"64n5h","Hyena":"pvhzk","Ice Devil":"y2m3s","Ice Mephit":"4aune","Imp":"4aune","Invisible Stalker":"4jn8c","Iron Golem":"m4wnx","Jackal":"5fhrn","Killer Whale":"9chbg","Knight":"zrgm8","Kobold":"jbrss","Kraken":"2wgtd","Lamia":"2csmg","Lemure":"z54tz","Lich":"jngky","Lion":"8mr8x","Lizard":"nhgqj","Lizardfolk":"76xp6","Mage":"8pr82","Magma Mephit":"4aune","Magmin":"bhxx8","Mammoth":"m2rue","Manticore":"8mr8x","Marilith":"84x3m","Mastiff":"5fhrn","Medusa":"84x3m","Merfolk":"2dnpk","Merrow":"wjhyw","Mimic":"gehg2","Minotaur":"6ysjx","Minotaur Skeleton":"yyxd3","Mule":"bqxth","Mummy":"nvgqt","Mummy Lord":"nvgqt","Nalfeshnee":"pzgp2","Night Hag":"8pr82","Nightmare":"rknct","Noble":"nbscu","Ochre Jelly":"58xww","Octopus":"bpnnn","Ogre":"cxr93","Ogre Zombie":"2fuc2","Oni":"wkxzc","Orc":"j5uru","Otyugh":"6dg36","Owl":"v6heq","Owlbear":"wb4qs","Panther":"2jgxp","Pegasus":"zc4xr","Phase Spider":"y3r6p","Pit Fiend":"r7ry5","Planetar":"9dmdk","Plesiosaurus":"crhfy","Poisonous Snake":"nzrtn","Polar Bear":"wb4qs","Pony":"rknct","Priest":"zrgm8","Pseudodragon":"4wnv9","Purple Worm":"gzmxf","Quasit":"4aune","Quipper":"8tgw5","Rakshasa":"whme3","Rat":"r5n4w","Raven":"57hra","Red Dragon Wyrmling":"6zn9f","Reef Shark":"wng4y","Remorhaz":"ydh9c","Rhinoceros":"nunz8","Riding Horse":"rknct","Roc":"6qrdb","Roper":"c5gas","Rug of Smothering":"9wgjd","Rust Monster":"vsrb9","Saber-Toothed Tiger":"2jgxp","Sahuagin":"wjhyw","Salamander":"mtnhb","Satyr":"zxmzx","Scorpion":"zaxpe","Scout":"5j4kv","Sea Hag":"8pr82","Sea Horse":"mgnsm","Shadow":"banmp","Shambling Mound":"89hdv","Shield Guardian":"m4wnx","Shrieker":"zwm79","Silver Dragon Wyrmling":"6zn9f","Skeleton":"rrrg4","Solar":"9dmdk","Specter":"4jn8c","Spider":"jxsnj","Spirit Naga":"mtnhb","Sprite":"8zxkb","Spy":"zxmzx","Steam Mephit":"4aune","Stirge":"vag5z","Stone Giant":"4cr9r","Stone Golem":"4pu6g","Storm Giant":"4cr9r","Succubus/Incubus":"y2m3s","Swarm of Bats":"4fghf","Swarm of Beetles":"vsrb9","Swarm of Centipedes":"ydh9c","Swarm of Insects":"2bnyz","Swarm of Poisonous Snakes":"nzrtn","Swarm of Quippers":"8tgw5","Swarm of Rats":"r5n4w","Swarm of Ravens":"57hra","Swarm of Spiders":"jxsnj","Swarm of Wasps":"vfnje","Tarrasque":"5sxgt","Thug":"5j4kv","Tiger":"whme3","Treant":"m9ru6","Tribal Warrior":"5j4kv","Triceratops":"5kgmq","Troll":"6jubz","Tyrannosaurus Rex":"5sxgt","Unicorn":"9e4kf","Vampire Spawn":"2fuc2","Vampire, Bat Form":"zfyff","Vampire, Mist Form":"b6rrt","Vampire, Vampire Form":"2yr7h","Veteran":"5j4kv","Violet Fungus":"zwm79","Vrock":"5yms5","Vulture":"gwxhk","Warhorse":"rknct","Warhorse Skeleton":"rknct","Water Elemental":"7mhcm","Weasel":"5nmd4","Werebear, Bear Form":"88nj6","Werebear, Human Form":"mdugv","Werebear, Hybrid Form":"88nj6","Wereboar, Boar Form":"6wu8k","Wereboar, Human Form":"mdugv","Wereboar, Hybrid Form":"pzgp2","Wererat, Human Form":"mdugv","Wererat, Hybrid Form":"r5n4w","Wererat, Rat Form":"r5n4w","Weretiger, Human Form":"mdugv","Weretiger, Hybrid Form":"whme3","Weretiger, Tiger Form":"whme3","Werewolf, Human Form":"mdugv","Werewolf, Hybrid Form":"mvsrk","Werewolf, Wolf Form":"2xgtm","White Dragon Wyrmling":"6zn9f","Wight":"gxxh4","Will-o'-Wisp":"bhxx8","Winter Wolf":"2xgtm","Wolf":"2xgtm","Worg":"2xgtm","Wraith":"4jn8c","Wyvern":"6zn9f","Xorn":"6dg36","Young Black Dragon":"6zn9f","Young Blue Dragon":"6zn9f","Young Brass Dragon":"6zn9f","Young Bronze Dragon":"6zn9f","Young Copper Dragon":"6zn9f","Young Gold Dragon":"6zn9f","Young Green Dragon":"6zn9f","Young Red Dragon":"6zn9f","Young Silver Dragon":"6zn9f","Young White Dragon":"6zn9f","Zombie":"2fuc2"};
-// Browse SRD Tokens source: the 334 SRD monsters paired with their default icon (from SRD_MONSTERS +
-// SRD_DEFAULT_ART). Reuses the SRD_TOKENS name so renderSrdList works unchanged. [name, size, type, shortcode].
-const SRD_TOKENS=SRD_MONSTERS.map(m=>[m[0],m[1],m[2],SRD_DEFAULT_ART[m[0]]]);
 // Avrae-style default combatant name for an SRD monster. Mirrors Avrae get_initials (utils/functions.py):
 // split on \W+; one word -> first two letters uppercased (Goblin->GO, Orc->OR); multiple words -> first
 // char of each word, case preserved (Young Red Dragon->YRD, Swarm of Crawling Claws->SoCC). Then the next
@@ -4350,11 +4251,6 @@ function setup(){
           // re-derives the name unless it was hand-edited.
           const cur=String(ac.name||"").trim();
           if(cur===""||cur===ac._autoName){const auto=monAutoName(row[0]);ac.name=auto;ac._autoName=auto;}
-          // Default token art: apply the mapped icon shortcode unless the user picked a custom image.
-          // _autoArt mirrors _autoName so switching stat blocks re-derives, but a custom image sticks.
-          // Trailing "~" = face-detect off (icons are already cropped circular tokens).
-          const dArt=SRD_DEFAULT_ART[row[0]];
-          if(ac.useDefaultArt&&dArt){const want=dArt+"~";if(!ac.tokenImage||ac.tokenImage===ac._autoArt){ac.tokenImage=want;ac._autoArt=want;}}
         }
         renderSB();
       }
@@ -4392,24 +4288,6 @@ function setup(){
         if(c){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){pushU();tk.col=c.col;tk.row=c.row;renderSVG();renderCmd();}}
         else{e.target.style.borderColor="var(--danger)";setTimeout(()=>e.target.style.borderColor="",1500);}
         return;}}
-    if(e.target.id==="cb-defart"){
-      // Opt-in default token art. On: apply the mapped icon for the current stat block (unless a custom
-      // image is set). Off: drop the auto art but keep a custom image. _autoArt tracks the auto value.
-      const checked=e.target.checked;
-      if(S.addingCombatant){
-        const ac=S.addingCombatant;ac.useDefaultArt=checked;
-        const val=((ac.mon&&ac.mon.srd)||"").trim();
-        const row=val?SRD_MONSTERS.find(m=>m[0].toLowerCase()===val.toLowerCase()):null;
-        if(checked){
-          const dArt=row?SRD_DEFAULT_ART[row[0]]:"";
-          if(dArt){const want=dArt+"~";if(!ac.tokenImage||ac.tokenImage===ac._autoArt){ac.tokenImage=want;ac._autoArt=want;}}
-        }else{
-          if(ac.tokenImage&&ac.tokenImage===ac._autoArt)ac.tokenImage="";
-          ac._autoArt="";
-        }
-        renderSB();
-      }
-      return;}
     if(e.target.id==="cb-hide"){
       // Hide the HP+AC inputs entirely when checked (so players don't see exact numbers); show a
       // condition word instead. Unchecking reveals and re-enables editing.
@@ -5366,8 +5244,6 @@ function setup(){
   },true);
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&S.cropSelect)exitCropSelect();});
 
-  // SRD Monster Token Browser Modal
-  let srdTok=null;// token being edited
   // Resolve the token that token-image actions target: the draft combatant in Add mode (snapshotting the
   // current form fields first so a re-render keeps what the user typed), else the single selected token.
   function srdTargetToken(){
@@ -5382,520 +5258,7 @@ function setup(){
     }
     return S.sel.type==="token"&&S.sel.ids.size===1?S.tokens.find(x=>x.id===[...S.sel.ids][0]):null;
   }
-  function openSrdModal(){
-    const tk=srdTargetToken();
-    if(!tk){showError("Select a token first");return;}
-    srdTok=tk;const m=$("srd-modal");m.style.display="flex";
-    // Current token display
-    const code=(tk.tokenImage||"").replace(/~$/,"");
-    $("srd-cur-code").textContent=code||"none";
-    $("srd-cur-img").src=code?"https://token.otfbm.io/img/"+code:"";
-    $("srd-cur-img").style.display=code?"":"none";
-    $("srd-facedet").checked=!tk.tokenImage||!tk.tokenImage.endsWith("~");
-    $("srd-facedet-note").textContent=$("srd-facedet").checked?"Preview may differ from OTFBM render (face detect)":"";
-    $("srd-code-input").value=code;
-    // Default to shortcode tab
-    document.querySelectorAll(".srd-tab").forEach(b=>b.classList.remove("active"));
-    ["browse","saved","upload","bake"].forEach(t=>{const el=$("srd-tab-"+t);if(el)el.style.display="none";});
-    $("srd-search").value="";renderSrdList("");
-    refreshLabelWarn();}
-  function closeSrdModal(){$("srd-modal").style.display="none";srdTok=null;}
-  function applySrdCode(code){
-    if(!srdTok)return;pushU();
-    const facedet=$("srd-facedet").checked;
-    srdTok.tokenImage=code?(code.replace(/~$/,"")+(facedet?"":"~")):"";
-    closeSrdModal();renderAll();}
-  function renderSrdList(q){
-    const list=$("srd-list");const lq=q.toLowerCase();
-    const matches=q?SRD_TOKENS.filter(m=>m[0].toLowerCase().includes(lq)||m[2].toLowerCase().includes(lq)):SRD_TOKENS;
-    $("srd-count").textContent=matches.length+"/"+SRD_TOKENS.length;
-    const show=matches.slice(0,80);
-    list.innerHTML=show.map(m=>`<div class="srd-row" data-code="${m[3]}" style="display:flex;align-items:center;gap:8px;padding:4px 6px;cursor:pointer;border-radius:4px;font-size:11px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><img src="https://token.otfbm.io/img/${m[3]}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--fg3);flex-shrink:0" onerror="this.style.display='none'"><span style="flex:1;color:var(--fg)">${m[0]}</span><span style="color:var(--fg3);font-size:9px">${m[1]} ${m[2]}</span></div>`).join("")+(matches.length>80?`<div style="text-align:center;color:var(--fg3);font-size:10px;padding:8px">Showing 80 of ${matches.length} - refine search</div>`:"");}
-  // Modal events
-  $("srd-close").onclick=closeSrdModal;
-  $("srd-modal").onclick=e=>{if(e.target===$("srd-modal"))closeSrdModal();};
-  // ESC closes the SRD modal when it's open
-  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("srd-modal").style.display!=="none")closeSrdModal();});
-  $("srd-search").oninput=e=>renderSrdList(e.target.value);
-  $("srd-list").onclick=e=>{const row=e.target.closest(".srd-row");if(row)applySrdCode(row.dataset.code);};
-  $("srd-code-apply").onclick=()=>{const v=$("srd-code-input").value.trim().replace(/[^a-zA-Z0-9]/g,"").slice(0,6);
-    // Auto-save if name field has content
-    const saveName=$("srd-save-name")?.value.trim();
-    if(saveName&&v){const existing=S.savedTokens.find(t=>t.name.toLowerCase()===saveName.toLowerCase());
-      if(existing)existing.shortcode=v;else S.savedTokens.push({name:saveName,shortcode:v});
-      S.tokenSaves=S.tokenSaves.filter(t=>t.name.toLowerCase()!==saveName.toLowerCase());
-      S.tokenSaves.push({name:saveName,shortcode:v});
-      S.tokenDeletes=S.tokenDeletes.filter(n=>n.toLowerCase()!==saveName.toLowerCase());}
-    applySrdCode(v);};
-  $("srd-code-input").onkeydown=e=>{if(e.key==="Enter")$("srd-code-apply").click();};
-  $("srd-clear").onclick=()=>applySrdCode("");
-  // Custom Image - URL to shortcode via proxy
-  $("srd-img-go").onclick=()=>{
-    const url=$("srd-img-url").value.trim();const status=$("srd-img-status");
-    if(!url){status.innerHTML='<span style="color:var(--danger)">Enter an image URL first</span>';return;}
-    status.innerHTML='<span style="color:var(--accent)">⏳ Uploading to OTFBM...</span>';
-    $("srd-img-preview").style.display="none";
-    fetch(PROXY_URL.replace("?url=","?token=")+encodeURIComponent(url))
-      .then(r=>r.json())
-      .then(data=>{
-        if(data.error){status.innerHTML='<span style="color:var(--danger)">⚠ '+data.error+'</span>';return;}
-        if(data.shortcode){
-          status.innerHTML='<span style="color:var(--accent)">✓ Shortcode generated!</span>';
-          $("srd-img-code").textContent=data.shortcode;
-          const base="https://token.otfbm.io/";
-          $("srd-img-preview-img").src=base+"img/"+data.shortcode;
-          $("srd-crop-default").src=base+"img/"+data.shortcode;
-          // Face crop: hide the whole option if OTFBM has no face for this image (404).
-          {const fc=$("srd-crop-face");fc.onerror=function(){this.parentElement.style.display="none";};fc.onload=function(){this.parentElement.style.display="";this.style.opacity="1";};fc.src=base+"face/"+data.shortcode;}
-          $("srd-img-preview").style.display="flex";
-          $("srd-img-save").style.display="flex";$("srd-img-savename").value="";}
-      }).catch(err=>{status.innerHTML='<span style="color:var(--danger)">⚠ Request failed - check the URL</span>';});};
-  $("srd-img-url").onkeydown=e=>{if(e.key==="Enter")$("srd-img-go").click();};
-  {const tlb=$("srd-toklib-open");if(tlb)tlb.onclick=()=>showTokenLibraryModal(t=>{
-    // Library tokens carry a known size and (usually) a pre-generated shortcode. Apply both
-    // straight to the combatant being edited: default crop (face off => trailing ~), and the
-    // creature's size so the props panel reflects e.g. Gargantuan rather than staying Medium.
-    const sl=t.size?(TOK_SIZE_LETTER[t.size]||""):"";
-    const applyCode=code=>{if(!code)return;pushU();if(srdTok){if(sl)srdTok.size=sl;srdTok.tokenImage=code.replace(/~$/,"")+"~";}closeSrdModal();renderAll();};
-    if(t.code)applyCode(t.code);
-    else{const url=t.img?tcImgUrl(t.img):null;if(!url)return;fetch(PROXY_URL.replace("?url=","?token=")+encodeURIComponent(url)).then(r=>r.json()).then(d=>{if(d.shortcode)applyCode(d.shortcode);}).catch(()=>{});}
-  });}
-  $("srd-img-apply").onclick=()=>{const code=$("srd-img-code").textContent;if(!code)return;
-    // Auto-save if name field has content
-    const saveName=$("srd-img-savename")?.value.trim();
-    if(saveName){const existing=S.savedTokens.find(t=>t.name.toLowerCase()===saveName.toLowerCase());
-      if(existing)existing.shortcode=code;else S.savedTokens.push({name:saveName,shortcode:code});
-      S.tokenSaves=S.tokenSaves.filter(t=>t.name.toLowerCase()!==saveName.toLowerCase());
-      S.tokenSaves.push({name:saveName,shortcode:code});
-      S.tokenDeletes=S.tokenDeletes.filter(n=>n.toLowerCase()!==saveName.toLowerCase());}
-    applySrdCode(code);};
-  // Crop version picker - click to preview, double-click non-default to re-crop
-  $("srd-img-crops").onclick=e=>{const pick=e.target.closest(".srd-crop-pick");if(!pick)return;
-    const crop=pick.dataset.crop;const code=$("srd-img-code").textContent;if(!code)return;
-    const base="https://token.otfbm.io/";
-    $("srd-img-preview-img").src=base+crop+"/"+code;
-    document.querySelectorAll(".srd-crop-pick img").forEach(img=>img.style.borderColor="var(--bg3)");
-    pick.querySelector("img").style.borderColor="var(--accent)";
-    // Show "Use this crop" button for non-default
-    const useBtn=$("srd-crop-use");
-    if(crop!=="img"){useBtn.style.display="inline-block";useBtn.dataset.crop=crop;useBtn.textContent="⬆ Use "+({face:"Face"}[crop]||crop)+" crop as token";}
-    else{useBtn.style.display="none";}};
-  $("srd-crop-use").onclick=async function(){
-    const crop=this.dataset.crop;const code=$("srd-img-code").textContent;const status=$("srd-img-status");
-    if(!crop||!code)return;
-    this.disabled=true;this.textContent="⏳ Re-cropping...";status.innerHTML='<span style="color:var(--accent)">Downloading '+crop+' crop...</span>';
-    try{
-      // Step 1: Download the crop via proxy
-      const cropUrl="https://token.otfbm.io/"+crop+"/"+code;
-      const imgResp=await fetch(PROXY_URL+encodeURIComponent(cropUrl));
-      if(!imgResp.ok)throw new Error("Failed to download crop");
-      const blob=await imgResp.blob();
-      // Step 2: Upload to imgbb
-      status.innerHTML='<span style="color:var(--accent)">Uploading to imgbb...</span>';
-      const fd=new FormData();fd.append("file",blob,"token_"+crop+".jpg");
-      const upResp=await fetch(UPLOAD_URL,{method:"POST",body:fd});
-      const upData=await upResp.json();
-      if(upData.error)throw new Error(upData.error);
-      // Step 3: Get new shortcode from OTFBM
-      status.innerHTML='<span style="color:var(--accent)">Getting shortcode from OTFBM...</span>';
-      const tkResp=await fetch(PROXY_URL.replace("?url=","?token=")+encodeURIComponent(upData.url));
-      const tkData=await tkResp.json();
-      if(tkData.error)throw new Error(tkData.error);
-      // Success - update with new shortcode
-      $("srd-img-code").textContent=tkData.shortcode;
-      const base="https://token.otfbm.io/";
-      $("srd-img-preview-img").src=base+"img/"+tkData.shortcode;
-      $("srd-crop-default").src=base+"img/"+tkData.shortcode;
-      {const fc=$("srd-crop-face");fc.onerror=function(){this.parentElement.style.display="none";};fc.onload=function(){this.parentElement.style.display="";this.style.opacity="1";};fc.src=base+"face/"+tkData.shortcode;}
-      status.innerHTML='<span style="color:var(--accent)">✓ New shortcode: '+tkData.shortcode+' ('+crop+' crop applied)</span>';
-      this.style.display="none";
-    }catch(err){status.innerHTML='<span style="color:var(--danger)">⚠ Re-crop failed: '+err.message+'</span>';}
-    this.disabled=false;this.textContent="⬆ Use "+({face:"Face"}[crop]||crop)+" crop as token";};
-  // Token image file upload
-  $("srd-img-filebtn").onclick=()=>$("srd-img-file").click();
-  $("srd-img-file").onchange=e=>{const file=e.target.files?.[0];if(!file)return;
-    const status=$("srd-img-status"), loginbox=$("srd-img-loginbox");
-    if(loginbox)loginbox.style.display="none";
-    status.innerHTML='<span style="color:var(--accent)">Cleaning up image...</span>';
-    bscryConvertTokenPng(file,(out)=>{
-      // Host the cleaned PNG on R2, then feed its URL into the existing shortcode fetch (srd-img-go).
-      const proceed=()=>{
-        if(loginbox)loginbox.style.display="none";
-        status.innerHTML='<span style="color:var(--accent)">Hosting on BattleScry...</span>';
-        bscryHostBlob(out.blob,"token.png",(url)=>{$("srd-img-url").value=url;$("srd-img-go").click();},
-          (err)=>{const s=$("srd-img-status");if(s)s.innerHTML='<span style="color:var(--danger)">'+err+'</span>';});
-      };
-      if(BSCRY_SESSION){proceed();return;}
-      // Logged out: a clean login/download box (popup login keeps this modal open and auto-hosts).
-      status.innerHTML="";
-      if(loginbox){
-        loginbox.style.display="block";
-        const lo=$("srd-img-login");if(lo){lo.innerHTML=discordLogo(14,11)+"Log in to host it";lo.onclick=()=>{bscryOnSessionChange=()=>{bscryOnSessionChange=null;if(BSCRY_SESSION&&$("srd-img-url"))proceed();};bscryStartLogin();};}
-        const dl=$("srd-img-dl");if(dl)dl.onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(out.blob);a.download="token.png";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000);};
-      }
-    },(err)=>{status.innerHTML='<span style="color:var(--danger)">'+err+'</span>';});};
-  $("srd-img-savebtn").onclick=()=>{
-    const name=$("srd-img-savename").value.trim();const code=$("srd-img-code").textContent;
-    if(!name){showError("Enter a name to save this token as");return;}
-    if(!code)return;
-    const existing=S.savedTokens.find(t=>t.name.toLowerCase()===name.toLowerCase());
-    if(existing)existing.shortcode=code;else S.savedTokens.push({name,shortcode:code});
-    S.tokenSaves=S.tokenSaves.filter(t=>t.name.toLowerCase()!==name.toLowerCase());
-    S.tokenSaves.push({name,shortcode:code});
-    S.tokenDeletes=S.tokenDeletes.filter(n=>n.toLowerCase()!==name.toLowerCase());
-    $("srd-img-savename").value="";renderCmd();
-    showError("✅ Token '"+name+"' will be saved when you paste the command");};
-  // Save token button (from shortcode tab)
-  $("srd-save-btn").onclick=()=>{
-    const name=$("srd-save-name").value.trim();const code=$("srd-code-input").value.trim().replace(/[^a-zA-Z0-9]/g,"");
-    if(!name){showError("Enter a name to save this token as");return;}
-    if(!code){showError("Enter or apply a shortcode first");return;}
-    // Check for duplicate name
-    const existing=S.savedTokens.find(t=>t.name.toLowerCase()===name.toLowerCase());
-    if(existing)existing.shortcode=code;else S.savedTokens.push({name,shortcode:code});
-    // Track save for command output
-    S.tokenSaves=S.tokenSaves.filter(t=>t.name.toLowerCase()!==name.toLowerCase());
-    S.tokenSaves.push({name,shortcode:code});
-    // Remove from deletes if it was pending delete
-    S.tokenDeletes=S.tokenDeletes.filter(n=>n.toLowerCase()!==name.toLowerCase());
-    $("srd-save-name").value="";renderCmd();
-    showError("✅ Token '"+name+"' will be saved when you paste the command");};
-  // Saved tokens list - mapTokens entries split into "regular" (savedTokens only) and "baked" (savedTokens + tokenLabels metadata)
-  function renderSavedTokens(){
-    const list=$("srd-saved-list");if(!list)return;
-    const all=[...S.savedTokens];
-    // Include pending saves not yet in savedTokens
-    S.tokenSaves.forEach(ts=>{if(!all.find(t=>t.name===ts.name))all.push(ts);});
-    // Exclude pending deletes
-    const filtered=all.filter(t=>!S.tokenDeletes.includes(t.name));
-    // Build set of names that have label metadata = these render as "Baked Tokens"
-    const labelMap={};
-    [...S.tokenLabels,...S.tokenLabelSaves].forEach(c=>{if(!S.tokenLabelDeletes.includes(c.name))labelMap[c.name]=c;});
-    const regular=filtered.filter(t=>!labelMap[t.name]);
-    const baked=filtered.filter(t=>labelMap[t.name]);
-    if(!regular.length&&!baked.length){list.innerHTML='<div style="text-align:center;color:var(--fg3);font-size:11px;padding:20px">No saved tokens.<br><br>Save tokens from the Shortcode or Custom tabs, or bake labels from the Bake Label tab.</div>';return;}
-    let html="";
-    if(regular.length){
-      html+='<div style="font-size:9px;color:var(--fg3);text-transform:uppercase;padding:4px 6px 2px;letter-spacing:.5px">Saved Tokens</div>';
-      html+=regular.map(t=>{
-        const isPending=S.tokenSaves.find(s=>s.name===t.name);
-        return`<div class="srd-row srd-saved-row" data-code="${t.shortcode}" style="display:flex;align-items:center;gap:8px;padding:5px 6px;cursor:pointer;border-radius:4px;font-size:11px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><img src="https://token.otfbm.io/img/${t.shortcode}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--fg3);flex-shrink:0" onerror="this.style.display='none'"><span style="flex:1;color:var(--fg)">${t.name}${isPending?' <span style="color:var(--accent);font-size:9px">(pending save)</span>':""}</span><span style="color:var(--fg3);font-family:monospace;font-size:9px">${t.shortcode}</span><button class="btn btn-s srd-saved-del" data-delname="${t.name}" style="font-size:9px;padding:1px 5px;color:var(--danger)" title="Delete saved token">✕</button></div>`;}).join("");}
-    if(baked.length){
-      html+='<div style="font-size:9px;color:var(--fg3);text-transform:uppercase;padding:8px 6px 2px;letter-spacing:.5px">Baked Tokens 🎨</div>';
-      html+=baked.map(t=>{
-        const meta=labelMap[t.name];
-        const isPending=S.tokenLabelSaves.find(s=>s.name===t.name)||S.tokenSaves.find(s=>s.name===t.name);
-        const labelHint=meta&&meta.labelText?' <span style="color:var(--fg3);font-size:9px">"'+meta.labelText+'"</span>':"";
-        return`<div class="srd-row srd-baked-row" data-name="${t.name}" data-code="${t.shortcode}" style="display:flex;align-items:center;gap:8px;padding:5px 6px;cursor:pointer;border-radius:4px;font-size:11px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''"><img src="https://token.otfbm.io/img/${t.shortcode}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--fg3);flex-shrink:0" onerror="this.style.display='none'"><span style="flex:1;color:var(--fg)">${t.name}${labelHint}${isPending?' <span style="color:var(--accent);font-size:9px">(pending save)</span>':""}</span><span style="color:var(--fg3);font-family:monospace;font-size:9px">${t.shortcode}</span><button class="btn btn-s srd-baked-edit" data-editname="${t.name}" style="font-size:9px;padding:1px 5px" title="Re-edit label">✏️</button><button class="btn btn-s srd-baked-del" data-delname="${t.name}" style="font-size:9px;padding:1px 5px;color:var(--danger)" title="Delete baked token">✕</button></div>`;}).join("");}
-    list.innerHTML=html;}
-  $("srd-saved-list").onclick=e=>{
-    // Baked token edit (pencil icon)
-    const editBtn=e.target.closest(".srd-baked-edit");
-    if(editBtn){
-      const name=editBtn.dataset.editname;
-      const entry=[...S.tokenLabels,...S.tokenLabelSaves].find(c=>c.name===name);
-      if(!entry)return;
-      // Open Bake tab pre-populated. Use the entry's origCode as the source image.
-      _bakeEditContext={origCode:entry.origCode,prefillFrom:entry};
-      document.querySelector('.srd-tab[data-tab="bake"]').click();
-      return;
-    }
-    // Baked token delete (X)
-    const bakedDel=e.target.closest(".srd-baked-del");
-    if(bakedDel){const name=bakedDel.dataset.delname;
-      if(!confirm("Delete baked token '"+name+"'?"))return;
-      // Remove from token-labels (metadata)
-      const wasLoadedLabel=!!S.tokenLabels.find(c=>c.name===name);
-      S.tokenLabels=S.tokenLabels.filter(c=>c.name!==name);
-      S.tokenLabelSaves=S.tokenLabelSaves.filter(c=>c.name!==name);
-      if(wasLoadedLabel)S.tokenLabelDeletes.push(name);
-      // Remove from saved-tokens (shortcode in mapTokens)
-      const wasLoadedSt=!!S.savedTokens.find(t=>t.name===name);
-      S.savedTokens=S.savedTokens.filter(t=>t.name!==name);
-      S.tokenSaves=S.tokenSaves.filter(t=>t.name!==name);
-      if(wasLoadedSt)S.tokenDeletes.push(name);
-      renderSavedTokens();renderCmd();return;}
-    // Regular saved-token delete button
-    const delBtn=e.target.closest(".srd-saved-del");
-    if(delBtn){const name=delBtn.dataset.delname;
-      if(!confirm("Delete saved token '"+name+"'?"))return;
-      S.savedTokens=S.savedTokens.filter(t=>t.name!==name);
-      S.tokenSaves=S.tokenSaves.filter(t=>t.name!==name);
-      // Only add to deletes if it was an original saved token (not just a pending save)
-      if(!S.tokenSaves.find(t=>t.name===name))S.tokenDeletes.push(name);
-      renderSavedTokens();renderCmd();return;}
-    // Click row to apply (regular saved or baked - both have data-code)
-    const row=e.target.closest(".srd-saved-row, .srd-baked-row");
-    if(row){const code=row.dataset.code;if(code)applySrdCode(code);}
-  };
-  $("srd-facedet").onchange=()=>{
-    $("srd-facedet-note").textContent=$("srd-facedet").checked?"Preview may differ from OTFBM render (face detect)":"";
-    if(srdTok&&srdTok.tokenImage){pushU();const base=srdTok.tokenImage.replace(/~$/,"");
-      srdTok.tokenImage=$("srd-facedet").checked?base:base+"~";renderAll();}};
-  // Tab switching
-  document.querySelectorAll(".srd-tab").forEach(b=>b.onclick=()=>{
-    const tab=b.dataset.tab,wasActive=b.classList.contains("active");
-    document.querySelectorAll(".srd-tab").forEach(x=>x.classList.remove("active"));
-    ["browse","saved","upload","bake"].forEach(t=>{const el=$("srd-tab-"+t);if(el)el.style.display="none";});
-    if(!wasActive){
-      b.classList.add("active");
-      const el=$("srd-tab-"+tab);if(el)el.style.display="flex";
-      if(tab==="browse")$("srd-search").focus();
-      if(tab==="saved")renderSavedTokens();
-      if(tab==="bake")setupBakeTab();
-    }});
 
-  // ======== Phase A: label warning + rename helper ========
-  // OTFBM renders only trailing digits as the label badge on custom-image tokens.
-  // Warn the DM and offer a rename helper when the current token's name doesn't match the convention.
-  function trailingDigits(name){const m=(name||"").match(/(\d+)$/);return m?m[1]:"";}
-  function refreshLabelWarn(){
-    const el=$("srd-label-warn");if(!el)return;
-    const code=$("srd-img-code")?.textContent||$("srd-code-input")?.value||(srdTok&&srdTok.tokenImage||"").replace(/~$/,"");
-    const hasCustom=!!(code&&code.trim()&&srdTok);
-    if(!hasCustom){el.style.display="none";return;}
-    const name=srdTok.name||"";
-    const td=trailingDigits(name);
-    if(td.length===1||td.length===2){
-      el.style.display="block";
-      el.style.background="#1e3a2e";el.style.borderColor="#2a8a52";el.style.color="#a3e4b7";
-      el.innerHTML='✓ Players will see label "<b>'+td+'</b>" on this custom-image token.';
-    }else if(td.length>=3){
-      el.style.display="block";
-      el.style.background="#3a2618";el.style.borderColor="#a86b2a";el.style.color="#fbd46e";
-      el.innerHTML='⚠ Custom-image labels are truncated to the last 2 digits. Players will see "<b>'+td.slice(-2)+'</b>" (not full "'+td+'"). Use the Bake Label tab if you need the full text shown.';
-    }else{
-      el.style.display="block";
-      el.style.background="#3a2618";el.style.borderColor="#a86b2a";el.style.color="#fbd46e";
-      const suggested=(name+"1").replace(/[^A-Za-z0-9_]/g,"_");
-      el.innerHTML='⚠ OTFBM only shows trailing digits as the label on custom-image tokens. "<b>'+name+'</b>" has no trailing digits, so players won\'t see a label.<br><div style="display:flex;gap:4px;align-items:center;margin-top:6px"><input class="inp" id="srd-warn-newname" value="'+suggested+'" style="flex:1;font-size:10px;font-family:monospace"><button class="btn btn-s" id="srd-warn-copy" style="font-size:9px;padding:2px 8px;white-space:nowrap">Copy Avrae rename</button><button class="btn btn-s" id="srd-warn-bake" style="font-size:9px;padding:2px 8px;white-space:nowrap;background:var(--accent);color:#fff">Or bake a label</button></div><div id="srd-warn-copied" style="font-size:9px;color:var(--fg3);margin-top:3px;min-height:11px"></div>';
-      // Wire up the new buttons
-      setTimeout(()=>{
-        const copyBtn=$("srd-warn-copy"),bakeBtn=$("srd-warn-bake");
-        if(copyBtn)copyBtn.onclick=()=>{
-          const newName=$("srd-warn-newname")?.value.trim()||suggested;
-          const cmd='!i opt "'+name+'" -name "'+newName+'"';
-          navigator.clipboard.writeText(cmd).then(()=>{
-            const s=$("srd-warn-copied");if(s){s.textContent="✓ Copied. Paste into Discord to rename.";setTimeout(()=>{if(s)s.textContent="";},3000);}
-          }).catch(()=>{const s=$("srd-warn-copied");if(s)s.textContent="⚠ Clipboard copy failed - select & copy manually: "+cmd;});
-        };
-        if(bakeBtn)bakeBtn.onclick=()=>{document.querySelector('.srd-tab[data-tab="bake"]').click();};
-      },0);
-    }
-  }
-
-  // ======== Phase B: bake label feature ========
-  // Built around BS's existing image-hosting pipeline (PROXY_URL + UPLOAD_URL + token.otfbm.io tokenizer).
-  let _bakeState={text:"",size:"M",color:"w",bg:"bk",pos:"bc",srcCode:"",srcImage:null};
-  let _bakeEditContext=null;// {origCode, prefillFrom} when entered via "edit" pencil
-  const _bakeFontSize={S:14,M:22,L:32};// pixel sizes on a 256x256 canvas
-
-  function setupBakeTab(){
-    // Determine current shortcode source: edit context > the live shortcode shown in any of the other tabs
-    let code="";
-    if(_bakeEditContext&&_bakeEditContext.origCode){code=_bakeEditContext.origCode;}
-    else{code=$("srd-img-code")?.textContent||$("srd-code-input")?.value.trim()||(srdTok&&srdTok.tokenImage||"").replace(/~$/,"");}
-    if(!code){$("srd-bake-nocode").style.display="block";$("srd-bake-content").style.display="none";return;}
-    $("srd-bake-nocode").style.display="none";$("srd-bake-content").style.display="flex";
-    _bakeState.srcCode=code;
-    // If we're editing a saved baked token, prefill from it; otherwise reasonable defaults
-    if(_bakeEditContext&&_bakeEditContext.prefillFrom){
-      const p=_bakeEditContext.prefillFrom;
-      $("srd-bake-text").value=p.labelText||"";
-      $("srd-bake-size").value=p.labelSize||"M";
-      $("srd-bake-savename").value=p.name||"";
-      _bakeState.text=p.labelText||"";_bakeState.size=p.labelSize||"M";
-      _bakeState.color=p.labelColor||"w";_bakeState.bg=p.labelBg||"bk";_bakeState.pos=p.labelPos||"bc";
-    }else{
-      const defaultText=(srdTok&&srdTok.name)?srdTok.name:"";
-      $("srd-bake-text").value=defaultText;
-      $("srd-bake-size").value="M";
-      $("srd-bake-savename").value=defaultText?defaultText+" Labeled":"";
-      _bakeState.text=defaultText;_bakeState.size="M";
-      _bakeState.color="w";_bakeState.bg="bk";_bakeState.pos="bc";
-    }
-    _bakeEditContext=null;// consumed
-    // Render palette swatches
-    renderBakeColorPicker("srd-bake-color","color");
-    renderBakeColorPicker("srd-bake-bg","bg");
-    // Update position grid highlighting
-    updateBakePosUI();
-    // Fetch source image then start preview render
-    $("srd-bake-status").innerHTML='<span style="color:var(--fg3)">Loading source image...</span>';
-    fetchBakeSourceImage(code).then(img=>{
-      _bakeState.srcImage=img;
-      $("srd-bake-status").innerHTML="";
-      renderBakePreview();
-    }).catch(err=>{
-      $("srd-bake-status").innerHTML='<span style="color:var(--danger)">⚠ Could not load source image: '+err.message+'</span>';
-    });
-  }
-
-  function renderBakeColorPicker(elId,fieldKey){
-    const el=$(elId);if(!el)return;
-    el.innerHTML=COLORS.map(c=>{
-      const isSel=_bakeState[fieldKey]===c.code;
-      return '<button class="srd-bake-sw" data-field="'+fieldKey+'" data-code="'+c.code+'" style="width:22px;height:22px;background:'+c.hex+';border:'+(isSel?"2px solid var(--accent)":"1px solid var(--bg3)")+';border-radius:3px;cursor:pointer" title="'+c.n+'"></button>';
-    }).join("");
-    el.querySelectorAll(".srd-bake-sw").forEach(b=>b.onclick=()=>{
-      _bakeState[b.dataset.field]=b.dataset.code;
-      renderBakeColorPicker(elId,fieldKey);
-      renderBakePreview();
-    });
-  }
-
-  function updateBakePosUI(){
-    document.querySelectorAll(".srd-pos-btn").forEach(b=>{
-      const isSel=b.dataset.pos===_bakeState.pos;
-      b.style.background=isSel?"var(--accent)":"var(--bg2)";
-      b.style.borderColor=isSel?"var(--accent)":"var(--bg3)";
-      b.style.color=isSel?"#fff":"var(--fg2)";
-    });
-  }
-  document.querySelectorAll(".srd-pos-btn").forEach(b=>b.onclick=()=>{
-    _bakeState.pos=b.dataset.pos;updateBakePosUI();renderBakePreview();
-  });
-
-  $("srd-bake-text").oninput=e=>{_bakeState.text=e.target.value;renderBakePreview();};
-  $("srd-bake-size").onchange=e=>{_bakeState.size=e.target.value;renderBakePreview();};
-
-  // Fetch a token image via the proxy (returns a Promise<HTMLImageElement>).
-  // Using object-URL from a blob avoids canvas tainting.
-  function fetchBakeSourceImage(code){
-    const url="https://token.otfbm.io/img/"+code;
-    return fetch(PROXY_URL+encodeURIComponent(url)).then(r=>{
-      if(!r.ok)throw new Error("HTTP "+r.status);
-      return r.blob();
-    }).then(blob=>new Promise((resolve,reject)=>{
-      const img=new Image();
-      const objUrl=URL.createObjectURL(blob);
-      img.onload=()=>{URL.revokeObjectURL(objUrl);resolve(img);};
-      img.onerror=()=>{URL.revokeObjectURL(objUrl);reject(new Error("Image decode failed"));};
-      img.src=objUrl;
-    }));
-  }
-
-  // Draw the baked image at the given canvas size, returning the canvas element.
-  // Used for both live preview (smaller) and the actual bake (256x256).
-  function drawBakedCanvas(canvas,outSize){
-    const ctx=canvas.getContext("2d");
-    canvas.width=outSize;canvas.height=outSize;
-    ctx.clearRect(0,0,outSize,outSize);
-    if(!_bakeState.srcImage)return canvas;
-    // Draw the source image fitted to the canvas (preserve aspect ratio, crop to square)
-    const src=_bakeState.srcImage;
-    const srcMin=Math.min(src.width,src.height);
-    const sx=(src.width-srcMin)/2,sy=(src.height-srcMin)/2;
-    ctx.drawImage(src,sx,sy,srcMin,srcMin,0,0,outSize,outSize);
-    // Compute label metrics (scaled to outSize from the 256-px reference)
-    const text=(_bakeState.text||"").slice(0,20);
-    if(!text)return canvas;
-    const scale=outSize/256;
-    const fontPx=_bakeFontSize[_bakeState.size]*scale;
-    ctx.font="bold "+fontPx+"px Arial, Helvetica, sans-serif";
-    ctx.textBaseline="middle";ctx.textAlign="center";
-    const tw=ctx.measureText(text).width;
-    const padX=8*scale,padY=4*scale,radius=6*scale;
-    const bgW=tw+padX*2,bgH=fontPx+padY*2;
-    // Clamp width to fit within the canvas
-    const maxW=outSize-4*scale;
-    const finalBgW=Math.min(bgW,maxW);
-    // Position: 3x3 grid (tl tc tr cl cc cr bl bc br)
-    const margin=4*scale;
-    let cx,cy;
-    const pos=_bakeState.pos;
-    if(pos[0]==="t")cy=margin+bgH/2;
-    else if(pos[0]==="c")cy=outSize/2;
-    else cy=outSize-margin-bgH/2;
-    if(pos[1]==="l")cx=margin+finalBgW/2;
-    else if(pos[1]==="c")cx=outSize/2;
-    else cx=outSize-margin-finalBgW/2;
-    // Draw rounded background rect
-    const bgHex=(COLORS.find(c=>c.code===_bakeState.bg)||{hex:"#07031a"}).hex;
-    ctx.fillStyle=bgHex;
-    const x=cx-finalBgW/2,y=cy-bgH/2;
-    if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,finalBgW,bgH,radius);ctx.fill();}
-    else{ctx.fillRect(x,y,finalBgW,bgH);}// fallback
-    // Draw text on top
-    const fgHex=(COLORS.find(c=>c.code===_bakeState.color)||{hex:"#f4f6ff"}).hex;
-    ctx.fillStyle=fgHex;
-    ctx.fillText(text,cx,cy);
-    return canvas;
-  }
-
-  function renderBakePreview(){
-    const canvas=$("srd-bake-preview");if(!canvas)return;
-    drawBakedCanvas(canvas,180);
-  }
-
-  // Bake & Apply: composite onto 256px canvas, upload to imgbb, tokenize, save entry, apply.
-  $("srd-bake-go").onclick=async()=>{
-    if(!_bakeState.srcImage){return;}
-    const text=(_bakeState.text||"").trim();
-    if(!text){$("srd-bake-status").innerHTML='<span style="color:var(--danger)">⚠ Enter label text first</span>';return;}
-    const saveName=$("srd-bake-savename").value.trim();
-    if(!saveName){$("srd-bake-status").innerHTML='<span style="color:var(--danger)">⚠ Enter a save name</span>';return;}
-    const btn=$("srd-bake-go");btn.disabled=true;
-    const status=$("srd-bake-status");
-    try{
-      status.innerHTML='<span style="color:var(--accent)">⏳ Baking label onto image...</span>';
-      const offscreen=document.createElement("canvas");
-      drawBakedCanvas(offscreen,256);
-      const blob=await new Promise((resolve,reject)=>{
-        offscreen.toBlob(b=>{if(b)resolve(b);else reject(new Error("Canvas export failed"));},"image/png");
-      });
-      status.innerHTML='<span style="color:var(--accent)">⏳ Uploading to imgbb...</span>';
-      const fd=new FormData();fd.append("file",blob,"baked_"+_bakeState.srcCode+".png");
-      const upResp=await fetch(UPLOAD_URL,{method:"POST",body:fd});
-      const upData=await upResp.json();
-      if(upData.error)throw new Error(upData.error);
-      if(!upData.url)throw new Error("Upload returned no URL");
-      status.innerHTML='<span style="color:var(--accent)">⏳ Tokenizing on OTFBM...</span>';
-      const tkResp=await fetch(PROXY_URL.replace("?url=","?token=")+encodeURIComponent(upData.url));
-      const tkData=await tkResp.json();
-      if(tkData.error)throw new Error(tkData.error);
-      if(!tkData.shortcode)throw new Error("Tokenizer returned no shortcode");
-      const newCode=tkData.shortcode;
-      // Save entry: token-label metadata in S.tokenLabels, AND the shortcode mapping in S.savedTokens (shared with mapTokens via apply).
-      const entry={name:saveName,origCode:_bakeState.srcCode,newCode:newCode,
-        labelText:text,labelSize:_bakeState.size,labelColor:_bakeState.color,
-        labelBg:_bakeState.bg,labelPos:_bakeState.pos};
-      // tokenLabels (metadata)
-      const existing=S.tokenLabels.find(c=>c.name===saveName);
-      if(existing)Object.assign(existing,entry);
-      else S.tokenLabels.push(entry);
-      S.tokenLabelSaves=S.tokenLabelSaves.filter(c=>c.name!==saveName);
-      S.tokenLabelSaves.push(entry);
-      S.tokenLabelDeletes=S.tokenLabelDeletes.filter(n=>n!==saveName);
-      // savedTokens (shortcode): writes to mapTokens via st+ on apply
-      const stExisting=S.savedTokens.find(t=>t.name===saveName);
-      if(stExisting)stExisting.shortcode=newCode;
-      else S.savedTokens.push({name:saveName,shortcode:newCode});
-      S.tokenSaves=S.tokenSaves.filter(t=>t.name!==saveName);
-      S.tokenSaves.push({name:saveName,shortcode:newCode});
-      S.tokenDeletes=S.tokenDeletes.filter(n=>n!==saveName);
-      // Apply to current token
-      status.innerHTML='<span style="color:var(--accent)">✓ Saved '+newCode+'. Applying...</span>';
-      pushU();applySrdCode(newCode);
-      renderCmd();
-    }catch(err){
-      status.innerHTML='<span style="color:var(--danger)">⚠ Bake failed: '+(err.message||err)+'</span>';
-    }
-    btn.disabled=false;
-  };
-
-  // Hook the warning refresh into points where srdTok or shortcode changes
-  // (after applySrdCode replaces tokenImage, the modal closes - but during exploration the user may load shortcodes)
-  const _origApplySrdCode=applySrdCode;
-  // We refresh the warning whenever a shortcode is loaded into any tab's preview.
-  // Triggers: after Get Shortcode (custom tab), after browse selection or save row click would apply directly (closes modal anyway).
-  // The most useful refresh point is right after $("srd-img-code") gets updated.
-  const _imgCodeEl=$("srd-img-code");
-  if(_imgCodeEl){
-    const _obs=new MutationObserver(()=>refreshLabelWarn());
-    _obs.observe(_imgCodeEl,{childList:true,characterData:true,subtree:true});
-  }
-  $("srd-code-input")?.addEventListener("input",refreshLabelWarn);
 
   // Sidebar toggle
   // ---- Bottom sheet (mobile): the sidebar rises from the bottom; drag the handle to resize. ----
