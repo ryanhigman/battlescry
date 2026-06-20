@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.295                                      https://battlescry.com
+BattleScry v0.1.301                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -13,27 +13,28 @@ ARCHITECTURE
   - Tabs: Map | Tokens | Overlays | Structures (Structures subtabs: Walls | Map Objects).
 
 DATA CONTRACT (kept in sync with bscry_alias.py)
-  - Companion alias version: 0.2.35. Both files must be deployed together.
+  - Companion alias version: 0.2.39. Both files must be deployed together.
   - URL hash params: g, o, bg, vw, t, ip, np, w, fw, ob, fn, st, sm, sb, tl, ig, tm.
   - Name transport: spaces encoded as %20 (NOT underscore). User underscores survive.
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.295 - Changed: a custom token image in a multi-token pie now renders the portrait clipped to its
-            slice (matching OTFBM) instead of a flat color; the name label is dropped on image slices.
-  v0.1.294 - Changed: Small and Medium tokens on the same cell now combine into one pie (they share a grid
-            square), and Tiny-token pies are centered in the cell instead of pushed to the upper-left.
-  v0.1.293 - Fixed: importing a dark-mode map now switches the grid to white (as the dark toggle does) when
-            no explicit grid color was set, so the grid is visible instead of staying black on dark.
-  v0.1.292 - Fixed: stacking tokens on one cell now shows the multi-token pie even while one of them is
-            selected (the selected and unselected tokens were drawn in separate passes, so neither saw the
-            other and both rendered as lone tokens).
-  v0.1.291 - Added: importing an encounter now also preserves each combatant's hidden-stats state (from the
-            new `cs` hidden field), so HP/AC hidden from players in Avrae stay hidden in BattleScry. Needs
-            alias v0.2.39+.
+  v0.1.301 - Changed: synced the DATA CONTRACT note to the current companion alias version (0.2.39); this
+            is a comment-only change with no behaviour difference.
+  v0.1.300 - Changed: the quick-pick grid label now says "⭐ grid detected" only when the pick came from
+            pixel grid-detection, and "✨ suggested layout" when it came from the W/H arithmetic, so a
+            gridless map no longer shows a star implying real grid lines were found.
+  v0.1.299 - Changed: grid auto-detection now finds the grid-line phase (where the printed lines actually
+            fall at the detected spacing) and sets the offset to match, instead of just centering the
+            leftover pixels, so an auto-detected grid lines up on cropped or odd-sized maps.
+  v0.1.298 - Changed: initial grid detection now tries the greatest common factor of the image W and H
+            first (the largest value in c40...c100 that divides both), which is usually the real cell
+            size; also added 72 px/cell as a recognised common size. Both feed the quick-pick + auto-apply.
+  v0.1.297 - Changed: Map View moved below Grid Properties and is now a collapsible section (collapsed by
+            default), so Grid Properties is the first thing you see when setting up a map.
 ================================================================================
 -->
-<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.295"><meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<html lang="en"><head><meta charset="UTF-8"><meta name="version" content="0.1.301"><meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>BattleScry: Interactive Map Tool for D&amp;D on Avrae</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700&display=swap" rel="stylesheet">
@@ -287,7 +288,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.295</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.301</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -782,7 +783,7 @@ const IS_TOUCH='ontouchstart'in window||navigator.maxTouchPoints>0;
 const HANDLE_R=IS_TOUCH?16:8;// Bigger touch targets on mobile
 // Convert touch event to mouse-like coordinates
 function touchPt(e){const t=e.touches[0]||e.changedTouches[0];return{clientX:t.clientX,clientY:t.clientY,target:document.elementFromPoint(t.clientX,t.clientY)||e.target,shiftKey:e.shiftKey,preventDefault:()=>e.preventDefault()};}
-const S={grid:{cellSize:40,offsetX:0,offsetY:0,cols:26,rows:26,startCol:0,startRow:0,fullCols:26,fullRows:26},tokens:[],overlays:[],walls:[],objects:[],combatants:[],sel:{type:null,ids:new Set()},zoom:1,showGrid:true,showOverlays:true,showWalls:true,showObjects:true,showTokens:true,showFow:true,showBg:true,coordLabels:true,gridOpacity:0.99,bgAnalysis:null,mapBakedGrid:null,darkMode:false,noBorder:false,altFont:false,gridColor:"",fowOpacity:0,labelFont:"Figtree",loadedUrl:"",tab:"map",addingOverlay:null,addingCombatant:null,structSubTab:"walls",_uiMapAdvOpen:false,_uiBgOpen:false,_uiMapImportOpen:false,_uiAoeRuleOpen:false,aoeRule:"cell50",drag:null,marquee:null,tokCol:false,ovCol:false,npCol:true,tokSort:"init",ovSort:"name",sidebarOpen:true,coordPick:null,diagRule:"5105",fowRegions:[],wallDraw:null,fowDraw:null,spaceHeld:false,panDrag:null,fowResize:null,wallDrag:null,rulerMode:false,rulerStart:null,rulerEnd:null,rulerDrag:null,placingObject:null,objDraw:null,objResize:null,objMove:null,savedTokens:[],tokenSaves:[],tokenDeletes:[],savedMaps:[],mapSaves:[],mapDeletes:[],mapThumbs:{},savedBattles:[],battleSaves:[],battleDeletes:[],tokenLabels:[],tokenLabelSaves:[],tokenLabelDeletes:[]};
+const S={grid:{cellSize:40,offsetX:0,offsetY:0,cols:26,rows:26,startCol:0,startRow:0,fullCols:26,fullRows:26},tokens:[],overlays:[],walls:[],objects:[],combatants:[],sel:{type:null,ids:new Set()},zoom:1,showGrid:true,showOverlays:true,showWalls:true,showObjects:true,showTokens:true,showFow:true,showBg:true,coordLabels:true,gridOpacity:0.99,bgAnalysis:null,mapBakedGrid:null,darkMode:false,noBorder:false,altFont:false,gridColor:"",fowOpacity:0,labelFont:"Figtree",loadedUrl:"",tab:"map",addingOverlay:null,addingCombatant:null,structSubTab:"walls",_uiMapAdvOpen:false,_uiMapViewOpen:false,_uiBgOpen:false,_uiMapImportOpen:false,_uiAoeRuleOpen:false,aoeRule:"cell50",drag:null,marquee:null,tokCol:false,ovCol:false,npCol:true,tokSort:"init",ovSort:"name",sidebarOpen:true,coordPick:null,diagRule:"5105",fowRegions:[],wallDraw:null,fowDraw:null,spaceHeld:false,panDrag:null,fowResize:null,wallDrag:null,rulerMode:false,rulerStart:null,rulerEnd:null,rulerDrag:null,placingObject:null,objDraw:null,objResize:null,objMove:null,savedTokens:[],tokenSaves:[],tokenDeletes:[],savedMaps:[],mapSaves:[],mapDeletes:[],mapThumbs:{},savedBattles:[],battleSaves:[],battleDeletes:[],tokenLabels:[],tokenLabelSaves:[],tokenLabelDeletes:[]};
 // 3D cube distance between two tokens (nearest surface-to-surface, in feet)
 function tokCubeCells(t){const c=Math.max(1,SIZES[t.size]?.c||1);return c;}
 function cubeDist3D(a,b){
@@ -2211,7 +2212,7 @@ function mapGridPickerHtml(){
   let sh='<select class="inp" id="m-gridpick" style="font-size:10px;width:100%">';
   opts.forEach(o=>{const ar=o.gw*o.gh;
     const f2=ar>2000?"Epic Battlefield":ar>800?"Large Battle":ar>300?"Standard Encounter":ar>100?"Skirmish":"Close Quarters";
-    const warn=o.cs<40?" ⚠":"";const star=o.baked?" ⭐ map's grid":(!baked&&o.cs===a.recCs?" ⭐ recommended":"");
+    const warn=o.cs<40?" ⚠":"";const isRec=!baked&&o.cs===a.recCs;const star=o.baked?" ⭐ map's grid":(isRec?(o.det?" ⭐ grid detected":" ✨ suggested layout"):"");
     const sel=key(o)===selKey?" selected":"";
     sh+=`<option value="${o.cs}|${o.gw}|${o.gh}|${o.ox}|${o.oy}"${sel}>${o.gw}×${o.gh} @ c${o.cs} · ${f2} · ${o.gw*5}×${o.gh*5}ft${warn}${star}</option>`;});
   sh+="</select>";
@@ -2295,18 +2296,6 @@ function rMapTabContent(){
   }
   // Grid section
   const _vwCrop=S.grid.startCol>0||S.grid.startRow>0||S.grid.cols<(S.grid.fullCols||S.grid.cols)||S.grid.rows<(S.grid.fullRows||S.grid.rows);
-  h+=`<div class="sec"><div class="sec-title">Map View</div>
-  <div style="font-size:10px;color:var(--fg3);margin-bottom:6px">The visible portion of the grid. Type the corner cells and Update, or use Select area on map below.</div>
-  <div class="row" style="gap:5px;align-items:center;margin-bottom:6px">
-    <input id="vw-start" class="inp" style="flex:0 0 54px;width:54px;text-align:center;padding-left:4px;padding-right:4px;font-family:monospace;text-transform:uppercase" placeholder="A1" title="Top-left cell, e.g. A1">
-    <span style="color:var(--fg3);flex:0 0 auto">→</span>
-    <input id="vw-end" class="inp" style="flex:0 0 54px;width:54px;text-align:center;padding-left:4px;padding-right:4px;font-family:monospace;text-transform:uppercase" placeholder="J10" title="Bottom-right cell, e.g. J10">
-    <button id="btn-vw-update" class="btn btn-s" style="flex:1;opacity:.4;cursor:default" disabled title="Apply the typed coordinates">Update</button>
-    <button id="btn-vw-reset" class="btn btn-s" style="flex:0 0 auto;opacity:.4;cursor:default" disabled title="Reset to the full map view">Reset</button>
-  </div>
-  <button id="btn-vw-select" class="btn btn-s" style="width:100%;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px" title="Draw a box on the map to set the visible area"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 3"/></svg>Select area on map</button>
-  <label id="tb-border-label" style="display:${_vwCrop?"inline-flex":"none"};align-items:center;gap:6px;font-size:11px;color:var(--fg2);cursor:pointer" title="Solid border around the map (OTFBM 'e' option). Available when the map view is cropped."><input type="checkbox" id="tb-border" style="accent-color:var(--accent);cursor:pointer"><span>Solid border around map</span></label>
-  </div>`;
   h+=`<div class="sec"><div class="sec-title">Grid Properties</div>
   <div id="m-gridsuggestions" style="margin-bottom:6px">${mapGridPickerHtml()}</div>
   <div class="row" style="gap:6px;margin-bottom:6px;align-items:flex-end">
@@ -2322,6 +2311,18 @@ function rMapTabContent(){
   <div style="margin:8px 0"><span class="lbl">Grid line opacity (${Math.min(99,Math.round(S.gridOpacity*100))}%)</span><input type="range" id="m-opacity" min="0" max="99" value="${Math.min(99,Math.round(S.gridOpacity*100))}" style="width:100%;accent-color:var(--accent)"></div>
   <div style="margin:8px 0"><span class="lbl">Grid line & axis label color</span><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;padding:3px 0">${COLORS.map(c=>`<div class="cswatch${(S.gridColor===c.code||(!S.gridColor&&c.code==="bk"))?" on":""}" style="background:${c.hex}" data-color="${c.code}" data-prefix="gcol" title="${c.n}"></div>`).join("")}</div></div>
   </div>`;
+  h+=`<details class="sec" data-section="map-view" ${S._uiMapViewOpen?'open':''} style="display:block"><summary class="sec-title" style="cursor:pointer;user-select:none">Map View</summary>
+  <div style="font-size:10px;color:var(--fg3);margin:6px 0 6px">The visible portion of the grid. Type the corner cells and Update, or use Select area on map below.</div>
+  <div class="row" style="gap:5px;align-items:center;margin-bottom:6px">
+    <input id="vw-start" class="inp" style="flex:0 0 54px;width:54px;text-align:center;padding-left:4px;padding-right:4px;font-family:monospace;text-transform:uppercase" placeholder="A1" title="Top-left cell, e.g. A1">
+    <span style="color:var(--fg3);flex:0 0 auto">→</span>
+    <input id="vw-end" class="inp" style="flex:0 0 54px;width:54px;text-align:center;padding-left:4px;padding-right:4px;font-family:monospace;text-transform:uppercase" placeholder="J10" title="Bottom-right cell, e.g. J10">
+    <button id="btn-vw-update" class="btn btn-s" style="flex:1;opacity:.4;cursor:default" disabled title="Apply the typed coordinates">Update</button>
+    <button id="btn-vw-reset" class="btn btn-s" style="flex:0 0 auto;opacity:.4;cursor:default" disabled title="Reset to the full map view">Reset</button>
+  </div>
+  <button id="btn-vw-select" class="btn btn-s" style="width:100%;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px" title="Draw a box on the map to set the visible area"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 3"/></svg>Select area on map</button>
+  <label id="tb-border-label" style="display:${_vwCrop?"inline-flex":"none"};align-items:center;gap:6px;font-size:11px;color:var(--fg2);cursor:pointer" title="Solid border around the map (OTFBM 'e' option). Available when the map view is cropped."><input type="checkbox" id="tb-border" style="accent-color:var(--accent);cursor:pointer"><span>Solid border around map</span></label>
+  </details>`;
   return h;
 }
 // Advanced section - tweaks that experienced users want occasional access to.
@@ -2517,9 +2518,18 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
   function done(w,h,canDetect){
     const options=[];const tested=new Set();
     if(canDetect){let r=null;try{r=detectGrid(img);}catch(e){}
-      if(r&&!r.error&&r.cellSize){options.push({cs:r.cellSize,gw:r.gridW,gh:r.gridH,ox:r.offsetX,oy:r.offsetY,conf:r.confidence});tested.add(r.cellSize);}}
+      if(r&&!r.error&&r.cellSize){options.push({cs:r.cellSize,gw:r.gridW,gh:r.gridH,ox:r.offsetX,oy:r.offsetY,conf:r.confidence,det:true});tested.add(r.cellSize);}}
+    // GCF-first: a cell that divides both W and H exactly is a divisor of gcd(W,H). If gcd is in 40..100 use
+    // it; if larger, use the largest divisor in that range. Exact fit (offset 0), so rank it above the rest.
+    (function(){let a=w,b=h;while(b){const t=b;b=a%b;a=t;}const g=a;let gcf=0;
+      if(g>=40&&g<=100)gcf=g;else if(g>100){for(let d=100;d>=40;d--){if(g%d===0){gcf=d;break;}}}
+      if(gcf&&!tested.has(gcf)){const gw=w/gcf,gh=h/gcf;if(gw>=3&&gh>=3){tested.add(gcf);options.push({cs:gcf,gw:gw,gh:gh,ox:0,oy:0,conf:99});}}})();
     for(let cs=100;cs>=20;cs-=10){if(tested.has(cs))continue;tested.add(cs);
       const gw=Math.round(w/cs),gh=Math.round(h/cs);
+      if(gw>=3&&gh>=3){const fitW=Math.abs(w-gw*cs),fitH=Math.abs(h-gh*cs);
+        const conf=fitW<=2&&fitH<=2?90:(fitW<=cs*.1&&fitH<=cs*.1?70:50);
+        options.push({cs,gw,gh,ox:Math.round((w-gw*cs)/2),oy:Math.round((h-gh*cs)/2),conf});}}
+    if(!tested.has(72)){tested.add(72);const cs=72,gw=Math.round(w/cs),gh=Math.round(h/cs);
       if(gw>=3&&gh>=3){const fitW=Math.abs(w-gw*cs),fitH=Math.abs(h-gh*cs);
         const conf=fitW<=2&&fitH<=2?90:(fitW<=cs*.1&&fitH<=cs*.1?70:50);
         options.push({cs,gw,gh,ox:Math.round((w-gw*cs)/2),oy:Math.round((h-gh*cs)/2),conf});}}
@@ -3475,7 +3485,7 @@ function openBgModal(){
       const w=img.naturalWidth,h=img.naturalHeight;
       const options=[];const tested=new Set();
       if(r&&!r.error&&r.cellSize){options.push({cs:r.cellSize,gw:r.gridW,gh:r.gridH,ox:r.offsetX,oy:r.offsetY,conf:r.confidence,method:r.method});tested.add(r.cellSize);}
-      [40,50,60,70,80,100].forEach(cs=>{if(tested.has(cs))return;tested.add(cs);
+      [40,50,60,70,72,80,100].forEach(cs=>{if(tested.has(cs))return;tested.add(cs);
         const gw=Math.round(w/cs),gh=Math.round(h/cs);
         if(gw>=3&&gh>=3){const fitW=Math.abs(w-gw*cs),fitH=Math.abs(h-gh*cs);
           const conf=fitW<=2&&fitH<=2?90:(fitW<=cs*.1&&fitH<=cs*.1?70:50);
@@ -3649,6 +3659,13 @@ function setup(){
   window.fitHeightZoom=function(){const vp=$("map-vp");const vpH=vp.clientHeight-(vp.scrollWidth>vp.clientWidth?17:0)-4;const mapH=S.grid.rows*S.grid.cellSize+PAD*2;return vpH&&mapH?Math.max(.1,Math.min(3,vpH/mapH)):1;}
   // "Fit" fills the constraining dimension: for a tall map that's width (scroll down), for a wide map height (scroll across).
   window.fitSmartZoom=function(){return Math.max(fitZoom(),fitHeightZoom());};
+  window.applyMapHOffset=function(){try{
+    const vp=$("map-vp"),mc=$("map-container");if(!vp||!mc)return;
+    const mapW=(S.grid.cols*S.grid.cellSize+PAD*2)*S.zoom,vpW=vp.clientWidth;
+    // When the map is narrower than the viewport, nudge it right so the gap to the zoom tools
+    // matches the tools own right-edge gap (zoom-float sits at right:17px and is 36px wide).
+    const off=Math.max(0,vpW-70-mapW);mc.style.marginLeft=off>0?off+"px":"";
+  }catch(e){}};
   window.zoomAt=function(newZ,ax,ay){const oldZ=S.zoom;newZ=Math.max(.1,Math.min(3,newZ));if(newZ===oldZ&&!S._fitRecheck)return;
     const r=vp.getBoundingClientRect(),cx=(ax==null?r.width/2:ax),cy=(ay==null?r.height/2:ay);
     // Find the map point currently at viewport center
@@ -3661,7 +3678,7 @@ function setup(){
     // Set scroll and clamp to valid range
     const newSL=Math.max(0,useX*newZ-cx);
     const newST=Math.max(0,useY*newZ-cy);
-    vp.scrollLeft=newSL;vp.scrollTop=newST;
+    vp.scrollLeft=newSL;vp.scrollTop=newST;applyMapHOffset();
     $("zoom-slider").value=Math.round(S.zoom*100);
     // Update button states
     const is100=Math.abs(S.zoom-1)<.01;
@@ -3678,7 +3695,8 @@ function setup(){
         const adjZ=Math.max(.1,Math.min(3,adjW/adjMapW));
         if(Math.abs(adjZ-S.zoom)>0.001){S.zoom=adjZ;renderSVG();positionZoomPanel();
           $("zoom-slider").value=Math.round(S.zoom*100);}
-      }});}}
+      }
+      applyMapHOffset();});}}
   const ZOOM_STEPS=[10,25,50,75,100,150,200,250,300];
   $("btn-zin").onclick=()=>{const cur=Math.round(S.zoom*100);const next=ZOOM_STEPS.find(s=>s>cur);if(next)zoomAt(next/100);};
   $("btn-zout").onclick=()=>{const cur=Math.round(S.zoom*100);const prev=[...ZOOM_STEPS].reverse().find(s=>s<cur);if(prev)zoomAt(prev/100);};
@@ -3740,6 +3758,7 @@ function setup(){
   // Without this, any interaction inside an open <details> would collapse it on re-render.
   tc.addEventListener("toggle",e=>{const d=e.target;if(d.tagName!=="DETAILS")return;
     if(d.dataset.section==="map-advanced")S._uiMapAdvOpen=d.open;
+    else if(d.dataset.section==="map-view")S._uiMapViewOpen=d.open;
     else if(d.dataset.section==="map-import")S._uiMapImportOpen=d.open;
     else if(d.dataset.section==="aoe-rule")S._uiAoeRuleOpen=d.open;
   },true);
@@ -4249,7 +4268,7 @@ function setup(){
         if(r.cellSize)options.push({cs:r.cellSize,gw:r.gridW,gh:r.gridH,ox:r.offsetX,oy:r.offsetY,conf:r.confidence,method:r.method});
         tested.add(r.cellSize);
         // Generate alternatives at common cell sizes
-        [40,50,60,70,80,100].forEach(cs=>{
+        [40,50,60,70,72,80,100].forEach(cs=>{
           if(tested.has(cs))return;tested.add(cs);
           const gw=Math.round(w/cs),gh=Math.round(h/cs);
           if(gw>=3&&gh>=3&&cs>=20&&cs<=100){
@@ -5668,7 +5687,16 @@ function detectGrid(img){
     if(score>bestVotes&&p>=20&&p<=100){bestVotes=score;bestCS=p;}}
   if(bestCS>0){
     result.cellSize=bestCS;result.gridW=Math.floor(w/bestCS);result.gridH=Math.floor(h/bestCS);
-    result.offsetX=Math.round((w%bestCS)/2);result.offsetY=Math.round((h%bestCS)/2);
+    // Phase detection: find where the printed grid lines actually fall instead of centering the leftover
+    // pixels. Aggregate edge energy per column/row, then pick the phase whose periodic samples hit the most
+    // edge energy (the periodic grid component reinforces; non-periodic map art averages out across phases).
+    const periodS=bestCS*scale;
+    const colProf=new Float32Array(sw),rowProf=new Float32Array(sh);
+    const rowStep=Math.max(1,Math.floor(sh/200)),colStep=Math.max(1,Math.floor(sw/200));
+    for(let y=0;y<sh;y+=rowStep){const base=y*sw;for(let x=0;x<sw-1;x++){const i1=(base+x)*4,i2=(base+x+1)*4;colProf[x]+=Math.abs((data[i2]+data[i2+1]+data[i2+2])-(data[i1]+data[i1+1]+data[i1+2]));}}
+    for(let x=0;x<sw;x+=colStep){for(let y=0;y<sh-1;y++){const i1=(y*sw+x)*4,i2=((y+1)*sw+x)*4;rowProf[y]+=Math.abs((data[i2]+data[i2+1]+data[i2+2])-(data[i1]+data[i1+1]+data[i1+2]));}}
+    const bestPhase=(prof,plen)=>{const P=Math.max(1,Math.round(periodS));let bp=0,bs=-1;for(let ph=0;ph<P;ph++){let sc=0;for(let k=0;;k++){const xi=Math.round(ph+k*periodS);if(xi>=plen)break;sc+=prof[xi];}if(sc>bs){bs=sc;bp=ph;}}return bp;};
+    result.offsetX=Math.round(bestPhase(colProf,sw)/scale)%bestCS;result.offsetY=Math.round(bestPhase(rowProf,sh)/scale)%bestCS;
     result.confidence=Math.min(90,Math.round(bestVotes/nStrips*100));
     result.method="autocorrelation";
     // Clamp to OTFBM limits
