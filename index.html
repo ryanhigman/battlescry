@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.307                                      https://battlescry.com
+BattleScry v0.1.308                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,10 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.308 - Fixed: the welcome dialog's buttons were cut off on phones; it now fits or scrolls.
+            The map and token library lists are revalidated on every load (cache: no-cache), so a
+            changed inventory shows up immediately instead of whenever the browser's cached copy
+            expires.
   v0.1.307 - Fixed: a !bscry link from a combat with no map attached no longer treats the map saved
             in this browser as Avrae's map. It is shown as a pending change and sent with the next
             export, instead of being silently left out. Cell size is now held to OTFBM's 20-100px
@@ -245,6 +249,9 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   #sheet-handle:active{cursor:grabbing}
 }
 @media (max-width:768px){
+  /* Welcome dialog: on a phone its buttons were clipped below the fold with no way to scroll. */
+  #welcome-modal{padding:12px}
+  #welcome-modal .smart-modal{max-height:calc(100dvh - 24px);overflow-y:auto;padding:18px!important}
   /* Comfortable touch sizing inside the sheet and the top-bar menu. */
   #tabs button{font-size:13px;padding:12px 4px;letter-spacing:.3px}
   .subtabs button{font-size:12px;padding:9px 4px}
@@ -306,7 +313,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.307</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.308</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -6898,7 +6905,7 @@ let TOK_FAV=tokFavLoad();
 function fetchTCLib(){
   if(TCLIB)return Promise.resolve(TCLIB);
   if(TCLIB_LOADING)return TCLIB_LOADING;
-  TCLIB_LOADING=fetch(TC_CDN+"/tc_inventory.json")
+  TCLIB_LOADING=fetch(TC_CDN+"/tc_inventory.json",{cache:"no-cache"})
     .then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
     .then(d=>{const all=(d&&d.maps)||[];TCLIB=all.filter(m=>!cellSizeProblem(m.cell||72));if(TCLIB.length!==all.length)console.warn("[BattleScry] Hid "+(all.length-TCLIB.length)+" library maps with a cell size OTFBM cannot render.");return TCLIB;})
     .catch(e=>{TCLIB_LOADING=null;throw e;});
@@ -7314,7 +7321,7 @@ let TOKLIB=null, TOKLIB_LOADING=null;
 function loadTokenInventory(){
   if(TOKLIB)return Promise.resolve(TOKLIB);
   if(TOKLIB_LOADING)return TOKLIB_LOADING;
-  TOKLIB_LOADING=fetch(TC_CDN+"/t_inventory.json")
+  TOKLIB_LOADING=fetch(TC_CDN+"/t_inventory.json",{cache:"no-cache"})
     .then(r=>{if(!r.ok)throw new Error("no token inventory");return r.json();})
     .then(d=>{TOKLIB=Array.isArray(d)?d:(d.tokens||[]);return TOKLIB;})
     .catch(()=>{TOKLIB=[];return TOKLIB;});
