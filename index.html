@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.310                                      https://battlescry.com
+BattleScry v0.1.311                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,14 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.311 - Changed: the export button is now "Copy for Discord" and says what to do next once it is
+            copied. Pending changes lead with a plain summary above the raw command. On phones the
+            header stays on one row (status shows as a floating pill), tabs open scrolled to the
+            top, and in landscape the panel opens tall enough to use. Links open showing the whole
+            map when it fits on screen. Clear buttons for walls, fog and overlays no longer ask
+            (Undo restores them). Fixed: tokens placed from the list keep their initiative, typed
+            locations off the grid are rejected, the load message no longer counts the hidden DM,
+            and the fog panel notes that fog needs a background image to show in Discord.
   v0.1.310 - Fixed: overlays can be deleted and reverted from the sidebar again. The Delete and Revert
             buttons in the overlay panel had ids (p-ovdel, p-ovrevert) that no handler listened for,
             and the X on an overlay's list row was swallowed by the row-select check that ran first.
@@ -281,6 +289,18 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   .cswatch{width:24px;height:24px}
 }
 
+@media (max-width:768px){
+  /* One-row header: status becomes a floating pill under the bar instead of wrapping onto a second row. */
+  #toolbar{flex-wrap:nowrap}
+  #status-msg{position:fixed;top:58px;left:50%;transform:translateX(-50%);z-index:7000;max-width:88vw!important;background:rgba(20,18,14,.94);border:1px solid var(--border);border-radius:999px;padding:6px 14px!important;font-size:12px!important;text-align:center!important;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+  #status-msg:empty{display:none}
+  #btn-copy{white-space:nowrap}
+}
+@media (max-width:430px){.logo .logo-word{display:none!important}}
+@media (max-width:768px) and (orientation:landscape) and (max-height:500px){
+  #sheet-handle{height:16px}
+  #tabs button{padding:6px 4px;font-size:12px}
+}
 </style></head><body>
 <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><symbol id="bscry-logo" viewBox="0 0 236 236"><style>
 		.bs-s0 { fill: #915e3a;stroke: #45413c;stroke-linecap: round;stroke-linejoin: round } 
@@ -324,7 +344,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.310</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.311</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -333,7 +353,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   <div id="status-msg" class="tbo-right" style="font-size:10px;color:var(--fg3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;text-align:right;padding:0 8px"></div>
   <button id="btn-help" class="btn btn-s tbo-right" style="padding:3px 7px;display:inline-flex;align-items:center" title="Quick start guide" aria-label="Quick start guide"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg></button>
   <label id="hide-toggle-label" style="display:flex;align-items:center;gap:4px;font-size:10px;cursor:pointer;padding:3px 6px;border-radius:4px;margin-right:2px" title="When Secret Mode is enabled, the export command will update the map normally, but players won't see the list of changes (token moves, Fog of War reveals, etc)."><input type="checkbox" id="cmd-hidden" style="accent-color:var(--accent);cursor:pointer"><svg class="secret-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg><span class="secret-text">Secret Mode</span></label>
-  <button class="btn btn-p" id="btn-copy" style="font-size:11px;padding:5px 14px;font-weight:bold" title="Save your changes: copies the !bscry apply command to the clipboard, then paste it in Discord to apply">Save / Export</button>
+  <button class="btn btn-p" id="btn-copy" style="font-size:11px;padding:5px 14px;font-weight:bold" title="Save your changes: copies the !bscry apply command to the clipboard, then paste it in Discord to apply">Copy for Discord</button>
 </div>
 <div id="main">
   <div id="map-wrap" style="flex:1;position:relative;overflow:hidden"><div id="map-vp"><div id="map-container"><img id="map-img" style="display:none" alt=""><svg id="map-svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
@@ -353,7 +373,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
     <hr style="border:0;border-top:1px solid rgba(255,255,255,0.2);margin:2px 0;width:100%">
     <button id="btn-ruler" class="btn btn-s" style="padding:2px 0;width:28px;height:24px;display:inline-flex;align-items:center;justify-content:center" onmousedown="event.preventDefault()" title="Ruler - measure distances between points or tokens"><svg viewBox="0 0 122.88 122.88" width="16" height="16" fill="currentColor"><path d="M0.92,32.82l31.9-31.9C33.44,0.3,34.24,0,35.05,0c0.8,0,1.61,0.3,2.22,0.92l84.69,84.69c0.61,0.61,0.92,1.42,0.92,2.23c0,0.8-0.31,1.6-0.92,2.21l-0.01,0.01l0.01,0.01l-31.9,31.9c-0.62,0.62-1.42,0.92-2.23,0.92c-0.8,0-1.61-0.3-2.23-0.92L0.92,37.27C0.3,36.65,0,35.84,0,35.05C0,34.24,0.3,33.44,0.92,32.82L0.92,32.82z M105.32,77.15L90.84,91.63c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l14.48-14.48L90.12,61.94l-6.86,6.85c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l6.86-6.86L75.88,47.71L61.4,62.19c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l14.48-14.48L61.09,32.91l-6.86,6.85c-1.13,1.13-2.84,1.26-3.81,0.29c-0.97-0.97-0.84-2.68,0.29-3.81l6.86-6.86L46.43,18.26L31.95,32.74c-1.13,1.13-2.83,1.25-3.8,0.29c-0.97-0.97-0.84-2.67,0.29-3.8l14.48-14.48l-7.87-7.87L6.87,35.05l80.96,80.96l28.17-28.17C102.8,74.62,118.53,90.36,105.32,77.15L105.32,77.15z"/></svg></button>
   </div></div>
-  <div id="sidebar"><div id="sheet-handle" aria-hidden="true"></div><div id="tabs"><button class="active" data-tab="map">Map</button><button data-tab="tokens">Tokens</button><button data-tab="overlays">Overlays</button><button data-tab="other">Other</button></div><div id="tab-content"><div id="props-area"></div><div id="sidebar-splitter" title="Drag to resize"></div><div id="list-area"></div><div id="sheet-spacer" aria-hidden="true" style="flex:0 0 auto"></div></div><div id="cmd-bar"><div style="font-size:10px;color:var(--fg3);margin-bottom:3px">Pending changes:</div><div class="cmd" id="cmd-text" style="color:var(--fg4);font-size:10px;line-height:1.4">None - make edits to enable Export Updated Map</div></div></div>
+  <div id="sidebar"><div id="sheet-handle" aria-hidden="true"></div><div id="tabs"><button class="active" data-tab="map">Map</button><button data-tab="tokens">Tokens</button><button data-tab="overlays">Overlays</button><button data-tab="other">Other</button></div><div id="tab-content"><div id="props-area"></div><div id="sidebar-splitter" title="Drag to resize"></div><div id="list-area"></div><div id="sheet-spacer" aria-hidden="true" style="flex:0 0 auto"></div></div><div id="cmd-bar"><div style="font-size:10px;color:var(--fg3);margin-bottom:3px">Pending changes:</div><div class="cmd" id="cmd-text" style="color:var(--fg4);font-size:10px;line-height:1.4">Nothing to send yet.</div></div></div>
 </div>
 <div id="tooltip"></div><div id="popup"></div>
 <div id="welcome-modal" class="smart-modal-backdrop" style="display:none;z-index:9999">
@@ -973,7 +993,7 @@ function placeUnplacedCombatant(name,col,row){
   const newTok={id:uid(),name:cmb.name,col,row,
     size:sv.size||"M",color:tokenColorFor(cmb),height:0,
     tokenImage:sv.tokenImage||"",originalCol:col,originalRow:row,
-    hpCur:cmb.hpCur,hpMax:cmb.hp,ac:cmb.ac,hideStats:cmb.hideStats,note:cmb.note};
+    hpCur:cmb.hpCur,hpMax:cmb.hp,ac:cmb.ac,hideStats:cmb.hideStats,note:cmb.note,init:cmb.init,group:cmb.group};
   S.tokens.push(newTok);cmb.placed=true;
   return newTok;
 }
@@ -1957,7 +1977,7 @@ function renderCombatantForm(opts){
     if(stacked.length)h+=`<div style="font-size:10px;color:var(--fg2);margin-top:6px">Stacked with: ${stacked.map(x=>`<a href="#" class="cyc" data-cyc="${x.id}" style="color:var(--accent)">${x.name}</a>`).join(", ")}</div>`;
     const attached=S.overlays.filter(o=>o.target===name);
     if(attached.length)h+=`<div style="font-size:10px;color:var(--fg2);margin-top:4px">Attached Overlays: ${attached.map(o=>{const n=getOvNum(o);return`<a href="#" class="ovlink" data-ovid="${o.id}" style="color:var(--accent)">${n.label}: ${o.type}${o.locked?" 🔗":""}</a>`;}).join(", ")}</div>`;
-    h+=`<div style="font-size:9px;color:var(--fg4);margin-top:6px;font-style:italic;line-height:1.3">* HP / AC / Initiative / Group changes export to Avrae when you Save / Export.</div>`;
+    h+=`<div style="font-size:9px;color:var(--fg4);margin-top:6px;font-style:italic;line-height:1.3">* HP / AC / Initiative / Group changes reach Avrae when you paste the copied command in Discord.</div>`;
   }else if(mode==="unplaced"){
     h+=`<div style="margin-top:8px"><button class="btn btn-p" id="p-npplace" style="width:100%;font-size:11px;padding:6px">Place on Map</button></div>`;
     const npAttached=S.overlays.filter(o=>o.target===name);
@@ -2441,12 +2461,13 @@ function rAdvancedMapSection(){
   <div style="margin-top:8px;border-top:1px solid var(--bg3);padding-top:8px">
   <button class="btn btn-s" id="m-detect" style="width:100%;font-size:11px;padding:4px" title="Re-run grid detection on the current background image">🔍 Re-run Grid Detection</button>
   <div id="m-detect-result" style="font-size:10px;color:var(--fg2);margin-top:6px;line-height:1.5"></div></div>
-  </div>${(typeof isSheet==="function"&&isSheet())?`<div style="margin-top:10px;border-top:1px solid var(--bg3);padding-top:8px"><div style="font-size:10px;color:var(--fg3);margin-bottom:3px">Pending changes (export preview)</div><div id="cmd-mirror" style="font-family:monospace;font-size:11px;line-height:1.4;color:var(--fg2);max-height:140px;overflow:auto;white-space:pre-wrap;word-break:break-word">${(document.getElementById("cmd-text")||{innerHTML:"None"}).innerHTML}</div></div>`:""}</details>`;
+  </div>${(typeof isSheet==="function"&&isSheet())?`<div style="margin-top:10px;border-top:1px solid var(--bg3);padding-top:8px"><div style="font-size:10px;color:var(--fg3);margin-bottom:3px">Pending changes</div><div id="cmd-mirror" style="font-family:monospace;font-size:11px;line-height:1.4;color:var(--fg2);max-height:140px;overflow:auto;white-space:pre-wrap;word-break:break-word">${(document.getElementById("cmd-text")||{innerHTML:"None"}).innerHTML}</div></div>`:""}</details>`;
 }
 // Fog of War section - extracted from old fog subtab so it can live on the Map tab.
 // The user said FOW belongs with View controls (visibility/concealment, not a structure).
 function rFowSection(){
   let h=`<button class="btn btn-p" id="m-fowadd" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0" title="Add a new revealed region to enable Fog of War and conceal the rest of the map from view. You can add more regions to reveal more of the map for players as they travel.">${S.fowDraw?"➖ Cancel Drawing":"➕ Add New Revealed Region"}</button>`;
+  if(!S.loadedUrl)h+=`<div style="font-size:10px;color:var(--warn,#e0a030);padding:2px 0 8px 0">Fog only shows in Discord on maps with a background image. Add a background on the Map tab first.</div>`;
   if(S.fowDraw)h+=`<div style="font-size:10px;color:var(--accent);margin-bottom:6px;padding:0 2px">Click a grid cell to start selecting a region. Hold shift to select multiple.</div>`;
   if(S.sel.type==="fow"&&S.sel.ids.size===1){const r=S.fowRegions.find(x=>x.id===[...S.sel.ids][0]);if(r){
     const tl=fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2)),br=fmtU(Math.max(r.c1,r.c2),Math.max(r.r1,r.r2));
@@ -3120,7 +3141,7 @@ function renderCmd(){
   btn.title="Copy the !bscry apply command to clipboard, then paste it in Discord to apply your changes";
   // Fresh startup detection - no background loaded and no real combatants
   const isEmptyStartup=!S.loadedUrl&&S.tokens.length<=1&&S.walls.length===0&&S.fowRegions.length===0&&S.overlays.length===0&&S.objects.length===0&&!(origState&&mapChanged());
-  if(isEmptyStartup){ct.innerHTML='<span style="color:var(--fg4);font-style:italic">No changes - default 10×10 grid</span>';btn.textContent="Save / Export";btn.disabled=true;btn.classList.remove("ready");btn.classList.remove("copied");return;}
+  if(isEmptyStartup){ct.innerHTML='<span style="color:var(--fg4);font-style:italic">No changes - default 10×10 grid</span>';btn.textContent="Copy for Discord";btn.disabled=true;btn.classList.remove("ready");btn.classList.remove("copied");return;}
   const lines=[];
   // Token move parts
   const moveParts=[];
@@ -3316,7 +3337,7 @@ function renderCmd(){
     const cc=h2c(rt.color);if(cc&&cc!=="b"&&cc!=="r")props.push("Color: "+cc);
     if(rt.tokenImage)props.push("Token: "+rt.tokenImage);
     lines.push("!i note "+qN(rt.name)+(props.length?" "+props.join(" | "):""));});
-  if(!lines.length){ct.innerHTML="None - make edits to enable Save / Export";ct.style.color="var(--fg4)";btn.textContent="Save / Export";btn.disabled=true;btn.classList.remove("ready");btn.classList.remove("copied");}
+  if(!lines.length){ct.innerHTML="Nothing to send yet. Move a token or edit the map, then use Copy for Discord.";ct.style.color="var(--fg4)";btn.textContent="Copy for Discord";btn.disabled=true;btn.classList.remove("ready");btn.classList.remove("copied");}
   else{
   const warns=[];
   if(S.grid.cellSize<40&&S.tokens.some(t=>t.tokenImage))warns.push("⚠ Grid size "+S.grid.cellSize+"px per cell - custom token images need 40px or larger to display");
@@ -3326,7 +3347,6 @@ function renderCmd(){
   if(unassigned.length){
     const names=unassigned.map(o=>{const n=getOvNum(o);return n.label+": "+o.type;}).join(", ");
     warns.push("ℹ "+names+" not attached to a combatant - will show as preview in apply response only (one-shot)");}
-  ct.innerHTML=`<div style="color:var(--fg)">${lines.join("\n")}</div>${warns.length?`<div style="color:var(--danger);font-size:10px;margin-top:4px">${warns.join("<br>")}</div>`:""}`;
   const total=mv.length+ovChg.length+removed.length+(mapNeedsUpdate?1:0)+uvarOps.length;
   const summaryParts=[];
   if(mv.length)summaryParts.push(mv.length+" token"+(mv.length>1?"s":""));
@@ -3342,10 +3362,11 @@ function renderCmd(){
     if(mapParts.length)summaryParts.push(mapParts.join(", "));
     else summaryParts.push("map");}
   if(uvarOps.length)summaryParts.push(uvarOps.length+" save"+(uvarOps.length>1?"s":""));
+  ct.innerHTML=`<span style="display:block;font-family:inherit;font-size:11px;color:var(--accent);margin-bottom:3px">Ready to send: ${summaryParts.join(", ")||"changes"}</span><div style="color:var(--fg3)">${lines.join("\n")}</div>${warns.length?`<div style="color:var(--danger);font-size:10px;margin-top:4px">${warns.join("<br>")}</div>`:""}`;
   btn.disabled=false;
-  if(S._lastExport){btn.classList.add("copied");btn.classList.remove("ready");btn.textContent="✓ Saved";}
+  if(S._lastExport){btn.classList.add("copied");btn.classList.remove("ready");btn.textContent="✓ Copied";}
   else{btn.classList.add("ready");btn.classList.remove("copied");
-    btn.textContent=mv.length>MAX_MV?`⚠ ${mv.length}/${MAX_MV}! Copy`:"Save / Export";
+    btn.textContent=mv.length>MAX_MV?`⚠ ${mv.length}/${MAX_MV}! Copy`:"Copy for Discord";
     btn.title=mv.length>MAX_MV?`Too many token moves (${mv.length}/${MAX_MV}); copy and apply in batches`:`Ready to save: ${summaryParts.join(", ")}`;}
   if(hideLbl)hideLbl.style.display="";}}
 
@@ -3768,6 +3789,8 @@ function setup(){
     const zw=vp2.clientWidth/mapW,zh=vp2.clientHeight/mapH;return Math.max(.1,Math.min(3,Math.min(zw,zh)));}
   window.fitHeightZoom=function(){const vp=$("map-vp");const vpH=vp.clientHeight-(vp.scrollWidth>vp.clientWidth?17:0)-4;const mapH=S.grid.rows*S.grid.cellSize+PAD*2;return vpH&&mapH?Math.max(.1,Math.min(3,vpH/mapH)):1;}
   // "Fit" fills the constraining dimension: for a tall map that's width (scroll down), for a wide map height (scroll across).
+  // Link loads: fit to width, unless the whole map fits on screen without shrinking (small maps on a wide monitor), then show all of it.
+  window.loadFit=function(){try{if(!window.matchMedia("(max-width:768px)").matches){const fa=fitAllZoom();if(fa>=1)return fa;}}catch(e){}return fitZoom();};
   window.fitSmartZoom=function(){return Math.max(fitZoom(),fitHeightZoom());};
   window.applyMapHOffset=function(){try{
     const vp=$("map-vp"),mc=$("map-container");if(!vp||!mc)return;
@@ -3863,8 +3886,8 @@ function setup(){
     {const _cp=cellSizeProblem(S.grid.cellSize);if(_cp&&mapChanged()){showError(_cp);return;}}
     if(t&&t!=="None - make edits to enable Export Updated Map"){navigator.clipboard.writeText(t);
       S._lastExport=true;
-      btn.textContent="✓ Exported";btn.classList.add("copied");btn.classList.remove("ready");}};
-  $("cmd-hidden").onchange=()=>{const _on=$("cmd-hidden").checked;try{localStorage.setItem("bscry_secret",_on?"1":"0");}catch(e){}if(_on&&typeof promptDismissed==="function"&&!promptDismissed("secretExplained"))showSecretExplainer();renderCmd();};try{if(localStorage.getItem("bscry_secret")==="1"){$("cmd-hidden").checked=true;}}catch(e){}  document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");S.tab=b.dataset.tab;renderSB();});
+      btn.textContent="✓ Copied";btn.classList.add("copied");btn.classList.remove("ready");setStatus("✓ Copied. Paste it in your Discord channel to apply.");}};
+  $("cmd-hidden").onchange=()=>{const _on=$("cmd-hidden").checked;try{localStorage.setItem("bscry_secret",_on?"1":"0");}catch(e){}if(_on&&typeof promptDismissed==="function"&&!promptDismissed("secretExplained"))showSecretExplainer();renderCmd();};try{if(localStorage.getItem("bscry_secret")==="1"){$("cmd-hidden").checked=true;}}catch(e){}  document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");S.tab=b.dataset.tab;renderSB();try{const _tc=$("tab-content");_tc.scrollTop=0;requestAnimationFrame(()=>{_tc.scrollTop=0;});}catch(e){}});
   const tc=$("tab-content");
   // Listen for <details> open/close so re-renders preserve the user's chosen state.
   // Without this, any interaction inside an open <details> would collapse it on re-render.
@@ -4072,7 +4095,7 @@ function setup(){
     // Wall delete single
     if(t.classList.contains("m-walldel")){const wid=+t.dataset.delwall;pushU();S.walls=S.walls.filter(w=>w.id!==wid);if(S.sel.type==="wall")clearSel();renderAll();return;}
     // Remove all walls
-    if(t.id==="m-wallclear"){if(!confirm("⚠ You are about to remove ALL walls and doors from the map. This cannot be undone. OK to proceed?"))return;pushU();S.walls=[];clearSel();renderAll();return;}
+    if(t.id==="m-wallclear"){if(!S.walls.length)return;pushU();S.walls=[];clearSel();renderAll();setStatus("Removed all walls and doors. Use Undo to bring them back.");return;}
     // Wall list selection
     if(t.closest("[data-wid]")){const wid=+t.closest("[data-wid]").dataset.wid;
       if(e.ctrlKey||e.metaKey){ctrlToggle(wid);S._lastClick={type:"wall",id:wid};}
@@ -4091,7 +4114,7 @@ function setup(){
     // FOW delete single
     if(t.classList.contains("m-fowdel")){const fid=+t.dataset.delfow;pushU();S.fowRegions=S.fowRegions.filter(r=>r.id!==fid);if(S.sel.type==="fow")clearSel();renderAll();return;}
     // Remove all FOW
-    if(t.id==="m-fowclear"){if(!confirm("⚠ You are about to remove ALL revealed FOW regions. The entire map will become visible. OK to proceed?"))return;pushU();S.fowRegions=[];clearSel();renderAll();return;}
+    if(t.id==="m-fowclear"){if(!S.fowRegions.length)return;pushU();S.fowRegions=[];clearSel();renderAll();setStatus("Removed all fog regions, the whole map is visible. Use Undo to bring them back.");return;}
     // FOW list selection
     if(t.closest("[data-fid]")){const fid=+t.closest("[data-fid]").dataset.fid;
       if(e.ctrlKey||e.metaKey){ctrlToggle(fid);S._lastClick={type:"fow",id:fid};}
@@ -4220,7 +4243,7 @@ function setup(){
     // Overlay delete from list ✕ button
     if(t.classList.contains("ov-del-btn")){const oid=+t.dataset.delov;pushU();S.overlays=S.overlays.filter(o=>o.id!==oid);if(S.sel.type==="overlay")clearSel();renderAll();return;}
     // Remove all overlays
-    if(t.id==="ov-clearall"){if(!confirm("⚠ You are about to remove ALL overlays from the map. This cannot be undone. OK to proceed?"))return;pushU();S.overlays=[];clearSel();renderAll();return;}
+    if(t.id==="ov-clearall"){if(!S.overlays.length)return;pushU();S.overlays=[];clearSel();renderAll();setStatus("Removed all overlays. Use Undo to bring them back.");return;}
     // Inline Token Image controls (quick path in the Add/Edit form; mirrors the Map Background section).
     if(t.id==="cb-place-btn"){
       const f=$("cb-loc");
@@ -4484,8 +4507,9 @@ function setup(){
     if(e.target.id==="cb-loc"){
       if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
         const c=parseC(e.target.value);
-        if(c){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){pushU();tk.col=c.col;tk.row=c.row;renderSVG();renderCmd();}}
-        else{e.target.style.borderColor="var(--danger)";setTimeout(()=>e.target.style.borderColor="",1500);}
+        const _gc=S.grid.fullCols||S.grid.cols,_gr=S.grid.fullRows||S.grid.rows;
+        if(c&&c.col>=0&&c.row>=0&&c.col<_gc&&c.row<_gr){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){pushU();tk.col=c.col;tk.row=c.row;renderSVG();renderCmd();}}
+        else{e.target.style.borderColor="var(--danger)";setTimeout(()=>e.target.style.borderColor="",1500);if(c)setStatus("⚠ "+e.target.value.toUpperCase()+" is off the map. The grid ends at "+fmtU(_gc-1,_gr-1)+".");}
         return;}}
     if(e.target.id==="cb-hide"){
       // Hide the HP+AC inputs entirely when checked (so players don't see exact numbers); show a
@@ -5501,7 +5525,7 @@ function setup(){
   let sheetOpenFrac=0.5;
   function sheetSnaps(){const sb=$("sidebar");const h=sb.offsetHeight||Math.round(window.innerHeight*0.88);
     return{full:0,peek:Math.max(0,h-60),h};}
-  function sheetOpenOffset(){const sn=sheetSnaps();const want=sn.h-Math.round(sheetOpenFrac*window.innerHeight);return Math.min(sn.peek,Math.max(0,want));}
+  function sheetOpenOffset(){const sn=sheetSnaps();const _short=window.innerHeight<=500&&window.innerWidth>window.innerHeight;const want=sn.h-Math.round((_short?Math.max(sheetOpenFrac,0.86):sheetOpenFrac)*window.innerHeight);return Math.min(sn.peek,Math.max(0,want));}
   function applySheet(animate){const sb=$("sidebar");sb.style.transition=animate?"transform .3s cubic-bezier(.32,.72,0,1)":"none";const off=sheetOpen?sheetOpenOffset():sheetSnaps().peek;sb.style.transform="translateY("+off+"px)";syncSheetSpacer(off);}
   // The sheet is a fixed 88dvh box pinned bottom:0 and "opened" by translating it DOWN by `off` px, so the
   // bottom `off` px of #tab-content sits below the viewport. The scroll container's clientHeight still counts
@@ -5862,7 +5886,7 @@ function loadFromHashStr(hash){
     if(S.darkMode&&(!S.gridColor||S.gridColor==="bk"))S.gridColor="w";}
   if(params.bg){S.loadedUrl=params.bg;const _bgImg=$("map-img");_bgImg.src=params.bg;_bgImg.style.display="block";
     // Re-run smartFit once the bg image finishes loading - viewport sizing can shift after image decode
-    _bgImg.onload=()=>{try{S._fitRecheck=true;zoomAt(fitZoom());}catch(e){}};}
+    _bgImg.onload=()=>{try{S._fitRecheck=true;zoomAt(loadFit());}catch(e){}};}
   // Parse view window (vw=c6:14x12 → start at C6, 14 cols × 12 rows)
   S.grid.startCol=0;S.grid.startRow=0;S.grid.fullCols=S.grid.cols;S.grid.fullRows=S.grid.rows;
   if(params.vw){const vm=params.vw.match(/^([a-z]+)(\d+):(\d+)x(\d+)$/i);
@@ -6138,9 +6162,9 @@ function loadFromHashStr(hash){
   if(firstTok)S.sel={type:"token",ids:new Set([firstTok.id])};
   else if(S.overlays.length)S.sel={type:"overlay",ids:new Set([S.overlays[0].id])};
   $("placeholder").style.display="none";
-  renderAll();setStatus("✅ Loaded "+S.tokens.length+" tokens, "+S.overlays.length+" overlays"+(S.walls.length?", "+S.walls.length+" walls":""));
+  renderAll();setStatus("✅ Loaded "+S.tokens.filter(t=>!t.hidden&&t.name!=="DM").length+" tokens, "+S.overlays.length+" overlays"+(S.walls.length?", "+S.walls.length+" walls":""));
   // Auto-fit after load - always fit-width regardless of map proportions (smartFit picks fit-height for tall maps that fit horizontally, but for !bscry loads we want fit-width)
-  requestAnimationFrame(()=>{try{S._fitRecheck=true;zoomAt(fitZoom());}catch(e){}});
+  requestAnimationFrame(()=>{try{S._fitRecheck=true;zoomAt(loadFit());}catch(e){}});
   if(S.grid.cellSize<40&&S.tokens.some(t=>t.tokenImage))setTimeout(()=>setStatus("⚠ Grid size is "+S.grid.cellSize+"px - custom token images need 40px or larger to display"),1500);}
 // Two-step Load flow modals. Native confirm() can't render checkboxes or styled state, so we
 // build custom modals to make the "copy command then paste in Discord" round-trip visually obvious.
