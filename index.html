@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.315                                      https://battlescry.com
+BattleScry v0.1.316                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,10 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.316 - Fixed: typing an image URL and clicking Load did nothing (the field was wiped before the
+            click landed). Enter now works in that field too. The layout dropdown on the Map tab
+            uses the measured grid: the first entry says what it matches, a note explains images
+            whose squares Avrae cannot draw, and the generic sizes follow.
   v0.1.315 - Changed: floor-tile detection is a little more willing, so half-square tiles on gridless
             dungeon maps are picked up.
   v0.1.314 - Fixed: grid detection no longer reports double the spacing when every second (or fifth)
@@ -363,7 +367,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.315</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.316</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -2455,10 +2459,14 @@ function mapGridPickerHtml(){
   let sh='<select class="inp" id="m-gridpick" style="font-size:10px;width:100%">';
   opts.forEach(o=>{const ar=o.gw*o.gh;
     const f2=ar>2000?"Epic Battlefield":ar>800?"Large Battle":ar>300?"Standard Encounter":ar>100?"Skirmish":"Close Quarters";
-    const warn=o.cs<40?" ⚠":"";const isRec=!baked&&o.cs===a.recCs;const star=o.baked?" ⭐ map's grid":(isRec?(o.det?" ⭐ grid detected":" ✨ suggested layout"):"");
+    const warn=o.cs<40?" ⚠":"";const isRec=!baked&&o.cs===a.recCs;const star=o.baked?" ⭐ map's grid":((isRec?(a.found?" ⭐ ":" ✨ "):(o.label?" · ":""))+(o.label?o.label.toLowerCase().replace(" on the image",""):(isRec?"suggested":"")));
     const sel=key(o)===selKey?" selected":"";
-    sh+=`<option value="${o.cs}|${o.gw}|${o.gh}|${o.ox}|${o.oy}"${sel}>${o.gw}×${o.gh} @ c${o.cs} · ${f2} · ${o.gw*5}×${o.gh*5}ft${warn}${star}</option>`;});
+    sh+=`<option value="${o.cs}|${o.gw}|${o.gh}|${o.ox}|${o.oy}"${sel}>${o.gw}×${o.gh} squares at ${o.cs}px · ${o.gw*5}×${o.gh*5}ft${o.label?"":" · "+f2}${warn}${star}</option>`;});
   sh+="</select>";
+  if(!baked){const f=a.found;
+    const head=f?`<b style="color:var(--accent)">${f.kind==="tiles"?"Floor tiles":"Printed grid"} found: ${f.rawCell.toFixed(Math.abs(f.rawCell-Math.round(f.rawCell))>0.05?1:0)}px per ${f.kind==="tiles"?"tile":"square"}.</b> `:"";
+    if(a.note&&f)sh+=`<div style="font-size:10px;color:var(--fg3);line-height:1.4;padding:4px 0 0 0">${a.note}</div>`;
+    else if(head||a.note)sh+=`<div style="font-size:10px;color:var(--fg3);line-height:1.4;padding:4px 0 0 0">${head}${a.note||""}</div>`;}
   if(baked&&curKey!==bakedKey){
     sh+=`<div style="font-size:9px;color:var(--danger);margin-top:4px;line-height:1.4">⚠ This grid differs from the map's built-in grid (${baked.cols}×${baked.rows} @ c${baked.cell}). The grid printed on the map and your tokens may not line up. Re-select "${baked.cols}×${baked.rows} @ c${baked.cell} ⭐" to restore it.</div>`;
   }else{
@@ -2529,7 +2537,7 @@ function rMapTabContent(){
   const _bgAll=[...S.savedMaps,...S.mapSaves.map(x=>x.name).filter(n=>!S.savedMaps.includes(n))].filter(n=>!S.mapDeletes.includes(n));
   const _bgBrowse=_bgAll.length?`<button class="btn btn-s" id="m-bgbrowsesaved" style="width:100%;font-size:10px;padding:4px 8px;margin-bottom:6px" title="View thumbnails and load a previously saved map">🗂 Browse Saved Battlemaps (${_bgAll.length})</button>`:"";
   const _bgControls=(bgUrl||S._uiBgOpen)?`
-  <div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><input class="inp" id="m-bgurl" value="${bgUrl}" placeholder="Paste hosted image URL here" style="flex:1;font-family:monospace;font-size:9px" title="${bgUrl||'No background image'}"><button class="btn btn-s" id="m-bgupdate" style="font-size:9px;padding:3px 8px;white-space:nowrap">${bgUrl?"Update":"Load"}</button>${bgUrl?`<button class="btn btn-s" id="m-bgremove" style="font-size:9px;padding:3px 6px;color:var(--danger)" title="Remove background image">Remove</button>`:""}</div>
+  <div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><input class="inp" id="m-bgurl" value="${bgUrl||escAttr(S._bgUrlDraft||"")}" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('m-bgupdate').click();}" placeholder="Paste hosted image URL here" style="flex:1;font-family:monospace;font-size:9px" title="${bgUrl||'No background image'}"><button class="btn btn-s" id="m-bgupdate" style="font-size:9px;padding:3px 8px;white-space:nowrap">${bgUrl?"Update":"Load"}</button>${bgUrl?`<button class="btn btn-s" id="m-bgremove" style="font-size:9px;padding:3px 6px;color:var(--danger)" title="Remove background image">Remove</button>`:""}</div>
   <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap"><button class="btn btn-s" id="m-bgtclib" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Browse the map library">🗺️ Browse Map Library</button><button class="btn btn-s" id="m-bgupload" style="font-size:10px;padding:4px 8px;flex:1;min-width:90px" title="Upload your own map image, hosted on BattleScry">⬆️ Upload Map Image</button></div>
   ${loginLineHtml()}${_bgBrowse}`:"";
   if(bgUrl||S._uiBgOpen){
@@ -2760,9 +2768,12 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
   const proxyUrl=PROXY_URL?PROXY_URL+encodeURIComponent(url):null;
   const img=new Image();img.crossOrigin="anonymous";
   function done(w,h,canDetect){
-    const options=[];const tested=new Set();
-    if(canDetect){let r=null;try{r=detectGrid(img);}catch(e){}
-      if(r&&!r.error&&r.cellSize){options.push({cs:r.cellSize,gw:r.gridW,gh:r.gridH,ox:r.offsetX,oy:r.offsetY,conf:r.confidence,det:true});tested.add(r.cellSize);}}
+    const options=[];const tested=new Set();let note="",found=null;
+    // Measured layouts first (printed grid or floor tiles), each with a plain-language label.
+    if(canDetect){let sg=null;try{sg=bscrySuggestGrids(img);}catch(e){sg=null;}
+      if(sg){note=sg.note||"";found=sg.detected||null;
+        sg.forEach((o,i)=>{if(tested.has(o.cs))return;tested.add(o.cs);options.push({cs:o.cs,gw:o.gw,gh:o.gh,ox:o.ox,oy:o.oy,conf:found?(200-i):(o.rec?100:95-i),det:!!found&&i===0&&!!o.rec,label:o.label,top:true});});}}
+    else note="This image host does not let BattleScry read the picture, so the grid could not be measured. Pick the layout that lines up, or upload the file instead.";
     // GCF-first: a cell that divides both W and H exactly is a divisor of gcd(W,H). If gcd is in 40..100 use
     // it; if larger, use the largest divisor in that range. Exact fit (offset 0), so rank it above the rest.
     (function(){let a=w,b=h;while(b){const t=b;b=a%b;a=t;}const g=a;let gcf=0;
@@ -2778,9 +2789,9 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
         const conf=fitW<=2&&fitH<=2?90:(fitW<=cs*.1&&fitH<=cs*.1?70:50);
         options.push({cs,gw,gh,ox:Math.round((w-gw*cs)/2),oy:Math.round((h-gh*cs)/2),conf});}}
     const recCs=options.length?[...options].sort((a,b)=>b.conf-a.conf)[0].cs:null;
-    options.sort((a,b)=>b.cs-a.cs);
+    options.sort((a,b)=>((b.top?1:0)-(a.top?1:0))||(a.top&&b.top?b.conf-a.conf:b.cs-a.cs));
     const prevSize=(S.bgAnalysis&&S.bgAnalysis.w===w&&S.bgAnalysis.h===h)?S.bgAnalysis.sizeStr:"";
-    S.bgAnalysis={w,h,sizeStr:prevSize,options,recCs};
+    S.bgAnalysis={w,h,sizeStr:prevSize,options,recCs,note:note,found:found};
     if(autoApply&&!S.mapBakedGrid&&recCs!=null){
       const ro=options.find(o=>o.cs===recCs)||options[0];
       if(ro){S.grid.cols=ro.gw;S.grid.rows=ro.gh;S.grid.cellSize=ro.cs;S.grid.offsetX=ro.ox;S.grid.offsetY=ro.oy;S.grid.fullCols=ro.gw;S.grid.fullRows=ro.gh;renderAll();}
@@ -4090,7 +4101,8 @@ function setup(){
     if(t.id==="m-bgbrowsesaved"){showBrowseMapsModal();return;}
     // Background Update button - load image, then analyze for dimensions and grid suggestions
     if(t.id==="m-bgupdate"){
-      const url=$("m-bgurl")?.value.trim();if(!url)return;
+      const url=($("m-bgurl")?.value||S._bgUrlDraft||"").trim();if(!url)return;S._bgUrlDraft="";
+      if(!/^https?:\/\//i.test(url)){showError("That does not look like a web address. Paste a link that starts with https://");return;}
       // Apply the new BG immediately
       S.loadedUrl=url;$("map-img").src=url;$("map-img").style.display="block";
       S.mapBakedGrid=null;S.bgAnalysis=null; // a pasted URL has no known/baked grid
@@ -4481,6 +4493,8 @@ function setup(){
       if(e.target.id==="ao-c1"){const c=parseC(e.target.value.trim());if(c)ao.coord=c;return;}
       if(e.target.id==="ao-c2"){const c=parseC(e.target.value.trim());if(c)ao.coord2=c;return;}
     }
+    // Typing a URL then clicking Load fires this change first; re-rendering here wiped the field and the click did nothing.
+    if(e.target.id==="m-bgurl"){S._bgUrlDraft=e.target.value;return;}
     if(["m-cell","m-cols","m-rows"].includes(e.target.id))pushU();
     if(e.target.id==="m-cell"){const _v=+e.target.value||40;S.grid.cellSize=Math.min(CELL_MAX,Math.max(CELL_MIN,_v));if(_v!==S.grid.cellSize){e.target.value=S.grid.cellSize;setStatus("⚠ Cell size must be "+CELL_MIN+"-"+CELL_MAX+"px (OTFBM limit)");}}
     if(e.target.id==="m-cols")S.grid.cols=Math.max(1,+e.target.value||26);
