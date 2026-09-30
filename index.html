@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.312                                      https://battlescry.com
+BattleScry v0.1.313                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,15 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.313 - Changed: grid detection now measures the picture instead of guessing from its width and
+            height. It finds a printed grid (or a regular floor-tile pattern on gridless dungeon
+            maps), its exact spacing and its offset, and says which it found. Uploads use that to
+            resize: squares over 100px are shrunk, squares under 40px are enlarged, and fractional
+            squares (113.6px) are nudged to a whole number so the drawn grid stays aligned. The
+            layout list explains each option and never offers a size Avrae cannot draw.
+            Monsters default to red and player characters to blue. A saved token whose name matches
+            a combatant is used automatically when it is placed. A new overlay attached to a token
+            starts centred on that token. The desktop sidebar is 15% larger.
   v0.1.312 - Fixed: a link from a combat with no map attached now sends the grid on screen with the
             first apply, so Discord renders the map image instead of a text-only reply. Such links
             open on the Tokens tab when combatants are waiting, and the Tokens panel says what to
@@ -305,6 +314,8 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   #sheet-handle{height:16px}
   #tabs button{padding:6px 4px;font-size:12px}
 }
+/* Desktop: the sidebar was authored at 9-11px. Scale the whole panel up 15% rather than touching hundreds of inline sizes. */
+@media (min-width:769px){#sidebar{width:345px}#tabs,#tab-content,#cmd-bar{zoom:1.15}}
 </style></head><body>
 <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><symbol id="bscry-logo" viewBox="0 0 236 236"><style>
 		.bs-s0 { fill: #915e3a;stroke: #45413c;stroke-linecap: round;stroke-linejoin: round } 
@@ -348,7 +359,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.312</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.313</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -710,52 +721,136 @@ function loginLineHtml(){
     +'<button type="button" class="bscry-logout-link" style="background:none;border:none;color:var(--accent);font-size:10px;padding:0;cursor:pointer;text-decoration:underline;font-family:inherit" title="Log out of BattleScry">Log out</button>'
     +'</div>';
 }
-// Decide how much to shrink a map background before hosting it. OTFBM draws cells at 20-100px, and many
-// VTT exports are 140px (or more) per square, so a map hosted at its native size either cannot be used
-// or gets a grid at half-squares. Two rules, both using WHOLE-number divisors so an integer cell size
-// stays an integer (the old "longest side = 5000" cap turned 140px squares into 113.6px ones):
-//   1. If the image has a printed grid wider than 100px per square, divide so it lands at 100 or under.
-//   2. Otherwise, if the longest side is over maxDim, divide by the smallest whole number that fits.
-// Returns {k, cell}: divide both dimensions by k; cell is the detected native cell size (0 if none).
+// Decide how to resize a map background before hosting it. OTFBM draws square cells of a whole number of
+// pixels between 20 and 100, and custom token art needs 40 or more, so the hosted image should carry its
+// squares at a whole size in the 40-100 range. bscryFindGrid measures what is actually on the image (a
+// printed grid, or a regular floor-tile pattern); this turns that into a scale factor:
+//   squares over 100px   -> shrink by the smallest whole divisor that fits (140 -> 70, 256 -> 86)
+//   squares under 40px   -> enlarge by a whole multiple (25 -> 50, 35 -> 70)
+//   fractional squares   -> nudge to the nearest whole pixel (113.6 -> 57 after halving)
+//   no grid found        -> only shrink, by a whole divisor, when the longest side is over maxDim
+// Returns {scale, cell, srcCell, kind}: multiply both dimensions by scale; cell is the square size on the
+// hosted image (0 if unknown); srcCell is what was measured on the original.
 function bscryPlanBgScale(img,w,h,maxDim){
-  const fit=(k)=>Math.max(w,h)/k<=maxDim;
-  let cell=0;
-  try{cell=bscryDetectBigCell(img,w,h);}catch(e){cell=0;}
-  if(cell){for(let k=2;k<=12;k++){if(cell%k===0&&cell/k<=100&&cell/k>=20&&fit(k))return{k:k,cell:cell};}}
-  for(let k=1;k<=12;k++){if(fit(k))return{k:k,cell:cell};}
-  return{k:Math.ceil(Math.max(w,h)/maxDim),cell:cell};
+  const longest=Math.max(w,h);
+  let g={kind:"",cell:0};
+  try{g=bscryFindGrid(img,w,h)||g;}catch(e){g={kind:"",cell:0};}
+  if(g.cell){
+    let S=g.cell;
+    // Floor tiles are often a fraction of a 5ft square. Use the smallest whole number of tiles that reaches 40px.
+    if(g.kind==="tiles"&&S<40)S=S*Math.ceil(40/S);
+    let C;
+    if(S>100)C=Math.round(S/Math.ceil(S/100));
+    else if(S<40)C=Math.round(S*Math.ceil(40/S));
+    else C=Math.round(S);
+    let scale=C/S;
+    if(longest*scale>maxDim){const c2=Math.floor(C*maxDim/(longest*scale));if(c2>=20){C=c2;scale=C/S;}else{C=0;scale=maxDim/longest;}}
+    if(scale>4){C=0;scale=1;}
+    if(Math.abs(scale-1)*longest<1.5)scale=1;
+    return{scale:scale,cell:C,srcCell:Math.round(g.cell*10)/10,square:Math.round(S*10)/10,kind:g.kind,ox:g.ox*scale,oy:g.oy*scale};
+  }
+  for(let k=1;k<=12;k++){if(longest/k<=maxDim)return{scale:1/k,cell:0,srcCell:0,kind:""};}
+  return{scale:maxDim/longest,cell:0,srcCell:0,kind:""};
 }
-// Look for a printed grid coarser than OTFBM can draw. Samples thin strips (not the whole bitmap, which
-// can be 45+ megapixels), builds an edge profile along each axis, and for each candidate cell size asks:
-// is there a line at every multiple of C, and NOT at the half-way points? The second half is what tells
-// a real 140px grid from a 70px grid, since both divide the image evenly. Gridless maps fail the first
-// half and return 0. Candidates run largest-first so a 280px grid is not mistaken for 140.
-function bscryDetectBigCell(img,w,h){
-  const N=48;
-  const prof=(len,across,horiz)=>{
-    const cv=document.createElement("canvas");cv.width=horiz?len:N;cv.height=horiz?N:len;
-    const cx=cv.getContext("2d",{willReadFrequently:true});
-    for(let i=0;i<N;i++){const at=Math.floor((i+0.5)*across/N);
-      if(horiz)cx.drawImage(img,0,at,len,1,0,i,len,1);else cx.drawImage(img,at,0,1,len,i,0,1,len);}
-    const d=cx.getImageData(0,0,cv.width,cv.height).data;const out=new Float32Array(len);
-    for(let i=0;i<N;i++){for(let p=0;p<len-1;p++){
-      const a=horiz?(i*len+p)*4:(p*N+i)*4,b=horiz?(i*len+p+1)*4:((p+1)*N+i)*4;
-      out[p]+=Math.abs((d[b]+d[b+1]+d[b+2])-(d[a]+d[a+1]+d[a+2]));}}
-    return out;};
-  const colP=prof(w,h,true),rowP=prof(h,w,false);
-  const med=(a)=>{const s=Array.from(a).sort((x,y)=>x-y);return s[s.length>>1]||1;};
-  const at=(a,p)=>{let m=0;for(let q=p-2;q<=p+1;q++){if(q>=0&&q<a.length&&a[q]>m)m=a[q];}return m;};
-  const mean=(a,start,step)=>{let t=0,n=0;for(let p=start;p<a.length-2;p+=step){t+=at(a,p);n++;}return n?t/n:0;};
-  const axis=(a,C)=>{const bg=med(a),full=mean(a,C,C),half=mean(a,C/2,C);return full>3*bg&&half<0.65*full;};
-  const cands=[300,280,256,210,200,180,160,150,140,128,120];
-  for(const C of cands){
-    if(w%C>2||h%C>2||w/C<3||h/C<3)continue;
-    if(axis(colP,C)&&axis(rowP,C))return C;}
-  return 0;
+// Measure the square size of a map image. Works on the picture itself, not on its dimensions:
+//   1. Reduce to brightness and take the edge strength along each axis, in 12 bands across the image.
+//   2. A printed grid line crosses every band at the same place, so the MEDIAN across bands keeps it and
+//      drops terrain detail. Floor tiles only exist where there is floor, so a looser quantile finds them.
+//   3. The spacing is the first strong peak of the autocorrelation; a comb fit then refines it to a
+//      fraction of a pixel and finds the offset of the first line.
+// Returns {kind:"grid"|"tiles"|"", cell, ox, oy, score, cover} in ORIGINAL image pixels. cell can be fractional.
+function bscryFindGrid(img,w,h){
+  const NONE={kind:"",cell:0,ox:0,oy:0,score:0,cover:0};
+  if(!w||!h||w<100||h<100)return NONE;
+  const sc=Math.min(1,2600/Math.max(w,h));
+  const aw=Math.max(1,Math.round(w*sc)),ah=Math.max(1,Math.round(h*sc));
+  const cv=document.createElement("canvas");cv.width=aw;cv.height=ah;
+  const cx=cv.getContext("2d",{willReadFrequently:true});cx.imageSmoothingQuality="high";cx.drawImage(img,0,0,aw,ah);
+  const d=cx.getImageData(0,0,aw,ah).data;
+  const L=new Float32Array(aw*ah);
+  for(let i=0,j=0;i<L.length;i++,j+=4)L[i]=d[j]*0.3+d[j+1]*0.59+d[j+2]*0.11;
+  const B=12;
+  const bandsOf=(horiz)=>{
+    const len=horiz?aw:ah,across=horiz?ah:aw;const bands=[];for(let b=0;b<B;b++)bands.push(new Float32Array(len));
+    if(horiz){for(let y=0;y<ah;y++){const bp=bands[Math.min(B-1,Math.floor(y*B/ah))],row=y*aw;for(let x=0;x<aw-1;x++)bp[x]+=Math.abs(L[row+x+1]-L[row+x]);}}
+    else{for(let y=0;y<ah-1;y++){const r0=y*aw,r1=r0+aw;for(let x=0;x<aw;x++)bands[Math.min(B-1,Math.floor(x*B/aw))][y]+=Math.abs(L[r1+x]-L[r0+x]);}}
+    return bands;};
+  const quant=(bands,qi)=>{const len=bands[0].length,o=new Float32Array(len),t=new Float32Array(B);
+    for(let i=0;i<len;i++){for(let b=0;b<B;b++)t[b]=bands[b][i];t.sort();o[i]=t[qi];}return o;};
+  // Remove the slowly varying background and widen each spike by a pixel so fractional spacings still line up.
+  const clean=(p)=>{const n=p.length,R=15,pre=new Float64Array(n+1),o=new Float32Array(n),q=new Float32Array(n);
+    for(let i=0;i<n;i++)pre[i+1]=pre[i]+p[i];
+    for(let i=0;i<n;i++){const a=Math.max(0,i-R),b=Math.min(n,i+R+1);o[i]=Math.max(0,p[i]-(pre[b]-pre[a])/(b-a));}
+    for(let i=0;i<n;i++)q[i]=Math.max(o[i],i>0?o[i-1]:0,i<n-1?o[i+1]:0);
+    return q;};
+  const minL=Math.max(6,Math.round(12*sc)),maxLn=Math.round(420*sc)+2;
+  const period=(p)=>{const n=p.length;let e=0;for(let i=0;i<n;i++)e+=p[i]*p[i];if(e<=0)return null;
+    const maxL=Math.min(Math.floor(n/3),maxLn);if(maxL<=minL+2)return null;
+    const r=new Float32Array(maxL+2);
+    for(let l=minL-1;l<=maxL+1;l++){let s=0;for(let i=0;i+l<n;i++)s+=p[i]*p[i+l];r[l]=s/e*(n/(n-l));}
+    let rmax=0;const peaks=[];
+    for(let l=minL;l<=maxL;l++){if(r[l]>=r[l-1]&&r[l]>=r[l+1]&&r[l]>0){peaks.push(l);if(r[l]>rmax)rmax=r[l];}}
+    if(!peaks.length)return null;
+    for(const l of peaks){if(r[l]>=0.6*rmax)return{lag:l,r:r[l]};}
+    return null;};
+  const comb=(p,P0)=>{const n=p.length;let mean=0;for(let i=0;i<n;i++)mean+=p[i];mean/=n;if(mean<=0)return null;
+    let best=null;
+    for(let P=Math.max(minL,P0-1.5);P<=P0+1.5;P+=0.02){
+      for(let o=0;o<P;o+=1){let s=0,c=0;for(let x=o;x<n-1;x+=P){s+=p[Math.round(x)];c++;}
+        if(c<3)continue;s/=c;if(!best||s>best.s)best={s:s,P:P,o:o,c:c};}}
+    if(!best)return null;
+    let hit=0,c=0;for(let x=best.o;x<n-1;x+=best.P){if(p[Math.round(x)]>2*mean)hit++;c++;}
+    return{P:best.P,o:best.o,contrast:best.s/mean,cover:hit/c,n:c};};
+  const bx=bandsOf(true),by=bandsOf(false);
+  // Mean brightness per column / row: a grid line is where this departs most from its neighbours. Used to
+  // move the offset from the line's leading edge to its centre.
+  const mx=new Float32Array(aw),my=new Float32Array(ah);
+  for(let y=0;y<ah;y++){const row=y*aw;let t=0;for(let x=0;x<aw;x++){const v=L[row+x];mx[x]+=v;t+=v;}my[y]=t/aw;}
+  for(let x=0;x<aw;x++)mx[x]/=ah;
+  const centre=(m,o,P)=>{const n=m.length;let bd=0,bs=-1;
+    for(let dd=-3;dd<=4;dd++){let s2=0;for(let x=o+dd;x<n-5;x+=P){const i=Math.round(x);if(i<5)continue;s2+=Math.abs(m[i]-(m[i-5]+m[i+5])/2);}if(s2>bs){bs=s2;bd=dd;}}
+    return o+bd;};
+  const tryQ=(qi)=>{
+    const px=clean(quant(bx,qi)),py=clean(quant(by,qi));
+    const lx=period(px),ly=period(py);
+    if(!lx&&!ly)return null;
+    const cands=[];
+    if(lx)cands.push(lx.lag);if(ly&&(!lx||Math.abs(ly.lag-lx.lag)>1))cands.push(ly.lag);
+    let best=null;
+    for(const P0 of cands){
+      const fx=comb(px,P0),fy=comb(py,P0);if(!fx||!fy)continue;
+      if(Math.abs(fx.P-fy.P)>Math.max(0.6,P0*0.02))continue;
+      const score=Math.min(fx.contrast,fy.contrast),cover=Math.min(fx.cover,fy.cover);
+      if(!best||score*cover>best.score*best.cover)best={P:(fx.P*fx.n+fy.P*fy.n)/(fx.n+fy.n),ox:centre(mx,fx.o,fx.P),oy:centre(my,fy.o,fy.P),score:score,cover:cover,n:Math.max(fx.n,fy.n)};}
+    return best;};
+  const fin=(b,kind)=>{let cell=b.P/sc;
+    // Snap to a whole pixel when the drift across the whole image would be under 3px.
+    if(Math.abs(cell-Math.round(cell))*b.n<3)cell=Math.round(cell);
+    const tol=Math.max(2.5,cell*0.02);
+    const mod=(v)=>{let m=((v%cell)+cell)%cell;if(cell-m<tol||m<tol)m=0;return Math.round(m);};
+    return{kind:kind,cell:cell,ox:mod(b.ox/sc),oy:mod(b.oy/sc),score:Math.round(b.score*10)/10,cover:Math.round(b.cover*100)/100};};
+  const strict=tryQ(Math.floor(B/2)-1);
+  if(strict&&strict.score>=BSCRY_GRID_T.gs&&strict.cover>=BSCRY_GRID_T.gc)return fin(strict,"grid");
+  // Floor tiles only show where there is floor: accept the pattern when it holds in 3, then 2, of the 12 bands.
+  let loose=null;
+  for(const qi of [B-3,B-2]){const t=tryQ(qi);if(t&&t.score>=BSCRY_GRID_T.ts&&t.cover>=BSCRY_GRID_T.tc)return fin(t,"tiles");if(t&&(!loose||t.score>loose.score))loose=t;}
+  const dbg=(loose&&(!strict||loose.score>strict.score))?loose:strict;
+  return Object.assign({},NONE,dbg?{score:Math.round(dbg.score*10)/10,cover:Math.round(dbg.cover*100)/100,weak:Math.round(dbg.P/sc*10)/10}:{});
 }
+const BSCRY_GRID_T={gs:5,gc:0.7,ts:4,tc:0.5};
 // Convert an image file to a clean, hosting-ready JPEG entirely in the browser: decode (webp/png/jpg/gif
 // all accepted as input), downscale so the longest side is <= maxDim, flatten onto black, and re-encode
 // as JPEG (which also strips EXIF and any embedded payload). onDone({blob,w,h,bytes}); onError(msg).
+// One line telling the user what the converter did and why.
+function bscryResizeNote(out){
+  if(!out)return "";
+  const what=out.kind==="tiles"?"Floor tiles":"Grid";
+  if(out.cell&&out.srcCell){
+    if(Math.abs(out.scale-1)<0.002)return "<br>"+what+" found at "+out.srcCell+"px"+(out.kind==="tiles"&&out.cell!==Math.round(out.srcCell)?" per tile, "+out.cell+"px per square":" per square")+". No resize needed.";
+    return "<br>"+what+" found at "+out.srcCell+"px per "+(out.kind==="tiles"?"tile":"square")+". "+(out.scale>1?"Enlarged":"Resized")+" from "+out.srcW+" × "+out.srcH+" so each square is "+out.cell+"px"+(out.scale>1?" (custom tokens need 40px or more).":" (Avrae draws 20 to 100px).");}
+  if(out.scale<1)return "<br>No grid found. Shrunk from "+out.srcW+" × "+out.srcH+" to fit the 5000px limit.";
+  return "<br>No grid found on the image, so it was kept at its original size.";
+}
 function bscryConvertToJpeg(file,maxDim,quality,onDone,onError){
   try{
     const objUrl=URL.createObjectURL(file);
@@ -765,14 +860,14 @@ function bscryConvertToJpeg(file,maxDim,quality,onDone,onError){
         const w=img.naturalWidth,h=img.naturalHeight;
         if(!w||!h){URL.revokeObjectURL(objUrl);if(onError)onError("Could not read that image.");return;}
         const plan=bscryPlanBgScale(img,w,h,maxDim);
-        const ow=Math.max(1,Math.round(w/plan.k)),oh=Math.max(1,Math.round(h/plan.k));
+        const ow=Math.max(1,Math.round(w*plan.scale)),oh=Math.max(1,Math.round(h*plan.scale));
         const cv=document.createElement("canvas");cv.width=ow;cv.height=oh;
         const ctx=cv.getContext("2d");ctx.imageSmoothingQuality="high";ctx.fillStyle="#000";ctx.fillRect(0,0,ow,oh);ctx.drawImage(img,0,0,ow,oh);
         URL.revokeObjectURL(objUrl);
         const enc=(q)=>{cv.toBlob((blob)=>{
           if(!blob){if(onError)onError("Could not encode that image.");return;}
           if(blob.size>9.5*1024*1024&&q>0.5){enc(q-0.15);return;}
-          if(onDone)onDone({blob:blob,w:ow,h:oh,bytes:blob.size,srcCell:plan.cell,cell:plan.cell?plan.cell/plan.k:0,divisor:plan.k});
+          if(onDone)onDone({blob:blob,w:ow,h:oh,bytes:blob.size,srcW:w,srcH:h,srcCell:plan.srcCell,cell:plan.cell,scale:plan.scale,kind:plan.kind,divisor:plan.scale<1?Math.round(1/plan.scale):1});
         },"image/jpeg",q);};
         enc(quality);
       }catch(e){URL.revokeObjectURL(objUrl);if(onError)onError(e.message||"Conversion failed.");}
@@ -987,16 +1082,24 @@ function groupInit(name){
 function tokenColorFor(cmb){
   const sv=(cmb&&cmb.savedTok)||{};
   if(sv.color)return sv.color;
+  // Monsters (Avrae hides their stats) default to red, player characters to blue, so sides read at a glance.
+  if(cmb&&cmb.hideStats)return "#e63c3c";
   return "#3498db";
 }
 // Create a placed token from an unplaced combatant at a cell. Returns the new token, or null.
+// A saved token whose name matches the combatant (whole name or first word, case-insensitive) is used
+// automatically when that combatant is first placed.
+function savedTokenFor(name){try{const n=String(name||"").toLowerCase().trim();if(!n)return "";
+  const all=(S.savedTokens||[]).concat(S.tokenSaves||[]).filter(x=>x&&x.name&&x.shortcode&&!(S.tokenDeletes||[]).includes(x.name));
+  const hit=all.find(x=>x.name.toLowerCase()===n)||all.find(x=>x.name.toLowerCase()===n.split(/\s+/)[0]);
+  return hit?hit.shortcode.replace(/~$/,"")+"~":"";}catch(e){return "";}}
 function placeUnplacedCombatant(name,col,row){
   const cmb=S.combatants.find(c=>c.name===name);
   if(!cmb||cmb.placed)return null;
   pushU();const sv=cmb.savedTok||{};
   const newTok={id:uid(),name:cmb.name,col,row,
     size:sv.size||"M",color:tokenColorFor(cmb),height:0,
-    tokenImage:sv.tokenImage||"",originalCol:col,originalRow:row,
+    tokenImage:sv.tokenImage||savedTokenFor(cmb.name),originalCol:col,originalRow:row,
     hpCur:cmb.hpCur,hpMax:cmb.hp,ac:cmb.ac,hideStats:cmb.hideStats,note:cmb.note,init:cmb.init,group:cmb.group};
   S.tokens.push(newTok);cmb.placed=true;
   return newTok;
@@ -3618,26 +3721,18 @@ function openBgModal(){
     const gOpts=document.getElementById("bg-grid-options");
     gOpts.innerHTML='<div style="font-size:10px;color:var(--accent)">🔍 Detecting grid...</div>';
     setTimeout(()=>{
-      let r=null;try{r=detectGrid(img);}catch(e){r={error:"Canvas access blocked (CORS)",confidence:0};}
       const w=img.naturalWidth,h=img.naturalHeight;
-      const options=[];const tested=new Set();
-      if(r&&!r.error&&r.cellSize){options.push({cs:r.cellSize,gw:r.gridW,gh:r.gridH,ox:r.offsetX,oy:r.offsetY,conf:r.confidence,method:r.method});tested.add(r.cellSize);}
-      [40,50,60,70,72,80,100].forEach(cs=>{if(tested.has(cs))return;tested.add(cs);
-        const gw=Math.round(w/cs),gh=Math.round(h/cs);
-        if(gw>=3&&gh>=3){const fitW=Math.abs(w-gw*cs),fitH=Math.abs(h-gh*cs);
-          const conf=fitW<=2&&fitH<=2?90:(fitW<=cs*.1&&fitH<=cs*.1?70:50);
-          options.push({cs,gw,gh,ox:Math.round((w-gw*cs)/2),oy:Math.round((h-gh*cs)/2),conf,method:"calculated"});}});
-      options.sort((a,b)=>{if(a.conf!==b.conf)return b.conf-a.conf;return Math.abs(a.cs-60)-Math.abs(b.cs-60);});
-      const top=options.slice(0,5);
-      if(!top.length){gOpts.innerHTML='<div style="font-size:10px;color:var(--fg3)">No grid patterns detected. Enter settings manually below.</div>';
+      const top=bscrySuggestGrids(img);const r=top.detected;
+      if(!top.length){gOpts.innerHTML='<div style="font-size:10px;color:var(--fg3)">'+(top.note||"No grid patterns detected.")+' Enter settings manually below.</div>';
         document.getElementById("bg-manual").style.display="block";showManualOnly(w,h);validateForm();return;}
-      let oh=`<div style="font-size:10px;font-weight:bold;color:var(--fg2);margin-bottom:4px">Grid Suggestions${r&&!r.error?` (${r.confidence}% confidence)`:""}:</div>`;
+      let oh=`<div style="font-size:10px;font-weight:bold;color:var(--fg2);margin-bottom:4px">${r?(r.kind==="tiles"?"Floor tiles found":"Grid found")+" ("+r.rawCell.toFixed(Math.abs(r.rawCell-Math.round(r.rawCell))>0.05?1:0)+"px per "+(r.kind==="tiles"?"tile":"square")+")":"Grid suggestions"}:</div>`;
+      if(top.note)oh+=`<div style="font-size:10px;color:${r?"var(--warn,#e0a030)":"var(--fg3)"};line-height:1.4;margin-bottom:6px">${top.note}</div>`;
       top.forEach((o,i)=>{
-        const isRec=i===0;const warn=o.cs<40?" ⚠ no custom tokens":"";
+        const isRec=!!o.rec;const warn=o.cs<40?" ⚠ no custom tokens":"";
         const area=o.gw*o.gh;const feel=area>2000?"Epic Battlefield":area>800?"Large Battle":area>300?"Standard Encounter":area>100?"Skirmish":"Close Quarters";
         oh+=`<div class="bg-grid-opt" data-cs="${o.cs}" data-gw="${o.gw}" data-gh="${o.gh}" data-ox="${o.ox}" data-oy="${o.oy}" style="display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;border-radius:4px;border:1px solid ${isRec?"var(--accent)":"var(--bg3)"};margin-bottom:3px;${isRec?"background:rgba(251,191,36,0.1)":""}" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='${isRec?"rgba(251,191,36,0.1)":""}'">`
-        +`<div style="flex:1"><div style="font-size:11px;color:var(--fg)"><b>${o.gw}×${o.gh}</b> at <b>c${o.cs}</b>${isRec?" ⭐ Recommended":""}</div>`
-        +`<div style="font-size:9px;color:var(--fg3)">${feel} · ${o.gw*5}ft × ${o.gh*5}ft${warn}</div></div></div>`;});
+        +`<div style="flex:1"><div style="font-size:11px;color:var(--fg)"><b>${o.gw}×${o.gh}</b> squares at <b>${o.cs}px</b>${isRec?" ⭐ Recommended":""}</div>`
+        +`<div style="font-size:9px;color:var(--fg3)">${o.label} · ${feel} · ${o.gw*5}ft × ${o.gh*5}ft${warn}</div></div></div>`;});
       gOpts.innerHTML=oh;
       document.getElementById("bg-manual").style.display="block";
       // Pre-fill with recommended option
@@ -4373,7 +4468,7 @@ function setup(){
         renderSB();return;}
       if(e.target.id==="ao-size"){ao.size=+e.target.value||20;return;}
       if(e.target.id==="ao-width"){ao.width=+e.target.value||5;return;}
-      if(e.target.id==="ao-targ"){ao.target=e.target.value;return;}
+      if(e.target.id==="ao-targ"){ao.target=e.target.value;const _tt=S.tokens.find(x=>x.name===ao.target&&!x.hidden);if(_tt){ao.coord={col:_tt.col,row:_tt.row};renderAll();}return;}
       if(e.target.id==="ao-under"){ao.under=e.target.checked;return;}
       if(e.target.id==="ao-c1"){const c=parseC(e.target.value.trim());if(c)ao.coord=c;return;}
       if(e.target.id==="ao-c2"){const c=parseC(e.target.value.trim());if(c)ao.coord2=c;return;}
@@ -5764,101 +5859,55 @@ function showError(msg){
 }
 function showFormatError(){
   showError(`Input doesn't look like a URL or data string.<br><br><span style="color:var(--fg3);font-size:11px">Accepted formats:<br>• <b>OTFBM URL</b> - https://otfbm.io/...<br>• <b>Image URL</b> - https://example.com/map.jpg<br>• <b>Data string</b> - g=22x33&t=Name|K18|M|b|0&...</span>`);}
-// Grid Auto-Detection
+// Grid Auto-Detection: measures the image (see bscryFindGrid) instead of guessing from its dimensions.
 function detectGrid(img){
   const w=img.naturalWidth,h=img.naturalHeight;
   if(!w||!h)return{error:"Image not loaded"};
   if(w>8000||h>8000)return{error:"Image too large (max 8000px). Resize before uploading."};
-  const result={cellSize:0,offsetX:0,offsetY:0,gridW:0,gridH:-1,confidence:0,method:""};
-  // Step 1: Ratio check - test common cell sizes for clean division
-  const testSizes=[60,50,70,40,80,100,48,56,64,72,90];
-  for(const cs of testSizes){
-    const rw=w%cs,rh=h%cs;
-    if(rw<=2&&rh<=2&&w/cs>=3&&h/cs>=3){
-      result.cellSize=cs;result.gridW=Math.round(w/cs);result.gridH=Math.round(h/cs);
-      result.confidence=95;result.method="ratio";result.offsetX=0;result.offsetY=0;
-      return result;}}
-  // Also check with small offsets (cropped images)
-  for(const cs of testSizes){
-    for(let ox=0;ox<=cs/2;ox+=1){
-      const aw=w-ox,ah=h;// try offset on left only
-      if(aw%cs<=2&&ah%cs<=2&&aw/cs>=3&&ah/cs>=3){
-        result.cellSize=cs;result.gridW=Math.round(aw/cs);result.gridH=Math.round(ah/cs);
-        result.confidence=80;result.method="ratio+offset";result.offsetX=ox;result.offsetY=0;
-        return result;}
-      // try offset on top
-      const bw=w,bh=h-ox;
-      if(bw%cs<=2&&bh%cs<=2&&bw/cs>=3&&bh/cs>=3){
-        result.cellSize=cs;result.gridW=Math.round(bw/cs);result.gridH=Math.round(bh/cs);
-        result.confidence=80;result.method="ratio+offset";result.offsetX=0;result.offsetY=ox;
-        return result;}}}
-  // Step 2: Autocorrelation via canvas sampling
-  const canvas=document.createElement("canvas");const ctx=canvas.getContext("2d");
-  // Downscale for analysis if large
-  const scale=Math.min(1,4000/Math.max(w,h));
-  const sw=Math.floor(w*scale),sh=Math.floor(h*scale);
-  canvas.width=sw;canvas.height=sh;ctx.drawImage(img,0,0,sw,sh);
-  const data=ctx.getImageData(0,0,sw,sh).data;
-  // Compute brightness derivative for horizontal and vertical strips
-  function analyzeStrip(pixels,len){
-    // Compute absolute brightness differences
-    const diffs=new Float32Array(len-1);
-    for(let i=0;i<len-1;i++)diffs[i]=Math.abs(pixels[i+1]-pixels[i]);
-    // Autocorrelation to find period
-    const minP=Math.floor(15*scale),maxP=Math.floor(120*scale);
-    let bestP=0,bestScore=0;
-    for(let p=minP;p<=maxP&&p<len/3;p++){
-      let score=0,count=0;
-      for(let i=0;i<len-1-p;i++){score+=diffs[i]*diffs[i+p];count++;}
-      score/=count||1;
-      if(score>bestScore){bestScore=score;bestP=p;}}
-    return bestP>0?bestP/scale:0;}
-  // Sample horizontal strips (detect vertical grid lines → column width)
-  const hVotes={};const nStrips=Math.min(40,Math.floor(sh/3));
-  for(let s=0;s<nStrips;s++){
-    const y=Math.floor((s+0.5)*sh/nStrips);
-    const strip=new Float32Array(sw);
-    for(let x=0;x<sw;x++){const idx=(y*sw+x)*4;strip[x]=(data[idx]+data[idx+1]+data[idx+2])/3;}
-    const period=analyzeStrip(strip,sw);
-    if(period>0){const rp=Math.round(period);hVotes[rp]=(hVotes[rp]||0)+1;}}
-  // Sample vertical strips (detect horizontal grid lines → row height)
-  const vVotes={};
-  for(let s=0;s<nStrips;s++){
-    const x=Math.floor((s+0.5)*sw/nStrips);
-    const strip=new Float32Array(sh);
-    for(let y=0;y<sh;y++){const idx=(y*sw+x)*4;strip[y]=(data[idx]+data[idx+1]+data[idx+2])/3;}
-    const period=analyzeStrip(strip,sh);
-    if(period>0){const rp=Math.round(period);vVotes[rp]=(vVotes[rp]||0)+1;}}
-  // Find best period - prefer periods that appear in BOTH h and v with similar values
-  let bestCS=0,bestVotes=0;
-  const allPeriods=new Set([...Object.keys(hVotes),...Object.keys(vVotes)].map(Number));
-  for(const p of allPeriods){
-    // Check for matching period in both directions (within ±3px)
-    let hv=0,vv=0;
-    for(let dp=-3;dp<=3;dp++){hv+=hVotes[p+dp]||0;vv+=vVotes[p+dp]||0;}
-    const total=hv+vv;
-    const isSquare=hv>0&&vv>0;// Grid lines found in both directions
-    const score=isSquare?total*2:total;// Prefer square grids
-    if(score>bestVotes&&p>=20&&p<=100){bestVotes=score;bestCS=p;}}
-  if(bestCS>0){
-    result.cellSize=bestCS;result.gridW=Math.floor(w/bestCS);result.gridH=Math.floor(h/bestCS);
-    // Phase detection: find where the printed grid lines actually fall instead of centering the leftover
-    // pixels. Aggregate edge energy per column/row, then pick the phase whose periodic samples hit the most
-    // edge energy (the periodic grid component reinforces; non-periodic map art averages out across phases).
-    const periodS=bestCS*scale;
-    const colProf=new Float32Array(sw),rowProf=new Float32Array(sh);
-    const rowStep=Math.max(1,Math.floor(sh/200)),colStep=Math.max(1,Math.floor(sw/200));
-    for(let y=0;y<sh;y+=rowStep){const base=y*sw;for(let x=0;x<sw-1;x++){const i1=(base+x)*4,i2=(base+x+1)*4;colProf[x]+=Math.abs((data[i2]+data[i2+1]+data[i2+2])-(data[i1]+data[i1+1]+data[i1+2]));}}
-    for(let x=0;x<sw;x+=colStep){for(let y=0;y<sh-1;y++){const i1=(y*sw+x)*4,i2=((y+1)*sw+x)*4;rowProf[y]+=Math.abs((data[i2]+data[i2+1]+data[i2+2])-(data[i1]+data[i1+1]+data[i1+2]));}}
-    const bestPhase=(prof,plen)=>{const P=Math.max(1,Math.round(periodS));let bp=0,bs=-1;for(let ph=0;ph<P;ph++){let sc=0;for(let k=0;;k++){const xi=Math.round(ph+k*periodS);if(xi>=plen)break;sc+=prof[xi];}if(sc>bs){bs=sc;bp=ph;}}return bp;};
-    result.offsetX=Math.round(bestPhase(colProf,sw)/scale)%bestCS;result.offsetY=Math.round(bestPhase(rowProf,sh)/scale)%bestCS;
-    result.confidence=Math.min(90,Math.round(bestVotes/nStrips*100));
-    result.method="autocorrelation";
-    // Clamp to OTFBM limits
-    if(result.cellSize<20)result.cellSize=20;
-    if(result.cellSize>100)result.cellSize=100;
-    return result;}
-  return{error:"Could not detect grid. Set grid size manually.",confidence:0};}
+  const g=bscryFindGrid(img,w,h);
+  if(!g.cell)return{error:"No grid found on the image.",confidence:0,kind:""};
+  const cs=Math.round(g.cell);
+  const ox=Math.round(g.ox)%cs,oy=Math.round(g.oy)%cs;
+  return{cellSize:cs,rawCell:g.cell,offsetX:ox,offsetY:oy,
+    gridW:Math.max(1,Math.floor((w-ox)/g.cell+0.15)),gridH:Math.max(1,Math.floor((h-oy)/g.cell+0.15)),
+    confidence:Math.max(50,Math.min(99,Math.round(50+g.cover*30+Math.min(20,g.score)))),method:g.kind,kind:g.kind};
+}
+// Build the list of grid layouts offered for a background image, best first. Each entry:
+// {cs,gw,gh,ox,oy,label,warn,rec}. Anything outside OTFBM's 20-100px range is never offered as a choice;
+// when the printed grid itself is outside it, the note explains what to do instead.
+function bscrySuggestGrids(img){
+  const w=img.naturalWidth,h=img.naturalHeight;const out=[];const seen=new Set();let note="";
+  let r=null;try{r=detectGrid(img);}catch(e){r={error:"blocked"};note="This image host does not allow BattleScry to read the picture, so the grid could not be measured. These sizes fit the image evenly.";}
+  const add=(cs,ox,oy,label,exact)=>{cs=Math.round(cs);if(cs<20||cs>100||seen.has(cs))return;
+    const gw=Math.max(1,Math.floor((w-ox)/(exact||cs)+0.15)),gh=Math.max(1,Math.floor((h-oy)/(exact||cs)+0.15));
+    if(gw<3||gh<3)return;seen.add(cs);out.push({cs:cs,gw:gw,gh:gh,ox:ox,oy:oy,label:label});};
+  if(r&&!r.error&&r.cellSize){
+    const c=r.rawCell,ox=r.offsetX,oy=r.offsetY,what=r.kind==="tiles"?"floor tiles":"printed grid";
+    const frac=Math.abs(c-Math.round(c))>0.05;
+    if(r.kind==="tiles"&&c<40){const m=Math.ceil(40/c);add(c*m,ox,oy,"Matches the floor tiles ("+m+" tiles per square)",c*m);add(c*(m+1),ox,oy,(m+1)+" tiles per square",c*(m+1));if(c>=20)add(c,ox,oy,"One tile per square (too small for custom tokens)",c);}
+    else if(c>100){const k=Math.ceil(c/100);
+      note="The "+what+" on this image is "+(Math.round(c*10)/10)+"px per square. Avrae can draw 20 to 100px. Use Upload so BattleScry can resize it to "+Math.round(c/k)+"px; the options below split each printed square into smaller cells.";
+      const per=r.kind==="tiles"?" cells per tile":" cells per printed square";
+      add(c/k,ox%Math.round(c/k),oy%Math.round(c/k),k+"×"+k+per,c/k);add(c/(k+1),ox%Math.round(c/(k+1)),oy%Math.round(c/(k+1)),(k+1)+"×"+(k+1)+per,c/(k+1));}
+    else if(c<20){note="The "+what+" on this image is only "+(Math.round(c*10)/10)+"px per square. Use Upload so BattleScry can enlarge it.";
+      add(c*Math.ceil(40/c),ox,oy,Math.ceil(40/c)+" printed squares per cell",c*Math.ceil(40/c));}
+    else{add(c,ox,oy,"Matches the "+what+" on the image",c);
+      if(frac)note="The "+what+" is "+(Math.round(c*10)/10)+"px per square, not a whole number, so the drawn grid will drift a little across the map. Use Upload and BattleScry will resize it to fit exactly.";
+      if(c<40){note=(note?note+" ":"")+"Squares under 40px cannot show custom token images. Upload the file and BattleScry will enlarge it.";add(c*2,ox,oy,"2×2 printed squares per cell",c*2);}
+      if(r.kind==="tiles"){add(c*2,ox,oy,"2 tiles per square",c*2);if(c/2>=40)add(c/2,ox%Math.round(c/2),oy%Math.round(c/2),"Half a tile per square",c/2);}}
+    if(out.length)out[0].rec=true;
+  }else if(!note){note="No grid was found on the image, so any size works. These fit it evenly.";}
+  // Fill with sizes that divide the image evenly (closest to 60-70px first).
+  const fits=[70,60,50,80,100,64,72,40,90].map(cs=>{const gw=Math.round(w/cs),gh=Math.round(h/cs);return{cs:cs,err:Math.abs(w-gw*cs)+Math.abs(h-gh*cs)};}).sort((a,b)=>(a.err>4)-(b.err>4)||a.err-b.err);
+  const hadDetect=out.length>0;
+  for(const f of fits){if(out.length>=(hadDetect?3:4))break;
+    const gw=Math.round(w/f.cs),gh=Math.round(h/f.cs);
+    if(seen.has(f.cs)||gw<3||gh<3)continue;seen.add(f.cs);
+    out.push({cs:f.cs,gw:gw,gh:gh,ox:Math.max(0,Math.round((w-gw*f.cs)/2)),oy:Math.max(0,Math.round((h-gh*f.cs)/2)),label:hadDetect?"Other size (ignores the "+(r.kind==="tiles"?"tiles":"printed grid")+")":(f.err<=4?"Fits the image evenly":"Close fit")});}
+  if(!hadDetect&&out.length)out[0].rec=true;
+  out.note=note;out.detected=r&&!r.error?r:null;
+  return out;
+}
 
 function loadMap(inputStr){let url=inputStr||"";if(!url)return;
   // Detect hash data string (from !bscry alias)
@@ -6972,7 +7021,7 @@ function bgUploadScreen(nav){
         converted=null;renderActions();prev.innerHTML="";
         info.textContent="Processing "+file.name+"...";
         bscryConvertToJpeg(file,5000,0.85,
-          (out)=>{converted=out;const kb=Math.round(out.bytes/1024);info.innerHTML='<span style="color:var(--accent)">Ready:</span> '+out.w+' × '+out.h+' px, '+(kb>=1024?(kb/1024).toFixed(1)+" MB":kb+" KB")+' (JPEG)'+(out.cell?'<br>Grid found at '+out.srcCell+'px per square, resized to '+out.cell+'px so Avrae can draw it.':'');const im=document.createElement("img");im.src=URL.createObjectURL(out.blob);im.style.cssText="max-width:100%;max-height:160px;border-radius:5px;border:1px solid var(--bg3)";im.onload=()=>setTimeout(()=>URL.revokeObjectURL(im.src),5000);prev.innerHTML="";prev.appendChild(im);renderActions();},
+          (out)=>{converted=out;const kb=Math.round(out.bytes/1024);info.innerHTML='<span style="color:var(--accent)">Ready:</span> '+out.w+' × '+out.h+' px, '+(kb>=1024?(kb/1024).toFixed(1)+" MB":kb+" KB")+' (JPEG)'+bscryResizeNote(out);const im=document.createElement("img");im.src=URL.createObjectURL(out.blob);im.style.cssText="max-width:100%;max-height:160px;border-radius:5px;border:1px solid var(--bg3)";im.onload=()=>setTimeout(()=>URL.revokeObjectURL(im.src),5000);prev.innerHTML="";prev.appendChild(im);renderActions();},
           (err)=>{info.innerHTML='<span style="color:var(--danger)">'+err+'</span>';prev.innerHTML="";});
       };
     },
