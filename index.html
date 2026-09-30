@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.309                                      https://battlescry.com
+BattleScry v0.1.310                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,11 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.310 - Fixed: overlays can be deleted and reverted from the sidebar again. The Delete and Revert
+            buttons in the overlay panel had ids (p-ovdel, p-ovrevert) that no handler listened for,
+            and the X on an overlay's list row was swallowed by the row-select check that ran first.
+            The saved-map fallback now applies only when the saved default has a background image,
+            so a stale grid size from an earlier session no longer shows up as a pending change.
   v0.1.309 - Fixed: uploaded map backgrounds keep a whole-number cell size. A printed grid wider than
             OTFBM's 100px limit (140px VTT exports, 200px, 280px) is detected and the image is divided
             down so each square lands at 100px or under, and the 5000px size cap now divides by a whole
@@ -319,7 +324,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.309</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.310</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -4141,6 +4146,9 @@ function setup(){
     if(t.closest("[data-grpsel]")){const grpName=t.closest("[data-grpsel]").dataset.grpsel;
       if(S.addingCombatant)S.addingCombatant=null;
       S.sel={type:"group",group:grpName,ids:new Set()};S.tab="tokens";renderAll();return;}
+    // Overlay list delete button. Must be checked BEFORE the row-select below: the button sits inside the
+    // [data-oid] row, so the row branch used to swallow the click and the overlay was only selected.
+    if(t.classList.contains("ov-del-btn")){const oid=+t.dataset.delov;pushU();S.overlays=S.overlays.filter(o=>o.id!==oid);if(S.sel.type==="overlay")clearSel();renderAll();return;}
     const ti=t.closest("[data-tid]");if(ti){const id=+ti.dataset.tid;if(e.ctrlKey||e.metaKey){ctrlToggle(id);S._lastClick={type:"token",id};}else if(e.shiftKey){shiftRange("data-tid",id,"token");}else{S.sel={type:"token",ids:new Set([id])};S._lastClick={type:"token",id};S.tab="tokens";if(S.addingCombatant)S.addingCombatant=null;const tk=S.tokens.find(x=>x.id===id);if(tk)scrollTo(tk.col,tk.row);}renderAll();return;}
     const oi=t.closest("[data-oid]");if(oi){const id=+oi.dataset.oid;if(e.ctrlKey||e.metaKey){ctrlToggle(id);S._lastClick={type:"overlay",id};}else if(e.shiftKey){shiftRange("data-oid",id,"overlay");}else{S.sel={type:"overlay",ids:new Set([id])};S._lastClick={type:"overlay",id};S.tab="overlays";const ov=S.overlays.find(x=>x.id===id);if(ov){const coord=getOvCoord(ov);if(coord)scrollTo(coord.col,coord.row);}}renderAll();return;}
     // Select unplaced combatant - also cancels Add Combatant form
@@ -4192,7 +4200,7 @@ function setup(){
       if(pfx==="prop"&&S.sel.ids.size===1){pushU();if(S.sel.type==="token"||S.sel.type==="mixed"){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk)tk.color=hex;}if(S.sel.type==="overlay"){const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);if(ov)ov.color=hex;}renderAll();}
       if(pfx==="prop"&&S.sel.type==="unplaced"){const cmb=S.combatants.find(c=>c.name===S.sel.name);if(cmb){if(!cmb.savedTok)cmb.savedTok={};cmb.savedTok.color=hex;renderAll();}}
       if(pfx==="aov"){t.closest(".colors").querySelectorAll(".cswatch").forEach(s=>s.classList.remove("on"));t.classList.add("on");}return;}
-    if(t.id==="p-revert"){if(!origState)return;pushU();
+    if(t.id==="p-revert"||t.id==="p-ovrevert"){if(!origState)return;pushU();
       if(S.sel.type==="token"||S.sel.type==="mixed"){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);const orig=origState.tokens.find(x=>x.id===tk?.id);if(tk&&orig){tk.col=orig.col;tk.row=orig.row;tk.size=orig.size;tk.color=orig.color;tk.height=orig.height;tk.tokenImage=orig.tokenImage;tk.hpCur=orig.hpCur;tk.hpMax=orig.hpMax;tk.ac=orig.ac;tk.note=orig.note;tk.hideStats=orig.hideStats;tk.group=orig.group;tk.init=orig.init;tk.mapHidden=orig.mapHidden;}}
       if(S.sel.type==="overlay"){const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);const orig=origState.overlays.find(x=>x.id===ov?.id);if(ov&&orig){ov.size=orig.size;ov.color=orig.color;ov.type=orig.type;ov.coord={...orig.coord};ov.coord2=orig.coord2?{...orig.coord2}:null;ov.under=orig.under;}}
       renderAll();return;}
@@ -4206,7 +4214,7 @@ function setup(){
         else S.combatants.push({name:tk.name,placed:false,savedTok:saved});
         S.tokens=S.tokens.filter(x=>x.id!==tk.id);
         clearSel();renderAll();}return;}
-    if(t.id==="p-ovremove"){pushU();
+    if(t.id==="p-ovremove"||t.id==="p-ovdel"){pushU();
       const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);
       if(ov){S.overlays=S.overlays.filter(x=>x.id!==ov.id);clearSel();renderAll();}return;}
     // Overlay delete from list ✕ button
@@ -5865,11 +5873,14 @@ function loadFromHashStr(hash){
   // The saved default is a convenience for links that carry no map (Avrae has no map attached yet).
   // It is NOT Avrae's state, so it must not become the baseline: see _fromSavedDef at the snap() below.
   let _fromSavedDef=false;
-  if(!hasMap&&!S.loadedUrl){try{const sv=JSON.parse(localStorage.getItem("mapDef")||"{}");if(sv.g||sv.o||sv.bg)_fromSavedDef=true;
+  if(!hasMap&&!S.loadedUrl){try{const sv=JSON.parse(localStorage.getItem("mapDef")||"{}");if(!sv.bg)throw 0; /* a saved default with no background is just a stale grid size: ignore it */ _fromSavedDef=true;
     if(sv.g){const m=sv.g.match(/(\d+)x(\d+)/);if(m){S.grid.cols=+m[1];S.grid.rows=+m[2];S.grid.fullCols=+m[1];S.grid.fullRows=+m[2];}}
     if(sv.o){const opts=parseOpts("@"+sv.o);S.grid.cellSize=opts.cellSize||40;S.grid.offsetX=opts.offsetX;S.grid.offsetY=opts.offsetY;if(opts.dark)S.darkMode=true;}
     if(sv.bg){S.loadedUrl=sv.bg;$("map-img").src=sv.bg;$("map-img").style.display="block";}
   }catch(e){}}
+  // First load from a link with no map and nothing saved: show what Discord will draw, OTFBM's blank
+  // 10x10, not the 26x26 placeholder grid the page starts with.
+  if(!hasMap&&!S.loadedUrl&&!_fromSavedDef&&!origState){S.grid.cols=10;S.grid.rows=10;S.grid.fullCols=10;S.grid.fullRows=10;S.grid.cellSize=40;S.grid.offsetX=0;S.grid.offsetY=0;}
   {const _cp=cellSizeProblem(S.grid.cellSize);if(_cp)setTimeout(()=>showError(_cp),0);}
   if(S.grid.cellSize>60)S.zoom=Math.max(.25,40/S.grid.cellSize);
   // Auto-zoom to fill viewport width
