@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.318                                      https://battlescry.com
+BattleScry v0.1.319                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,9 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.319 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
+            the coordinate tooltip sits below the pointer instead of over token labels. Removed the
+            old background dialog, which nothing opened any more.
   v0.1.318 - Fixed: an uploaded map keeps the grid that was measured before it was resized or
             enhanced, so a faint printed grid smoothed away by AI upscaling no longer changes the
             layout that gets applied.
@@ -376,7 +379,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.318</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.319</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -3643,7 +3646,7 @@ function showTT(e){const tt=$("tooltip");if(lastPtrTouch){tt.style.display="none
   if(hits.toks.length) text+=": "+hits.toks.map(t=>tokInfo(t)).join(", ");
   if(hits.ovs.length){if(hits.toks.length)text+=", ";else text+=": ";text+=hits.ovs.map(o=>{const n=getOvNum(o);return`[${n.label}: ${o.type}${o.size?" "+o.size+"'":""}${o.target?" → "+o.target:""}${o.locked?" 🔗":""}]`;}).join(", ");}
   if(hits.objs.length){if(hits.toks.length||hits.ovs.length)text+=", ";else text+=": ";text+=hits.objs.map(o=>{const meta=OBJ_META[o.type]||{name:o.type};return`{${meta.name}}`;}).join(", ");}}
-  tt.textContent=text;tt.style.display="block";tt.style.left=(e.clientX+14)+"px";tt.style.top=(e.clientY-10)+"px";}
+  tt.textContent=text;tt.style.display="block";tt.style.left=(e.clientX+18)+"px";tt.style.top=(e.clientY+18)+"px";}
 
 // POPUP for multi-object selection - mergeMode adds to existing selection
 let ppOpenedAt=0;
@@ -3689,177 +3692,6 @@ function showPopup(e,items,mergeMode){ppOpenedAt=Date.now();const pp=$("popup");
     pp.style.display="none";renderAll();};}
 
 
-// BACKGROUND CHANGE MODAL
-function openBgModal(){
-  const existing=document.getElementById("bg-modal");if(existing)existing.remove();
-  const d=document.createElement("div");d.id="bg-modal";
-  d.style.cssText="position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.7);display:flex;justify-content:center;align-items:center";
-  const currentBg=S.loadedUrl||"";
-  d.innerHTML=`<div style="background:var(--bg);border:1px solid var(--bg3);border-radius:8px;width:520px;max-width:94vw;max-height:90vh;overflow-y:auto;padding:16px">
-    <div style="display:flex;align-items:center;margin-bottom:10px"><span style="font-size:14px;font-weight:bold;color:var(--accent)">🖼️ Background Image & Grid Setup</span><span style="margin-left:auto;cursor:pointer;font-size:18px;color:var(--fg3)" id="bg-close">✕</span></div>
-    <div style="font-size:10px;color:var(--fg3);margin-bottom:8px;line-height:1.4">Enter a direct image URL (.jpg, .jpeg, .gif, .png). Must be publicly accessible.<br>Working hosts: imgur, imgbb, iili.io, GitHub raw, Discord CDN</div>
-    <div style="display:flex;gap:4px;margin-bottom:10px"><input class="inp" id="bg-url-input" value="${currentBg}" placeholder="https://i.ibb.co/example/map.jpg" style="flex:1;font-family:monospace;font-size:10px"><button class="btn btn-p" id="bg-load-btn" style="font-size:10px;padding:4px 10px;white-space:nowrap">Load Image</button></div>
-    <div id="bg-preview-area" style="text-align:center;min-height:30px;margin-bottom:8px"></div>
-    <div id="bg-info" style="font-size:10px;color:var(--fg2);margin-bottom:8px;min-height:14px"></div>
-    <div id="bg-upload-area" style="margin-bottom:8px;padding:8px;border:1px dashed var(--bg3);border-radius:4px;text-align:center">
-      <div style="font-size:10px;color:var(--fg3);margin-bottom:4px">Or upload from your computer for full grid detection</div>
-      <input type="file" id="bg-file-input" accept="image/*" style="display:none">
-      <button class="btn btn-s" id="bg-file-btn" style="font-size:10px;padding:4px 12px">📁 Choose File</button>
-      <div id="bg-file-status" style="font-size:9px;color:var(--fg3);margin-top:4px"></div>
-    </div>
-    <div id="bg-grid-options" style="margin-bottom:8px"></div>
-    <div id="bg-manual" style="display:none;margin-bottom:10px;padding:8px;border:1px solid var(--bg3);border-radius:4px">
-      <div style="font-size:10px;font-weight:bold;color:var(--fg2);margin-bottom:6px">Grid Settings</div>
-      <div style="display:flex;gap:6px;margin-bottom:4px">
-        <div style="flex:1"><span class="lbl">Columns</span><input type="number" class="inp" id="bg-cols" min="3" max="100" style="width:100%"></div>
-        <div style="flex:1"><span class="lbl">Rows</span><input type="number" class="inp" id="bg-rows" min="3" max="100" style="width:100%"></div>
-        <div style="flex:1"><span class="lbl">Cell px</span><input type="number" class="inp" id="bg-cellsize" min="20" max="100" style="width:100%"></div>
-      </div>
-      <div style="display:flex;gap:6px">
-        <div style="flex:1"><span class="lbl">Offset X</span><input type="number" class="inp" id="bg-ox" value="0" style="width:100%"></div>
-        <div style="flex:1"><span class="lbl">Offset Y</span><input type="number" class="inp" id="bg-oy" value="0" style="width:100%"></div>
-        <div style="flex:1"><span class="lbl" style="font-size:9px">Map size</span><div id="bg-mapsize-info" style="font-size:10px;color:var(--fg3);padding-top:4px">-</div></div>
-      </div>
-    </div>
-    <div id="bg-validation" style="font-size:10px;color:var(--danger);margin-bottom:6px;min-height:14px"></div>
-    <div style="display:flex;gap:6px"><button class="btn btn-p" id="bg-update-btn" style="flex:1;padding:6px;opacity:.4;cursor:default" disabled>Update Map</button><button class="btn btn-s" id="bg-cancel-btn" style="flex:1;padding:6px">Cancel</button></div>
-  </div>`;
-  document.body.appendChild(d);
-  const inp=document.getElementById("bg-url-input");
-  let loadedImg=null;
-  inp.focus();inp.select();
-  document.getElementById("bg-close").onclick=()=>d.remove();
-  document.getElementById("bg-cancel-btn").onclick=()=>d.remove();
-  d.onclick=e=>{if(e.target===d)d.remove();};
-  function updateMapSizeInfo(){
-    const c=document.getElementById("bg-cols"),r=document.getElementById("bg-rows"),cs=document.getElementById("bg-cellsize");
-    const info=document.getElementById("bg-mapsize-info");
-    if(c&&r&&cs&&c.value&&r.value){info.textContent=c.value*5+"ft × "+r.value*5+"ft";}else{info.textContent="-";}
-  }
-  function validateForm(){
-    const c=+document.getElementById("bg-cols")?.value,r=+document.getElementById("bg-rows")?.value,cs=+document.getElementById("bg-cellsize")?.value;
-    const v=document.getElementById("bg-validation"),btn=document.getElementById("bg-update-btn");
-    if(!loadedImg){v.textContent="Load an image first";btn.disabled=true;btn.style.opacity=".4";btn.style.cursor="default";return false;}
-    if(!c||!r){v.textContent="Grid columns and rows are required";btn.disabled=true;btn.style.opacity=".4";btn.style.cursor="default";return false;}
-    if(!cs){v.textContent="Cell size is required";btn.disabled=true;btn.style.opacity=".4";btn.style.cursor="default";return false;}
-    if(cs<20){v.textContent="Cell size minimum is 20px (c20)";btn.disabled=true;btn.style.opacity=".4";btn.style.cursor="default";return false;}
-    if(cs>100){v.textContent="Cell size maximum is 100px (c100)";btn.disabled=true;btn.style.opacity=".4";btn.style.cursor="default";return false;}
-    if(c<3||r<3){v.textContent="Grid must be at least 3×3";btn.disabled=true;btn.style.opacity=".4";btn.style.cursor="default";return false;}
-    v.textContent="";btn.disabled=false;btn.style.opacity="1";btn.style.cursor="pointer";return true;}
-  function loadImage(){
-    const url=inp.value.trim();
-    if(!url){document.getElementById("bg-info").textContent="Enter a URL first";return;}
-    const area=document.getElementById("bg-preview-area");
-    area.innerHTML='<div style="font-size:10px;color:var(--fg3)">Loading image...</div>';
-    document.getElementById("bg-grid-options").innerHTML="";
-    document.getElementById("bg-manual").style.display="none";
-    // Reset upload area styling
-    const ua=document.getElementById("bg-upload-area");
-    ua.style.borderColor="var(--bg3)";ua.querySelector("div").textContent="Or upload from your computer for full grid detection";ua.querySelector("div").style.color="var(--fg3)";
-    loadedImg=null;validateForm();
-    // Try loading through CORS proxy first (enables canvas pixel analysis)
-    const proxyUrl=PROXY_URL?PROXY_URL+encodeURIComponent(url):null;
-    const img=new Image();img.crossOrigin="anonymous";
-    img.onload=()=>{
-      loadedImg=img;
-      area.innerHTML="";img.style.cssText="max-width:100%;max-height:180px;border-radius:4px;border:1px solid var(--bg3)";img.id="bg-preview-img";area.appendChild(img);
-      let infoStr=`<span style="color:var(--accent)">✓</span> ${img.naturalWidth} × ${img.naturalHeight} px`;
-      // Try to get file size
-      fetch(proxyUrl||url,{method:"HEAD",mode:"cors"}).then(r=>{const cl=r.headers.get("content-length");if(cl){const kb=Math.round(+cl/1024);infoStr+=" · "+(kb>1024?(kb/1024).toFixed(1)+"MB":kb+"KB");document.getElementById("bg-info").innerHTML=infoStr;}}).catch(()=>{});
-      document.getElementById("bg-info").innerHTML=infoStr;
-      runGridDetection(img);};
-    img.onerror=()=>{
-      // Proxy failed or unavailable - fall back to direct load (no canvas access)
-      const img2=new Image();
-      img2.onload=()=>{
-        loadedImg=img2;
-        area.innerHTML="";img2.style.cssText="max-width:100%;max-height:180px;border-radius:4px;border:1px solid var(--bg3)";img2.id="bg-preview-img";area.appendChild(img2);
-        document.getElementById("bg-info").innerHTML=`<span style="color:var(--accent)">✓</span> ${img2.naturalWidth} × ${img2.naturalHeight} px`;
-        // Highlight upload area since pixel analysis unavailable
-        ua.style.borderColor="var(--accent)";
-        ua.querySelector("div").textContent="Upload this image for better grid detection (pixel analysis unavailable)";
-        ua.querySelector("div").style.color="var(--fg2)";
-        runGridDetection(img2);};
-      img2.onerror=()=>{area.innerHTML='<div style="font-size:10px;color:var(--danger)">⚠ Failed to load image. Check the URL and that it\'s publicly accessible.</div>';document.getElementById("bg-info").textContent="";};
-      img2.src=url;};
-    img.src=proxyUrl||url;}
-  function showManualOnly(w,h){
-    const cs=S.grid.cellSize||40;
-    document.getElementById("bg-cols").value=Math.round(w/cs);
-    document.getElementById("bg-rows").value=Math.round(h/cs);
-    document.getElementById("bg-cellsize").value=cs;
-    document.getElementById("bg-ox").value=0;document.getElementById("bg-oy").value=0;
-    updateMapSizeInfo();
-    document.getElementById("bg-grid-options").innerHTML='<div style="font-size:10px;color:var(--fg3)">Enter grid settings manually, or try common cell sizes: the image is '+w+'×'+h+'px.</div>';}
-  function runGridDetection(img){
-    const gOpts=document.getElementById("bg-grid-options");
-    gOpts.innerHTML='<div style="font-size:10px;color:var(--accent)">🔍 Detecting grid...</div>';
-    setTimeout(()=>{
-      const w=img.naturalWidth,h=img.naturalHeight;
-      const top=bscrySuggestGrids(img);const r=top.detected;
-      if(!top.length){gOpts.innerHTML='<div style="font-size:10px;color:var(--fg3)">'+(top.note||"No grid patterns detected.")+' Enter settings manually below.</div>';
-        document.getElementById("bg-manual").style.display="block";showManualOnly(w,h);validateForm();return;}
-      let oh=`<div style="font-size:10px;font-weight:bold;color:var(--fg2);margin-bottom:4px">${r?(r.kind==="tiles"?"Floor tiles found":"Grid found")+" ("+r.rawCell.toFixed(Math.abs(r.rawCell-Math.round(r.rawCell))>0.05?1:0)+"px per "+(r.kind==="tiles"?"tile":"square")+")":"Grid suggestions"}:</div>`;
-      if(top.note)oh+=`<div style="font-size:10px;color:${r?"var(--warn,#e0a030)":"var(--fg3)"};line-height:1.4;margin-bottom:6px">${top.note}</div>`;
-      top.forEach((o,i)=>{
-        const isRec=!!o.rec;const warn=o.cs<40?" ⚠ no custom tokens":"";
-        const area=o.gw*o.gh;const feel=area>2000?"Epic Battlefield":area>800?"Large Battle":area>300?"Standard Encounter":area>100?"Skirmish":"Close Quarters";
-        oh+=`<div class="bg-grid-opt" data-cs="${o.cs}" data-gw="${o.gw}" data-gh="${o.gh}" data-ox="${o.ox}" data-oy="${o.oy}" style="display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;border-radius:4px;border:1px solid ${isRec?"var(--accent)":"var(--bg3)"};margin-bottom:3px;${isRec?"background:rgba(251,191,36,0.1)":""}" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='${isRec?"rgba(251,191,36,0.1)":""}'">`
-        +`<div style="flex:1"><div style="font-size:11px;color:var(--fg)"><b>${o.gw}×${o.gh}</b> squares at <b>${o.cs}px</b>${isRec?" ⭐ Recommended":""}</div>`
-        +`<div style="font-size:9px;color:var(--fg3)">${o.label} · ${feel} · ${o.gw*5}ft × ${o.gh*5}ft${warn}</div></div></div>`;});
-      gOpts.innerHTML=oh;
-      document.getElementById("bg-manual").style.display="block";
-      // Pre-fill with recommended option
-      if(top[0]){selectGridOption(top[0].gw,top[0].gh,top[0].cs,top[0].ox,top[0].oy);}
-      // Click handler for options
-      gOpts.querySelectorAll(".bg-grid-opt").forEach(el=>el.onclick=()=>{
-        selectGridOption(+el.dataset.gw,+el.dataset.gh,+el.dataset.cs,+el.dataset.ox,+el.dataset.oy);
-        gOpts.querySelectorAll(".bg-grid-opt").forEach(x=>{x.style.borderColor="var(--bg3)";x.style.background="";});
-        el.style.borderColor="var(--accent)";el.style.background="rgba(251,191,36,0.1)";});
-      validateForm();},100);}
-  function selectGridOption(gw,gh,cs,ox,oy){
-    document.getElementById("bg-cols").value=gw;document.getElementById("bg-rows").value=gh;
-    document.getElementById("bg-cellsize").value=cs;document.getElementById("bg-ox").value=ox;document.getElementById("bg-oy").value=oy;
-    updateMapSizeInfo();validateForm();}
-  document.getElementById("bg-load-btn").onclick=loadImage;
-  inp.onkeydown=e=>{if(e.key==="Enter")loadImage();};
-  // Live validation on manual field changes
-  ["bg-cols","bg-rows","bg-cellsize","bg-ox","bg-oy"].forEach(id=>{
-    const el=document.getElementById(id);if(el){el.oninput=()=>{updateMapSizeInfo();validateForm();};}});
-  document.getElementById("bg-update-btn").onclick=()=>{
-    if(!validateForm())return;
-    const url=inp.value.trim();
-    const cols=+document.getElementById("bg-cols").value,rows=+document.getElementById("bg-rows").value;
-    const cs=+document.getElementById("bg-cellsize").value;
-    const ox=+document.getElementById("bg-ox").value||0,oy=+document.getElementById("bg-oy").value||0;
-    S.loadedUrl=url;$("map-img").src=url;$("map-img").style.display="block";
-    $("map-img").onerror=function(){showError("Could not load the background image.");this.style.display="none";};
-    S.grid.cols=cols;S.grid.rows=rows;S.grid.cellSize=cs;S.grid.offsetX=ox;S.grid.offsetY=oy;
-    S.grid.fullCols=cols;S.grid.fullRows=rows;
-    d.remove();renderAll();};
-  // File upload for CORS-free grid detection
-  document.getElementById("bg-file-btn").onclick=()=>document.getElementById("bg-file-input").click();
-  document.getElementById("bg-file-input").onchange=e=>{
-    const file=e.target.files[0];if(!file)return;
-    const status=document.getElementById("bg-file-status");
-    status.textContent="Loading "+file.name+"...";
-    const objUrl=URL.createObjectURL(file);
-    const fimg=new Image();
-    fimg.onload=()=>{
-      status.innerHTML=`<span style="color:var(--accent)">✓</span> ${file.name} - ${fimg.naturalWidth}×${fimg.naturalHeight}px`;
-      // If no URL image loaded yet, use this as the preview
-      if(!loadedImg){loadedImg=fimg;
-        const area=document.getElementById("bg-preview-area");
-        area.innerHTML="";fimg.style.cssText="max-width:100%;max-height:180px;border-radius:4px;border:1px solid var(--bg3)";area.appendChild(fimg);
-        document.getElementById("bg-info").innerHTML=`<span style="color:var(--accent)">✓</span> ${fimg.naturalWidth} × ${fimg.naturalHeight} px (local file)`;
-        validateForm();}
-      // Run full detection on local file (no CORS restrictions)
-      runGridDetection(fimg);
-      URL.revokeObjectURL(objUrl);};
-    fimg.onerror=()=>{status.textContent="Failed to load image file";URL.revokeObjectURL(objUrl);};
-    fimg.src=objUrl;};
-  // Auto-load if there's already a URL
-  if(currentBg)loadImage();}
 // EVENTS
 function setup(){
   // Import string is now in Map Options tab - handler added dynamically
@@ -5717,7 +5549,7 @@ function setup(){
   // dragging it (almost) to the bottom minimizes. The height is kept as a fraction of the viewport so it
   // survives orientation changes.
   let sheetOpen=false;
-  let sheetOpenFrac=0.5;
+  let sheetOpenFrac=0.42;
   function sheetSnaps(){const sb=$("sidebar");const h=sb.offsetHeight||Math.round(window.innerHeight*0.88);
     return{full:0,peek:Math.max(0,h-60),h};}
   function sheetOpenOffset(){const sn=sheetSnaps();const _short=window.innerHeight<=500&&window.innerWidth>window.innerHeight;const want=sn.h-Math.round((_short?Math.max(sheetOpenFrac,0.86):sheetOpenFrac)*window.innerHeight);return Math.min(sn.peek,Math.max(0,want));}

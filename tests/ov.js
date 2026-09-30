@@ -1,0 +1,24 @@
+const { chromium } = require('playwright');
+(async()=>{
+  const b = await chromium.launch({executablePath: process.env.PW_CHROME});
+  const ctx = await b.newContext({viewport:{width:1500,height:850}}); const errs=[];
+  const open=async(hash,ls)=>{const p=await ctx.newPage();p.on('pageerror',e=>errs.push(e.message));await p.goto('http://localhost:8765/index.html?test=1');await p.evaluate(()=>localStorage.setItem('welcomeDismissed','1'));if(ls)await p.evaluate(v=>localStorage.setItem('mapDef',v),ls);await p.goto('about:blank');await p.goto('http://localhost:8765/index.html?test=1'+hash);await p.waitForTimeout(900);return p;};
+  const H='#g=12x10&o=c50&t=GO1%7CI7%7CM%7Cb%7C0%7C;GO2%7CC4%7CM%7Cb%7C0%7C&ov=GO2~c10rC5;GO1~c15bH6';
+  let p=await open(H);
+  const n=()=>p.evaluate(()=>S.overlays.length);
+  await p.click('#tabs button[data-tab="overlays"]'); await p.waitForTimeout(200);
+  const r={start:await n()};
+  await p.click('.ov-del-btn'); await p.waitForTimeout(200); r.afterListX=await n();
+  await p.click('[data-oid]'); await p.waitForTimeout(200);
+  await p.evaluate(()=>{const o=S.overlays[0];pushU();o.size=30;renderAll();}); r.sizeEdited=await p.evaluate(()=>S.overlays[0].size);
+  await p.click('#p-ovrevert'); await p.waitForTimeout(200); r.afterRevert=await p.evaluate(()=>S.overlays[0].size);
+  await p.click('#p-ovdel'); await p.waitForTimeout(200); r.afterPanelDelete=await n();
+  r.cmd=await p.evaluate(()=>document.getElementById('cmd-text').textContent.slice(0,120));
+  await p.close();
+  p=await open('#np=GO2;OG1&ip=GO2:12;OG1:10', JSON.stringify({g:'12x10',o:'c50',bg:''}));
+  r.noBgDefault=await p.evaluate(()=>({grid:[S.grid.cols,S.grid.rows,S.grid.cellSize],changed:hasAnyChanges(),cmd:document.getElementById('cmd-text').textContent.slice(0,60)}));
+  await p.close();
+  p=await open('#np=GO2;OG1&ip=GO2:12;OG1:10', JSON.stringify({g:'22x17',o:'c72',bg:'https://cdn.battlescry.com/m/tc0335.jpg'}));
+  r.bgDefault=await p.evaluate(()=>({grid:[S.grid.cols,S.grid.rows,S.grid.cellSize],changed:hasAnyChanges()}));
+  console.log(JSON.stringify(r,null,1)); console.log(errs.join('\n')||'no page errors'); await b.close();
+})();
