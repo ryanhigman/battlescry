@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.317                                      https://battlescry.com
+BattleScry v0.1.318                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,9 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.318 - Fixed: an uploaded map keeps the grid that was measured before it was resized or
+            enhanced, so a faint printed grid smoothed away by AI upscaling no longer changes the
+            layout that gets applied.
   v0.1.317 - Added: AI enhancement for low-resolution maps. Uploads whose squares are under 40px are
             hosted at their original size and upscaled by the server (Cloudflare Images), falling
             back to plain enlargement if that is unavailable. On the Map tab, layouts that would
@@ -373,7 +376,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.317</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.318</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -883,7 +886,7 @@ function bscryConvertToJpeg(file,maxDim,quality,onDone,onError){
         const ctx=cv.getContext("2d");ctx.imageSmoothingQuality="high";ctx.fillStyle="#000";ctx.fillRect(0,0,ow,oh);ctx.drawImage(img,0,0,ow,oh);
         URL.revokeObjectURL(objUrl);
         // Aim for a 1-2MB file: step the JPEG quality down from the requested value to 0.70 while it is over 2MB.
-        const finish=(blob,srcBlob)=>{if(onDone)onDone({blob:blob,srcBlob:srcBlob||null,w:ow,h:oh,bytes:blob.size,srcW:w,srcH:h,srcCell:plan.srcCell,cell:plan.cell,scale:plan.scale,kind:plan.kind,divisor:plan.scale<1?Math.round(1/plan.scale):1});};
+        const finish=(blob,srcBlob)=>{if(onDone)onDone({blob:blob,srcBlob:srcBlob||null,w:ow,h:oh,bytes:blob.size,srcW:w,srcH:h,srcCell:plan.srcCell,cell:plan.cell,ox:Math.round(plan.ox||0),oy:Math.round(plan.oy||0),scale:plan.scale,kind:plan.kind,divisor:plan.scale<1?Math.round(1/plan.scale):1});};
         const enc=(q)=>{cv.toBlob((blob)=>{
           if(!blob){if(onError)onError("Could not encode that image.");return;}
           if(blob.size>2*1024*1024&&q>0.701){enc(Math.max(0.7,q-0.05));return;}
@@ -948,7 +951,10 @@ function bscryEnhance(srcUrl,w,h,onDone,onFail){
 // Host a converted map. When the converter had to enlarge it, host the original-size copy and have the
 // server AI-upscale it; if that is not available, host the plainly enlarged copy instead.
 // onDone(url,enhanced), onStatus(text) for progress.
-function bscryHostMap(out,filename,onDone,onError,onStatus){
+function bscryHostMap(out,filename,onDone0,onError,onStatus){
+  // Remember the grid measured on the original, keyed by the hosted URL. AI upscaling can smooth faint
+  // grid lines away, so the Map tab must not rely on re-measuring the hosted copy.
+  const onDone=(u,enh)=>{if(out.cell)window._bscryGridHint={url:u,cell:out.cell,ox:out.ox||0,oy:out.oy||0,kind:out.kind||"grid",w:out.w,h:out.h};onDone0(u,enh);};
   if(!out.srcBlob){bscryHostBlob(out.blob,filename,(u)=>onDone(u,false),onError);return;}
   if(onStatus)onStatus("Uploading...");
   bscryHostBlob(out.srcBlob,filename,(u0)=>{
@@ -2816,6 +2822,13 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
       if(sg){note=sg.note||"";found=sg.detected||null;
         sg.forEach((o,i)=>{if(tested.has(o.cs))return;tested.add(o.cs);options.push({cs:o.cs,gw:o.gw,gh:o.gh,ox:o.ox,oy:o.oy,conf:found?(200-i):(o.rec?100:95-i),det:!!found&&i===0&&!!o.rec,label:o.label,top:true});});}}
     else note="This image host does not let BattleScry read the picture, so the grid could not be measured. Pick the layout that lines up, or upload the file instead.";
+    // An upload carries the grid measured before it was resized or enhanced: trust that over a re-measure.
+    {const hint=window._bscryGridHint;
+      if(hint&&hint.url===url&&hint.cell>=20&&hint.cell<=100){
+        for(let i=options.length-1;i>=0;i--){if(options[i].cs===hint.cell)options.splice(i,1);}
+        const hx=hint.ox%hint.cell,hy=hint.oy%hint.cell;
+        options.unshift({cs:hint.cell,gw:Math.max(1,Math.floor((w-hx)/hint.cell+0.15)),gh:Math.max(1,Math.floor((h-hy)/hint.cell+0.15)),ox:hx,oy:hy,conf:300,det:true,label:hint.kind==="tiles"?"Matches the floor tiles":"Matches the printed grid",top:true});
+        tested.add(hint.cell);found={kind:hint.kind,rawCell:hint.cell};note="";}}
     // GCF-first: a cell that divides both W and H exactly is a divisor of gcd(W,H). If gcd is in 40..100 use
     // it; if larger, use the largest divisor in that range. Exact fit (offset 0), so rank it above the rest.
     (function(){let a=w,b=h;while(b){const t=b;b=a%b;a=t;}const g=a;let gcf=0;
