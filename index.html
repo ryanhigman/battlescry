@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.325                                      https://battlescry.com
+BattleScry v0.1.326                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,7 +19,7 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.325 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
+  v0.1.326 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
             the coordinate tooltip sits below the pointer instead of over token labels. Removed the
             old background dialog, which nothing opened any more.
   v0.1.318 - Fixed: an uploaded map keeps the grid that was measured before it was resized or
@@ -382,7 +382,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.325</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.326</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -1098,6 +1098,55 @@ function tokGridDist(a,b){
   const flat=gridDist(0,0,dx,dy);
   const hA=a.height||0,hB=b.height||0,gapZ=Math.max(0,hB-(hA+ca*5),hA-(hB+cb*5));
   return gapZ>0?Math.round(Math.sqrt(flat*flat+gapZ*gapZ)/5)*5:flat;}
+// --- Off-map and fog visibility -------------------------------------------------------------------
+// A token whose cell is outside the full grid is "parked": kept in play but not drawn (a banished
+// monster, say). OTFBM does not draw tokens past the right/bottom edge, whatever their size, but a cell
+// far outside (ZZ99) makes it fail outright, so parked tokens all go to one cell just past the corner.
+function tokParked(t){const g=S.grid,c=t.col+(g.startCol||0),r=t.row+(g.startRow||0);return c<0||r<0||c>=(g.fullCols||g.cols)||r>=(g.fullRows||g.rows);}
+function parkCell(){const g=S.grid;return{col:(g.fullCols||g.cols)+1-(g.startCol||0),row:(g.fullRows||g.rows)+1-(g.startRow||0)};}
+// Fog covers everything except the revealed regions, and OTFBM does not draw a token under it.
+function cellRevealed(c,r){return S.fowRegions.some(f=>c>=Math.min(f.c1,f.c2)&&c<=Math.max(f.c1,f.c2)&&r>=Math.min(f.r1,f.r2)&&r<=Math.max(f.r1,f.r2));}
+function tokInFog(t){if(!S.fowRegions.length||tokParked(t))return false;const n=tokCubeCells(t);for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(cellRevealed(t.col+i,t.row+j))return false;return true;}
+function tokFogHidden(t){return !S.revealFogTokens&&tokInFog(t);}
+// Not drawn on the map right now (parked, or under fog with "show tokens in fog" off).
+function tokOffMap(t){return tokParked(t)||tokFogHidden(t);}
+function fogTokenCount(){return S.tokens.filter(t=>!t.hidden&&tokInFog(t)).length;}
+// --- Scatter: drop a batch of tokens into random free cells of a region ---------------------------
+function scatterTargets(){
+  const placed=(S.sel.type==="token"||S.sel.type==="mixed")?S.tokens.filter(t=>S.sel.ids.has(t.id)&&!t.hidden):[];
+  const np=[...(S.sel.np||[])].map(n=>S.combatants.find(c=>c.name===n&&!c.placed)).filter(Boolean);
+  return{placed,np};}
+function fullMapRange(){const g=S.grid;return{c1:-(g.startCol||0),r1:-(g.startRow||0),c2:(g.fullCols||g.cols)-1-(g.startCol||0),r2:(g.fullRows||g.rows)-1-(g.startRow||0)};}
+function doScatter(rg){
+  const full=fullMapRange();
+  const c1=Math.max(full.c1,Math.min(rg.c1,rg.c2)),c2=Math.min(full.c2,Math.max(rg.c1,rg.c2)),r1=Math.max(full.r1,Math.min(rg.r1,rg.r2)),r2=Math.min(full.r2,Math.max(rg.r1,rg.r2));
+  const tg=scatterTargets();
+  const items=[...tg.placed.map(t=>({t:t,size:t.size,name:t.name})),...tg.np.map(c=>({c:c,size:(c.savedTok&&c.savedTok.size)||"M",name:c.name}))];
+  if(!items.length)return;
+  if(c2<c1||r2<r1){showError("That area is not on the map.");return;}
+  const moving=new Set(tg.placed.map(t=>t.id)),occ=new Set(),key=(c,r)=>c+","+r;
+  const mark=(c,r,n)=>{for(let i=0;i<n;i++)for(let j=0;j<n;j++)occ.add(key(c+i,r+j));};
+  S.tokens.forEach(t=>{if(t.hidden||moving.has(t.id)||tokParked(t))return;mark(t.col,t.row,tokCubeCells(t));});
+  items.sort((a,b)=>tokCubeCells({size:b.size})-tokCubeCells({size:a.size}));
+  const n0=undoStack.length;pushU();
+  const ids=[],left=[];
+  items.forEach(it=>{const n=tokCubeCells({size:it.size}),cand=[];
+    for(let c=c1;c<=c2-n+1;c++)for(let r=r1;r<=r2-n+1;r++){let ok=true;for(let i=0;i<n&&ok;i++)for(let j=0;j<n;j++)if(occ.has(key(c+i,r+j))){ok=false;break;}if(ok)cand.push([c,r]);}
+    if(!cand.length){left.push(it);return;}
+    const pk=cand[Math.floor(Math.random()*cand.length)];
+    let tok=it.t;if(tok){tok.col=pk[0];tok.row=pk[1];}else tok=placeUnplacedCombatant(it.c.name,pk[0],pk[1]);
+    if(tok){ids.push(tok.id);mark(pk[0],pk[1],n);}else left.push(it);});
+  if(undoStack.length>n0+1)undoStack.length=n0+1; // one undo step for the whole batch
+  S._lastScatter={c1:c1,r1:r1,c2:c2,r2:r2};
+  const leftPlaced=left.filter(it=>it.t).map(it=>it.t.id),leftNp=left.filter(it=>it.c).map(it=>it.name);
+  S.sel={type:"token",ids:new Set(ids.concat(leftPlaced)),np:new Set(leftNp)};
+  if(!ids.length&&!leftPlaced.length&&leftNp.length)S.sel={type:"unplaced",ids:new Set(),name:leftNp[0],np:new Set(leftNp)};
+  const inFog=S.tokens.some(t=>ids.includes(t.id)&&tokInFog(t));if(inFog)S.revealFogTokens=true;
+  S.tab="tokens";renderAll();
+  setStatus("Scattered "+ids.length+" token"+(ids.length===1?"":"s")+" in "+fmtU(c1,r1)+":"+fmtU(c2,r2)+(left.length?". No room for "+left.length+" more.":".")+(inFog?" Some are under fog, so they are shown here but hidden on the map.":""));
+}
+function parkTokens(toks){if(!toks.length)return;pushU();const pc=parkCell();toks.forEach(t=>{t.col=pc.col;t.row=pc.row;});renderAll();
+  setStatus((toks.length===1?toks[0].name+" is":toks.length+" tokens are")+" off the map. Still in play, just not drawn. Select it in the list and pick a cell to bring it back.");}
 function cubeDist3D(a,b){
   const ca=tokCubeCells(a),cb=tokCubeCells(b);
   const ftA=ca*5,ftB=cb*5;
@@ -1136,7 +1185,7 @@ function showDistPopup(origin){
   dt.textContent=`📏 ${origin.name} (${origin.size}${hStr})`;
   ds.value="";
   function renderDistList(filter){
-    const others=S.tokens.filter(t=>!t.hidden&&!t.mapHidden&&t.id!==origin.id);
+    const others=S.tokens.filter(t=>!t.hidden&&!t.mapHidden&&!tokOffMap(t)&&t.id!==origin.id);
     const filtered=filter?others.filter(t=>t.name.toLowerCase().includes(filter.toLowerCase())):others;
     const withDist=filtered.map(t=>({tok:t,dist:tokGridDist(origin,t)})).sort((a,b)=>a.dist-b.dist);
     let h="";
@@ -1229,6 +1278,9 @@ function setViewOrigin(sc,sr){
   shiftEntities(S,sc-(S.grid.startCol||0),sr-(S.grid.startRow||0));
   S.grid.startCol=sc;S.grid.startRow=sr;syncOrigView();
 }
+// Undo and redo restore tokens but not the combatant list, so bring each combatant's "on the map" flag
+// back in line. Otherwise undoing a placement leaves it neither on the map nor in the unplaced list.
+function syncPlacedFlags(){(S.combatants||[]).forEach(c=>{c.placed=!!S.tokens.find(t=>t.name===c.name&&!t.hidden);});}
 function snap(){return JSON.parse(JSON.stringify({tokens:S.tokens,overlays:S.overlays,walls:S.walls,objects:S.objects,fowRegions:S.fowRegions,grid:S.grid}));}
 // Baseline of combatant stats (ac/current-hp/max-hp/init/group) captured at load, so the export can diff
 // edits to combatants that already exist in Avrae and replay them via `!i opt`. snap() deliberately omits
@@ -1251,8 +1303,8 @@ window.addEventListener("beforeunload",function(e){
   const b=document.getElementById("btn-copy");
   if(b&&!b.disabled&&!S._lastExport){e.preventDefault();e.returnValue="";}
 });
-function popU(){if(!undoStack.length)return;redoStack.push(snap());const s=undoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;syncOrigView();clearSel();setStatus("\u21a9 Undo");renderAll();}
-function redoU(){if(!redoStack.length)return;undoStack.push(snap());const s=redoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;syncOrigView();clearSel();setStatus("\u21aa Redo");renderAll();}
+function popU(){if(!undoStack.length)return;redoStack.push(snap());const s=undoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;syncOrigView();syncPlacedFlags();clearSel();setStatus("\u21a9 Undo");renderAll();}
+function redoU(){if(!redoStack.length)return;undoStack.push(snap());const s=redoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;syncOrigView();syncPlacedFlags();clearSel();setStatus("\u21aa Redo");renderAll();}
 function clearSel(){S.sel={type:null,ids:new Set()};S._lastClick=null;}
 function allSel(type){
   if(!S.sel.ids.size)return false;
@@ -1378,7 +1430,7 @@ function imgTokBadge(t){
 }
 // Token display info for lists/popups: Name, Name (30'H), Name (S), Name (-10'H, S)
 function tokInfo(t){const parts=[];if(t.height)parts.push(t.height+"'H");if(t.size!=="M")parts.push(t.size);return parts.length?t.name+" ("+parts.join(", ")+")":t.name;}
-function groupToks(){const g={};S.tokens.filter(t=>!t.hidden&&!t.mapHidden).forEach(t=>{const sc=(t.size==="S"||t.size==="M")?"M":t.size;const k=`${t.col},${t.row},${sc}`;(g[k]=g[k]||[]).push(t);});return g;}
+function groupToks(){const g={};S.tokens.filter(t=>!t.hidden&&!t.mapHidden&&!tokOffMap(t)).forEach(t=>{const sc=(t.size==="S"||t.size==="M")?"M":t.size;const k=`${t.col},${t.row},${sc}`;(g[k]=g[k]||[]).push(t);});return g;}
 function tokensAt(col,row){return S.tokens.filter(t=>{if(t.hidden||t.mapHidden)return false;const c=Math.ceil(SIZES[t.size]?.c||1);return col>=t.col&&col<t.col+c&&row>=t.row&&row<t.row+c;});}
 function overlaysAt(col,row){return S.overlays.filter(ov=>{if(!ov.coord)return false;return ov.coord.col===col&&ov.coord.row===row;});}
 // Center of token in SVG coords
@@ -2074,7 +2126,7 @@ function renderCombatantForm(opts){
     ac=t.ac!=null?t.ac:(cb.ac||"");
     hideStats=t.hideStats!=null?!!t.hideStats:!!cb.hideStats;
     note=t.note!=null?t.note:(cb.note||"");
-    location=fmtU(t.col,t.row);height=t.height||0;group=t.group||cb.group||"";
+    location=tokParked(t)?"":fmtU(t.col,t.row);height=t.height||0;group=t.group||cb.group||"";
     isMoved=t.originalCol!==t.col||t.originalRow!==t.row;
     canRevert=!!(origState&&origState.tokens.find(x=>x.id===t.id));
     headerTitle=t.name;
@@ -2213,7 +2265,8 @@ function renderCombatantForm(opts){
     h+=`<div class="row" style="gap:4px;margin-top:8px">
       <button class="btn btn-s" id="p-revert" ${canRevert?"":"disabled"} style="flex:1;font-size:11px;padding:5px${canRevert?"":";opacity:.4;cursor:default"}" title="Reset this token to its original loaded state">Revert</button>
       <button class="btn btn-s" id="p-unplace" style="flex:1;font-size:11px;padding:5px;color:var(--danger)" title="Remove from map - moves to Unplaced (stays in initiative)">Unplace from Map</button>
-    </div>`;
+    </div>
+    ${tokParked(opts.token)?`<div style="font-size:10px;color:var(--accent);margin-top:6px;line-height:1.4">This token is off the map: still in play, not drawn. Tap the crosshair next to Location, then a cell, to bring it back.</div>`:`<div class="row" style="margin-top:4px"><button class="btn btn-s" id="p-park" style="flex:1;font-size:11px;padding:5px" title="Keeps the token and its settings but stops drawing it (banished, left the room). Works for any size.">Move off map</button></div>`}`;
     // Stacked / attached overlay hints
     const stacked=opts.token?tokensAt(opts.token.col,opts.token.row).filter(x=>x.id!==opts.token.id):[];
     if(stacked.length)h+=`<div style="font-size:10px;color:var(--fg2);margin-top:6px">Stacked with: ${stacked.map(x=>`<a href="#" class="cyc" data-cyc="${x.id}" style="color:var(--accent)">${x.name}</a>`).join(", ")}</div>`;
@@ -2378,7 +2431,8 @@ function rTokenProps(el){
   }
   // Selected placed token - unified form (mode "token")
   const sc=S.sel.ids.size;
-  if(sc===1&&(S.sel.type==="token"||S.sel.type==="mixed")){
+  const _tg=scatterTargets(),_multi=(_tg.placed.length+_tg.np.length)>1;
+  if(!_multi&&sc===1&&(S.sel.type==="token"||S.sel.type==="mixed")){
     const t=S.tokens.find(x=>x.id===[...S.sel.ids][0]);
     if(t){
       const cb=S.combatants.find(c=>c.name===t.name);
@@ -2386,7 +2440,7 @@ function rTokenProps(el){
     }
   }
   // Selected unplaced combatant - unified form (mode "unplaced")
-  if(S.sel.type==="unplaced"){
+  if(!_multi&&S.sel.type==="unplaced"){
     const cmb=S.combatants.find(c=>c.name===S.sel.name);
     if(cmb){h+=renderCombatantForm({mode:"unplaced",combatant:cmb});}
   }
@@ -2394,27 +2448,33 @@ function rTokenProps(el){
   if(S.sel.type==="group"){
     h+=renderGroupForm(S.sel.group);
   }
-  // Several tokens selected: say so, and offer the one thing that is tedious to do one at a time.
-  if(!isAdding&&sc>1&&(S.sel.type==="token"||S.sel.type==="mixed")){
-    const mt=S.tokens.filter(x=>S.sel.ids.has(x.id)&&!x.hidden);
-    if(mt.length>1){
-      const grps=[...new Set([...S.tokens.map(x=>x.group),...S.combatants.map(c=>c.group)].filter(Boolean))].sort((a,b)=>natSort(a,b));
-      const anyGrp=mt.some(x=>x.group);
-      h+=`<div class="sec" style="border:1px solid var(--accent);border-radius:6px;padding:10px;margin-top:4px">
-        <div class="sec-title" style="color:var(--accent);margin-bottom:6px">${mt.length} tokens selected</div>
-        <div style="font-size:11px;color:var(--fg2);line-height:1.5">${mt.map(x=>escAttr(x.name)).join(", ")}</div>
-        <div style="font-size:10px;color:var(--fg3);margin-top:6px">Drag any one of them on the map to move them all together.</div>
-        <div style="margin-top:10px"><span class="lbl" title="Members of a group share one initiative turn in Avrae">Put them in an initiative group</span>
-          <div class="row" style="gap:6px"><input class="inp" id="ms-grp" list="ms-grplist" placeholder="Group name, e.g. Goblins" maxlength="40" style="flex:1;min-width:0;box-sizing:border-box;font-size:11px;padding:6px 6px"><datalist id="ms-grplist">${grps.map(g=>`<option value="${escAttr(g)}"></option>`).join("")}</datalist>
-          <button type="button" class="btn btn-p" id="ms-grp-go" style="font-size:11px;padding:6px 12px">Group</button></div></div>
-        <div class="row" style="margin-top:10px;gap:6px">${anyGrp?`<button type="button" class="btn btn-s" id="ms-ungrp" style="flex:1;font-size:11px;padding:6px">Remove from groups</button>`:""}<button type="button" class="btn btn-s" id="ms-clear" style="flex:1;font-size:11px;padding:6px">Unselect</button></div>
-      </div>`;
-    }
+  // Several tokens and/or unplaced combatants selected: batch actions.
+  if(!isAdding&&_multi){
+    const mt=_tg.placed,npc=_tg.np,total=mt.length+npc.length;
+    const grps=[...new Set([...S.tokens.map(x=>x.group),...S.combatants.map(c=>c.group)].filter(Boolean))].sort((a,b)=>natSort(a,b));
+    const anyGrp=mt.some(x=>x.group)||npc.some(c=>c.group);
+    const names=[...mt.map(x=>x.name),...npc.map(c=>c.name)];
+    const ls=S._lastScatter,canRe=!!ls&&mt.length>0&&npc.length===0;
+    const bs="flex:1;font-size:11px;padding:6px";
+    h+=`<div class="sec" style="border:1px solid var(--accent);border-radius:6px;padding:10px;margin-top:4px">
+      <div class="sec-title" style="color:var(--accent);margin-bottom:6px">${total} selected${npc.length?` <span style="color:var(--fg3);font-weight:400;text-transform:none;letter-spacing:0">(${npc.length} not on the map yet)</span>`:""}</div>
+      <div style="font-size:11px;color:var(--fg2);line-height:1.5;max-height:54px;overflow:auto">${names.map(escAttr).join(", ")}</div>
+      ${mt.length>1?`<div style="font-size:10px;color:var(--fg3);margin-top:6px">Drag any placed one on the map to move them all together.</div>`:""}
+      <div style="margin-top:10px"><span class="lbl" title="Drops each one into a random empty cell. Large creatures get the room they need. Nothing lands on another token.">Scatter at random</span>
+        <div class="row" style="gap:6px"><button type="button" class="btn btn-p" id="ms-scatter-area" style="${bs}" title="Then drag a box on the map">${S.scatterPick?"Drag a box on the map...":"In an area I draw"}</button><button type="button" class="btn btn-s" id="ms-scatter-all" style="${bs}">Across the whole map</button></div>
+        <div class="row" style="gap:6px;margin-top:6px"><input class="inp" id="ms-scatter-range" placeholder="or type a range, e.g. N2:R8" style="flex:1;min-width:0;box-sizing:border-box;font-family:monospace;font-size:10px;padding:6px 6px"><button type="button" class="btn btn-s" id="ms-scatter-go" style="font-size:11px;padding:6px 10px">Scatter</button></div>
+        ${canRe?`<div class="row" style="margin-top:6px"><button type="button" class="btn btn-s" id="ms-rescatter" style="${bs}" title="Roll new random cells in ${fmtU(ls.c1,ls.r1)}:${fmtU(ls.c2,ls.r2)}">Reshuffle in ${fmtU(ls.c1,ls.r1)}:${fmtU(ls.c2,ls.r2)}</button></div>`:""}
+        <div style="font-size:10px;color:var(--fg3);margin-top:5px;line-height:1.4">Fogged areas and cells outside the current view are allowed, so you can set up an ambush. Those tokens are not drawn on the Discord map.</div></div>
+      <div style="margin-top:10px"><span class="lbl" title="Members of a group share one initiative turn in Avrae">Put them in an initiative group</span>
+        <div class="row" style="gap:6px"><input class="inp" id="ms-grp" list="ms-grplist" placeholder="Group name, e.g. Goblins" maxlength="40" style="flex:1;min-width:0;box-sizing:border-box;font-size:11px;padding:6px 6px"><datalist id="ms-grplist">${grps.map(g=>`<option value="${escAttr(g)}"></option>`).join("")}</datalist>
+        <button type="button" class="btn btn-s" id="ms-grp-go" style="font-size:11px;padding:6px 12px">Group</button></div></div>
+      <div class="row" style="margin-top:10px;gap:6px">${mt.length?`<button type="button" class="btn btn-s" id="ms-park" style="${bs}" title="Keeps them in play but off the map (banished, out of the room). Works for any size.">Move off map</button>`:""}${anyGrp?`<button type="button" class="btn btn-s" id="ms-ungrp" style="${bs}">Ungroup</button>`:""}<button type="button" class="btn btn-s" id="ms-clear" style="${bs}">Unselect</button></div>
+    </div>`;
   }
   // Nothing selected: say what to do next instead of leaving the panel blank.
-  if(!isAdding&&!(sc>=1&&(S.sel.type==="token"||S.sel.type==="mixed"))&&S.sel.type!=="unplaced"&&S.sel.type!=="group"){
+  if(!isAdding&&!_multi&&!(sc>=1&&(S.sel.type==="token"||S.sel.type==="mixed"))&&S.sel.type!=="unplaced"&&S.sel.type!=="group"){
     const _wait=S.combatants.filter(c=>!c.placed&&c.name!=="DM").length;
-    h+=`<div style="font-size:12px;color:var(--fg3);line-height:1.5;padding:10px 4px">${_wait?`<b style="color:var(--accent)">${_wait} combatant${_wait>1?"s":""} not on the map yet.</b><br>Drag a name from the list below onto the map, or click a name and type a location.`:"Click a token on the map or in the list to edit it.<br><span style=\"font-size:11px\">Shift or Ctrl + click picks several. Drag across empty map to box-select.</span>"}</div>`;
+    h+=`<div style="font-size:12px;color:var(--fg3);line-height:1.5;padding:10px 4px">${_wait?`<b style="color:var(--accent)">${_wait} combatant${_wait>1?"s":""} not on the map yet.</b><br>Drag a name from the list below onto the map, or click a name and type a location.`:"Click a token on the map or in the list to edit it.<br><span style=\"font-size:11px\">Shift or Ctrl + click picks several, on the map or in the list. Drag across empty map to box-select. With several picked you can scatter them at random.</span>"}</div>`;
   }
   el.innerHTML=h;
 }
@@ -2434,17 +2494,18 @@ function renderGroupForm(name){
     </div>
     <div style="font-size:10px;color:var(--fg3);margin-top:8px">${members.length} member${members.length===1?"":"s"}: ${members.map(escAttr).join(", ")||"(none)"}</div>
     <div style="font-size:10px;color:var(--fg3);margin-top:4px">To add a token to this group, select it and type the group name in its Init Group field.</div>
-    <div class="row" style="margin-top:10px;gap:6px">${memTok.length?`<button class="btn btn-s" id="cb-grp-select" style="flex:1;font-size:11px;padding:6px" title="Select every member on the map so you can drag them together">Select on map</button>`:""}<button class="btn btn-s" id="cb-grp-ungroup" style="flex:1;font-size:11px;padding:6px" title="Remove every member from this group (the tokens stay on the map)">Ungroup all</button></div>
+    <div class="row" style="margin-top:10px;gap:6px">${members.length?`<button class="btn btn-s" id="cb-grp-select" style="flex:1;font-size:11px;padding:6px" title="Select every member so you can scatter them or drag them together">Select members</button>`:""}<button class="btn btn-s" id="cb-grp-ungroup" style="flex:1;font-size:11px;padding:6px" title="Remove every member from this group (the tokens stay on the map)">Ungroup all</button></div>
   </div>`;
 }
 function rTokenList(el){let h="";
   const colorName=hex=>{const n=h2c(hex);const names={r:"red",b:"blue",g:"green",y:"yellow",pk:"pink",p:"purple",c:"cyan",bn:"brown",o:"orange",w:"white",bk:"black"};return names[n]||n||"unknown";};
   // Unified Tokens list - placed (including map-hidden) + unplaced combatants, sorted together.
-  const visToks=S.tokens.filter(t=>!t.hidden);
+  const _fogN=S.revealFogTokens?0:fogTokenCount();
+  const visToks=S.tokens.filter(t=>!t.hidden&&!tokFogHidden(t));
   const unplaced=S.combatants.filter(c=>!c.placed&&!S.tokens.find(t=>t.name===c.name&&!t.hidden));
   // Normalize into row objects with comparable fields for the sort
   const rows=[
-    ...visToks.map(t=>({kind:"placed",mapHidden:!!t.mapHidden,id:t.id,name:t.name,color:t.color,init:t.init,group:t.group,coord:fmtU(t.col,t.row),tok:t})),
+    ...visToks.map(t=>({kind:"placed",mapHidden:!!t.mapHidden,id:t.id,name:t.name,color:t.color,init:t.init,group:t.group,coord:tokParked(t)?"off map":fmtU(t.col,t.row),tok:t})),
     ...unplaced.map(c=>({kind:"unplaced",mapHidden:false,id:null,name:c.name,color:c.savedTok?.color||"",init:c.init,group:c.group||null,coord:"-",cmb:c}))
   ];
   const sortedRows=[...rows].sort((a,b)=>{
@@ -2476,7 +2537,7 @@ function rTokenList(el){let h="";
       if(inGroup&&S._grpCol[row.group])return;
       // Visual treatment: outline dot + dim name for unplaced OR map-hidden placed
       const isDim=row.kind==="unplaced"||row.mapHidden;
-      const sel=row.kind==="placed"?isSel("token",row.id):(S.sel.type==="unplaced"&&S.sel.name===row.name);
+      const sel=row.kind==="placed"?isSel("token",row.id):((S.sel.np&&S.sel.np.has(row.name))||(S.sel.type==="unplaced"&&S.sel.name===row.name));
       const ch=row.kind==="placed"&&tokChanged(row.tok);
       // Eye icons removed (v0.1.71) - dots are now the left-most element.
       const eyeHTML="";
@@ -2501,6 +2562,7 @@ function rTokenList(el){let h="";
       const indent=inGroup?"padding-left:18px;":"";
       const dataAttr=row.kind==="placed"?`data-tid="${row.id}"`:`data-npname="${row.name}"`;
       h+=`<div class="obj-item${sel?" sel":""}" ${dataAttr} style="display:flex;align-items:center;${indent}">${eyeHTML}${dotHTML}<div class="info" style="flex:1;min-width:0"><div class="name" style="${nameStyle};display:flex;align-items:center;font-size:13px">${nameContent}${grpLbl}</div></div>${coordHTML}${initLbl}</div>`;});}
+  if(_fogN)h+=`<div style="font-size:10px;color:var(--fg3);padding:6px 4px">${_fogN} token${_fogN===1?" is":"s are"} under fog and not listed. <span id="fog-reveal-link" role="button" tabindex="0" style="color:var(--accent);cursor:pointer;text-decoration:underline">Show</span></div>`;
   el.innerHTML=h;}
 function rOverlayProps(el){
   let h="";
@@ -2759,6 +2821,7 @@ function rAdvancedMapSection(){
 function rFowSection(){
   let h=`<button class="btn btn-p" id="m-fowadd" style="width:100%;font-size:11px;padding:5px;margin:12px 0 8px 0" title="Add a new revealed region to enable Fog of War and conceal the rest of the map from view. You can add more regions to reveal more of the map for players as they travel.">${S.fowDraw?"➖ Cancel Drawing":"➕ Add New Revealed Region"}</button>`;
   if(!S.loadedUrl)h+=`<div style="font-size:10px;color:var(--warn,#e0a030);padding:2px 0 8px 0">Fog only shows in Discord on maps with a background image. Add a background on the Map tab first.</div>`;
+  {const _fn=fogTokenCount();if(_fn)h+=`<label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;margin:2px 2px 8px" title="Tokens under fog are not drawn on the Discord map. Tick this to see and move them here."><input type="checkbox" id="fog-reveal" ${S.revealFogTokens?"checked":""} style="accent-color:var(--accent)"><span>Show tokens hidden by fog (${_fn})</span></label>`;}
   if(S.fowDraw)h+=`<div style="font-size:10px;color:var(--accent);margin-bottom:6px;padding:0 2px">Click a grid cell to start selecting a region. Hold shift to select multiple.</div>`;
   if(S.sel.type==="fow"&&S.sel.ids.size===1){const r=S.fowRegions.find(x=>x.id===[...S.sel.ids][0]);if(r){
     const tl=fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2)),br=fmtU(Math.max(r.c1,r.c2),Math.max(r.r1,r.r2));
@@ -4058,24 +4121,40 @@ function setup(){
       const _nm=$("cb-name");if(_nm){try{_nm.focus();}catch(_){}}
       return;}
     if(t.id==="cb-cancel"){S.addingCombatant=null;renderSB();return;}
-    if(t.id==="ms-clear"){clearSel();renderAll();return;}
+    if(t.id==="ms-clear"){S.scatterPick=false;clearSel();renderAll();return;}
+    if(t.id==="fog-reveal-link"||t.id==="fog-reveal"){S.revealFogTokens=t.id==="fog-reveal"?t.checked:true;renderAll();return;}
+    if(t.id==="p-park"){if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk)parkTokens([tk]);}return;}
+    if(t.id==="ms-park"){parkTokens(scatterTargets().placed);return;}
+    if(t.id==="ms-scatter-area"){S.scatterPick=!S.scatterPick;const ms=$("map-svg");if(ms)ms.style.cursor=S.scatterPick?"crosshair":"";
+      if(S.scatterPick){if(typeof isSheet==="function"&&isSheet()&&typeof setSheetOpen==="function")setSheetOpen(false);setStatus("Drag a box on the map. The selected tokens will be scattered inside it. Esc cancels.");}
+      renderSB();return;}
+    if(t.id==="ms-scatter-all"){doScatter(fullMapRange());return;}
+    if(t.id==="ms-rescatter"){if(S._lastScatter)doScatter(S._lastScatter);return;}
+    if(t.id==="ms-scatter-go"){const v=(($("ms-scatter-range")&&$("ms-scatter-range").value)||"").trim().replace(/\s+/g,"");
+      const m=v.match(/^([a-z]+\d+)[:\-]([a-z]+\d+)$/i);const a=m&&parseC(m[1]),b=m&&parseC(m[2]);
+      if(!a||!b){showError("Type a range like N2:R8 (top-left cell, colon, bottom-right cell).");return;}
+      doScatter({c1:a.col,r1:a.row,c2:b.col,r2:b.row});return;}
     if(t.id==="ms-grp-go"||t.id==="ms-ungrp"){
-      const mt=S.tokens.filter(x=>S.sel.ids.has(x.id)&&!x.hidden);if(mt.length<2)return;
+      const tg=scatterTargets(),mt=tg.placed,npc=tg.np;if(mt.length+npc.length<2)return;
       const name=t.id==="ms-ungrp"?"":(($("ms-grp")&&$("ms-grp").value)||"").trim();
       if(t.id==="ms-grp-go"&&!name){showError("Type a group name first");return;}
       pushU();
       // A group has one initiative. Joining an existing group takes its initiative; a new group takes
-      // the first selected token's.
+      // the first selected one's.
       let gi=name?groupInit(name):"";
-      if(name&&(gi===""||gi==null)){const f=mt.find(x=>x.init!=null&&x.init!=="");gi=f?f.init:"";}
+      if(name&&(gi===""||gi==null)){const f=[...mt,...npc].find(x=>x.init!=null&&x.init!=="");gi=f?f.init:"";}
       mt.forEach(x=>{x.group=name;const c=S.combatants.find(c=>c.name===x.name);if(c)c.group=name;
         if(name&&gi!==""&&gi!=null){x.init=+gi;if(c)c.init=+gi;}});
-      renderAll();setStatus(name?("Grouped "+mt.length+" tokens as "+name+"."):("Removed "+mt.length+" tokens from their groups."));return;}
+      npc.forEach(c=>{c.group=name;if(name&&gi!==""&&gi!=null)c.init=+gi;});
+      const keep=S.sel;renderAll();S.sel=keep;renderSB();
+      setStatus(name?("Grouped "+(mt.length+npc.length)+" as "+name+"."):("Removed "+(mt.length+npc.length)+" from their groups."));return;}
     if(t.id==="cb-grp-select"){
       if(S.sel.type!=="group")return;
       const g=S.sel.group,ids=S.tokens.filter(x=>x.group===g&&!x.hidden).map(x=>x.id);
-      if(!ids.length)return;
-      S.sel={type:"token",ids:new Set(ids)};renderAll();setStatus("Selected "+ids.length+" token"+(ids.length>1?"s":"")+" in "+g+". Drag one to move them all.");return;}
+      const nps=S.combatants.filter(c=>c.group===g&&!c.placed).map(c=>c.name);
+      if(!ids.length&&!nps.length)return;
+      S.sel=ids.length?{type:"token",ids:new Set(ids),np:new Set(nps)}:{type:"unplaced",ids:new Set(),name:nps[0],np:new Set(nps)};
+      renderAll();setStatus("Selected "+(ids.length+nps.length)+" in "+g+". Scatter them, or drag one that is on the map to move the placed ones.");return;}
     if(t.id==="cb-grp-ungroup"){
       if(S.sel.type!=="group")return;
       const g=S.sel.group;pushU();
@@ -4332,7 +4411,19 @@ function setup(){
     const ti=t.closest("[data-tid]");if(ti){const id=+ti.dataset.tid;if(e.ctrlKey||e.metaKey){ctrlToggle(id);S._lastClick={type:"token",id};}else if(e.shiftKey){shiftRange("data-tid",id,"token");}else{S.sel={type:"token",ids:new Set([id])};S._lastClick={type:"token",id};S.tab="tokens";if(S.addingCombatant)S.addingCombatant=null;const tk=S.tokens.find(x=>x.id===id);if(tk)scrollTo(tk.col,tk.row);}renderAll();return;}
     const oi=t.closest("[data-oid]");if(oi){const id=+oi.dataset.oid;if(e.ctrlKey||e.metaKey){ctrlToggle(id);S._lastClick={type:"overlay",id};}else if(e.shiftKey){shiftRange("data-oid",id,"overlay");}else{S.sel={type:"overlay",ids:new Set([id])};S._lastClick={type:"overlay",id};S.tab="overlays";const ov=S.overlays.find(x=>x.id===id);if(ov){const coord=getOvCoord(ov);if(coord)scrollTo(coord.col,coord.row);}}renderAll();return;}
     // Select unplaced combatant - also cancels Add Combatant form
-    const npi=t.closest("[data-npname]");if(npi){if(S.addingCombatant)S.addingCombatant=null;S.sel={type:"unplaced",ids:new Set(),name:npi.dataset.npname};renderAll();return;}
+    const npi=t.closest("[data-npname]");if(npi){if(S.addingCombatant)S.addingCombatant=null;const nm=npi.dataset.npname;
+      if(e.ctrlKey||e.metaKey||e.shiftKey){
+        // Add to (or toggle in) a multi-selection that can mix placed tokens and unplaced combatants.
+        const keepIds=(S.sel.type==="token"||S.sel.type==="mixed")?new Set(S.sel.ids):new Set();
+        const np=new Set(S.sel.np||[]);if(S.sel.type==="unplaced"&&S.sel.name)np.add(S.sel.name);
+        if(e.shiftKey&&S._lastNp){const all=[...document.querySelectorAll("#list-area [data-npname]")].map(x=>x.dataset.npname),a=all.indexOf(S._lastNp),b=all.indexOf(nm);
+          if(a>-1&&b>-1)all.slice(Math.min(a,b),Math.max(a,b)+1).forEach(x=>np.add(x));else np.add(nm);}
+        else if(np.has(nm))np.delete(nm);else np.add(nm);
+        S._lastNp=nm;
+        S.sel=keepIds.size?{type:"token",ids:keepIds,np:np}:{type:"unplaced",ids:new Set(),name:np.has(nm)?nm:([...np][0]||nm),np:np};
+        if(!keepIds.size&&!np.size)clearSel();
+        renderAll();return;}
+      S._lastNp=nm;S.sel={type:"unplaced",ids:new Set(),name:nm};renderAll();return;}
     // Place unassigned combatant - button only (from properties or list)
     const placeBtn=t.closest("[data-placebtn]")||t.id==="p-npplace"?t:null;
     if(placeBtn||t.id==="p-npplace"){const name=placeBtn?.dataset?.placebtn||(S.sel.type==="unplaced"?S.sel.name:"");
@@ -4675,8 +4766,10 @@ function setup(){
       if(S.addingCombatant){S.addingCombatant.location=e.target.value.trim();renderSVG();return;}
       if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
         const c=parseC(e.target.value);
-        const _gc=S.grid.fullCols||S.grid.cols,_gr=S.grid.fullRows||S.grid.rows;
-        if(c&&c.col>=0&&c.row>=0&&c.col<_gc&&c.row<_gr){const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);if(tk){pushU();tk.col=c.col;tk.row=c.row;renderSVG();renderCmd();}}
+        const _tk0=S.tokens.find(x=>x.id===[...S.sel.ids][0]);
+        // A cell outside the grid (A0, or past the last row or column) means "take it off the map".
+        if(c&&_tk0&&tokParked({col:c.col,row:c.row})){parkTokens([_tk0]);return;}
+        if(c){const tk=_tk0;if(tk){pushU();tk.col=c.col;tk.row=c.row;renderAll();}}
         else{e.target.style.borderColor="var(--danger)";setTimeout(()=>e.target.style.borderColor="",1500);if(c)setStatus("⚠ "+e.target.value.toUpperCase()+" is off the map. The grid ends at "+fmtU(_gc-1,_gr-1)+".");}
         return;}}
     if(e.target.id==="cb-hide"){
@@ -4980,6 +5073,8 @@ function setup(){
 
   $("map-svg").addEventListener("mousedown",e=>{
     e.preventDefault();const shift=e.shiftKey;const multi=e.ctrlKey||e.metaKey||(e.shiftKey&&!S.wallDraw&&!S.fowDraw&&!S.placingObject&&!S.rulerMode);// Shift=chain draw while drawing; otherwise Shift or Ctrl/Cmd=multi-select
+    // Scatter: the next drag draws the area, wherever it starts (even on top of a token).
+    if(S.scatterPick){const pt=svgPt(e);mStart={x:pt.x-PAD,y:pt.y-PAD,sx:e.clientX,sy:e.clientY};return;}
     // Wall drawing mode - click grid vertices
     if(S.wallDraw){const pt=svgPt(e),g=S.grid,cs=g.cellSize;
       // Snap to nearest grid vertex
@@ -5048,7 +5143,7 @@ function setup(){
     // Ruler mode - click-and-drag to measure. Single click on token = popup; single click on grid = nothing.
     if(S.rulerMode){const pt=svgPt(e),gp=pt2g(pt.x,pt.y);
       if(gp.col>=0&&gp.col<S.grid.cols&&gp.row>=0&&gp.row<S.grid.rows){
-        const hitTok=S.tokens.filter(t=>!t.hidden&&!t.mapHidden).find(t=>{
+        const hitTok=S.tokens.filter(t=>!t.hidden&&!t.mapHidden&&!tokOffMap(t)).find(t=>{
           const c=tokCubeCells(t);return gp.col>=t.col&&gp.col<t.col+c&&gp.row>=t.row&&gp.row<t.row+c;});
         // Clear any prior measurement line
         S.rulerStart=null;S.rulerEnd=null;S.rulerDist=null;S.rulerLabel=null;
@@ -5330,7 +5425,7 @@ function setup(){
         vbx=g.offsetX+(gp.col+0.5)*cs;vby=g.offsetY+(gp.row+0.5)*cs;}
       let endTok=null;
       if(gp.col>=0&&gp.col<S.grid.cols&&gp.row>=0&&gp.row<S.grid.rows){
-        endTok=S.tokens.filter(t=>!t.hidden&&!t.mapHidden).find(t=>{const c=tokCubeCells(t);return gp.col>=t.col&&gp.col<t.col+c&&gp.row>=t.row&&gp.row<t.row+c;});
+        endTok=S.tokens.filter(t=>!t.hidden&&!t.mapHidden&&!tokOffMap(t)).find(t=>{const c=tokCubeCells(t);return gp.col>=t.col&&gp.col<t.col+c&&gp.row>=t.row&&gp.row<t.row+c;});
         // Don't measure a token to itself
         if(endTok&&S.rulerDrag.startTok&&endTok.id===S.rulerDrag.startTok.id)endTok=null;}
       // Compute pixel-precise endpoints (perimeter for tokens, raw point for grid)
@@ -5443,12 +5538,20 @@ function setup(){
     if(S.aimDrag){S.aimDrag=null;document.body.classList.remove("grabbing");renderAll();return;}
     if(S.resize){S.resize=null;document.body.classList.remove("resizing");renderAll();return;}
     if(S.drag){if(!S.drag.moved)undoStack.pop();S.drag=null;renderSB();return;}
+    if(S.scatterPick){
+      const m=S.marquee;S.scatterPick=false;S.marquee=null;mStart=null;$("map-svg").style.cursor="";
+      if(m){const g=S.grid,cs=g.cellSize,cl=(v,hi)=>Math.max(0,Math.min(hi,v));
+        const c1=cl(Math.floor((Math.min(m.x1,m.x2)-g.offsetX)/cs),g.cols-1),c2=cl(Math.floor((Math.max(m.x1,m.x2)-g.offsetX)/cs),g.cols-1);
+        const r1=cl(Math.floor((Math.min(m.y1,m.y2)-g.offsetY)/cs),g.rows-1),r2=cl(Math.floor((Math.max(m.y1,m.y2)-g.offsetY)/cs),g.rows-1);
+        doScatter({c1:c1,r1:r1,c2:c2,r2:r2});}
+      else{renderAll();setStatus("Scatter cancelled. Drag a box to choose the area.");}
+      return;}
     if(S.marquee){
       // Find tokens + objects in marquee
       const mx1=Math.min(S.marquee.x1,S.marquee.x2),my1=Math.min(S.marquee.y1,S.marquee.y2);
       const mx2=Math.max(S.marquee.x1,S.marquee.x2),my2=Math.max(S.marquee.y1,S.marquee.y2);
       const tokIds=new Set(),objIds=new Set();
-      S.tokens.filter(t=>!t.hidden&&!t.mapHidden).forEach(t=>{const p=tokCenter(t);if(p.x>=mx1&&p.x<=mx2&&p.y>=my1&&p.y<=my2)tokIds.add(t.id);});
+      S.tokens.filter(t=>!t.hidden&&!t.mapHidden&&!tokOffMap(t)).forEach(t=>{const p=tokCenter(t);if(p.x>=mx1&&p.x<=mx2&&p.y>=my1&&p.y<=my2)tokIds.add(t.id);});
       const g=S.grid,cs=g.cellSize;
       S.objects.forEach(o=>{
         const c=(o.col+o.col2)/2,r=(o.row+o.row2)/2;
@@ -5461,7 +5564,9 @@ function setup(){
       S.marquee=null;renderAll();
     }
     mStart=null;};
-  vp.addEventListener("mouseup",endDrag);vp.addEventListener("mouseleave",()=>{if(S.marquee){S.marquee=null;renderSVG();}mStart=null;endDrag();});
+  vp.addEventListener("mouseup",endDrag);
+  vp.addEventListener("mouseup",()=>{if(S.revealFogTokens||!S.fowRegions.length)return;
+    if((S.sel.type==="token"||S.sel.type==="mixed")&&S.tokens.some(t=>S.sel.ids.has(t.id)&&tokInFog(t))){S.revealFogTokens=true;renderAll();setStatus("That token is under fog, so it is hidden on the Discord map. Showing tokens in fog here so you can see it.");}});vp.addEventListener("mouseleave",()=>{if(S.marquee){S.marquee=null;renderSVG();}mStart=null;endDrag();});
 
   // Help modal
   $("btn-help").onclick=openHelp;
@@ -5857,6 +5962,7 @@ function setup(){
   vp.addEventListener("pointerup",pointerEnd);
   vp.addEventListener("pointercancel",pointerEnd);
   document.addEventListener("keydown",e=>{if(e.key===" "&&!["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName)){e.preventDefault();if(!S.spaceHeld){S.spaceHeld=true;document.body.classList.add("panning");}return;}
+    if(e.key==="Escape"&&S.scatterPick){S.scatterPick=false;S.marquee=null;$("map-svg").style.cursor="";renderAll();setStatus("Scatter cancelled.");return;}
     if(e.key==="Escape"&&S.rulerMode){S.rulerMode=false;$("btn-ruler").classList.remove("active");S.rulerStart=null;S.rulerEnd=null;S.rulerDist=null;S.rulerLabel=null;S.rulerDrag=null;document.body.classList.remove("drawing");closeDistPopup();renderSVG();return;}
     if(e.key==="Escape"&&(S.wallDraw||S.fowDraw)){
     const lastW=S.wallDraw&&S.walls.length?S.walls[S.walls.length-1]:null;

@@ -25,6 +25,7 @@ What each script covers:
 | `tok.js` | Token image upload: framing window, 320px output, limits, URL fallback |
 | `vw.js` | Map View: cropping, undo and reset keep every cell label; export carries the real view |
 | `grp.js` | Multi-select panel, grouping several tokens, group select, monster search pick |
+| `sc.js` | Scatter, off-map parking, tokens under fog, multi-select of unplaced combatants |
 | `w.js`, `ux.js` | welcome dialog on phones; phone and desktop screenshots into `shots/` |
 
 `maps/` and `shots/` are generated and ignored by git.
