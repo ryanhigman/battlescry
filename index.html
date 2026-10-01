@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.323                                      https://battlescry.com
+BattleScry v0.1.324                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,7 +19,7 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.323 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
+  v0.1.324 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
             the coordinate tooltip sits below the pointer instead of over token labels. Removed the
             old background dialog, which nothing opened any more.
   v0.1.318 - Fixed: an uploaded map keeps the grid that was measured before it was resized or
@@ -143,7 +143,8 @@ input,select,textarea,button{font-family:inherit}
 .sec{background:var(--bg5);border-radius:6px;padding:10px;border:1px solid #33302a;display:flex;flex-direction:column;gap:6px}
 .sec-title{font-size:11px;color:var(--fg2);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
 .row{display:flex;gap:4px;align-items:center}
-.colors{display:flex;gap:2px;flex-wrap:wrap}
+/* One layout for every color picker on the site: 2 rows of 6. */
+.colors{display:grid;grid-template-columns:repeat(6,16px);gap:3px;padding:3px 0}
 .cswatch{width:16px;height:16px;border-radius:3px;cursor:pointer;border:1px solid transparent;transition:border-color .1s,box-shadow .1s,transform .1s}.cswatch:hover{border-color:#fff;transform:scale(1.1)}.cswatch.on{border-color:#fff;box-shadow:0 0 0 1px var(--accent)}.cswatch:focus{outline:none;box-shadow:0 0 0 1px var(--accent),0 0 0 3px var(--fg)}
 .nospin::-webkit-outer-spin-button,.nospin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.nospin{-moz-appearance:textfield}
 .spinwrap{display:flex;align-items:stretch;width:100%}
@@ -321,6 +322,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
   #cmd-bar{display:none}
   #cmd-bar .cmd{font-size:11px;max-height:64px}
   .cswatch{width:24px;height:24px}
+  .colors{grid-template-columns:repeat(6,24px);gap:6px}
 }
 
 @media (max-width:768px){
@@ -380,7 +382,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.323</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.324</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -1451,6 +1453,16 @@ function renderSVG(){
           svg.appendChild(sEl("circle",{cx,cy,r,fill:"none",stroke:ov.color||"#fbbf24","stroke-width":Math.max(2,cs*0.06),"stroke-dasharray":"4 3","stroke-opacity":0.85,"pointer-events":"none"}));});}}
   }
   // Marquee rect
+  // Preview of the combatant being added, at the cell picked or typed in the form. Not a real token.
+  {const gk=addGhostKey();S._ghostKey=gk;
+    if(gk){const ac=S.addingCombatant,c=parseC(ac.location),g=S.grid,cs=g.cellSize;
+      if(c&&c.col>=0&&c.row>=0&&c.col<g.cols&&c.row<g.rows){
+        const cells=tokCubeCells({size:ac.size||"M"}),r=(ac.size==="T"?cs*0.25:cells*cs/2)-2;
+        const cx=g.offsetX+c.col*cs+(ac.size==="T"?cs/2:cells*cs/2),cy=g.offsetY+c.row*cs+(ac.size==="T"?cs/2:cells*cs/2);
+        const gg=sEl("g",{"pointer-events":"none",opacity:0.75});
+        gg.appendChild(sEl("circle",{cx,cy,r,fill:ac.color||"#e63c3c","fill-opacity":0.45,stroke:"#fbbf24","stroke-width":2.5,"stroke-dasharray":"6 4"}));
+        const tx=sEl("text",{x:cx,y:cy+cs*0.1,"text-anchor":"middle","font-size":Math.max(9,cs*0.3),"font-weight":700,fill:"#fff",stroke:"#000","stroke-width":0.6,"font-family":"Figtree,sans-serif"});
+        tx.textContent=(ac.name||"").trim().slice(0,4)||"new";gg.appendChild(tx);svg.appendChild(gg);}}}
   if(S.marquee){const m=S.marquee,x=Math.min(m.x1,m.x2),y=Math.min(m.y1,m.y2),mw=Math.abs(m.x2-m.x1),mh=Math.abs(m.y2-m.y1);
     svg.appendChild(sEl("rect",{x,y,width:mw,height:mh,fill:"rgba(251,191,36,0.15)",stroke:"#fbbf24","stroke-width":1,"stroke-dasharray":"4 2","pointer-events":"none"}));}
   // FOW rendering - dark overlay with holes for revealed regions (on top of all content)
@@ -1933,6 +1945,7 @@ function escAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"
 //   <=50%  Bloodied  (orange)
 //   <=15%  Critical  (red)
 //   <=0    Dead      (grey) - negative allowed
+const COND_HINT={h:{label:"Healthy",color:"#01c178"},i:{label:"Injured",color:"#fbd46e"},b:{label:"Bloodied",color:"#f08237"},c:{label:"Critical",color:"#e74c3c"},d:{label:"Dead",color:"#777"}};
 function computeCondition(hpCur,hpMax){
   const cur=parseInt(hpCur,10),max=parseInt(hpMax,10);
   if(isNaN(cur)||isNaN(max)||max<=0)return{label:"Unknown",color:"var(--fg3)"};
@@ -2077,7 +2090,9 @@ function renderCombatantForm(opts){
   // A not-yet-applied (isNew) combatant can still be renamed locally; once it is live in Avrae the
   // Name is read-only (renaming there needs Avrae's own rename command, which doesn't round-trip).
   const isNewLocal=(mode!=="add")&&!!(opts.combatant&&opts.combatant.isNew);
-  const condition=computeCondition(hpCur,hpMax);
+  const _lk=mode==="token"?(opts.token.statsLocked?opts.token:((opts.combatant||{}).statsLocked?opts.combatant:null)):(mode==="unplaced"&&opts.combatant.statsLocked?opts.combatant:null);
+  const statsLocked=!!_lk&&hideStats;
+  const condition=statsLocked?(COND_HINT[_lk.condHint]||{label:"Unknown",color:"var(--fg3)"}):computeCondition(hpCur,hpMax);
   // The edit pencil on the preview opens the Manage Token Image modal in every mode, including
   // "add", so a new combatant can be given a custom token image before it is created.
   const editIcon=(mode==="token"||mode==="unplaced"||mode==="add");
@@ -2113,7 +2128,7 @@ function renderCombatantForm(opts){
       <div style="margin-top:6px"><span class="lbl">Size</span>
           <select class="inp" id="cb-size" style="width:160px;max-width:100%;font-size:11px">${Object.entries(SIZES).map(([k,v])=>`<option value="${k}"${size===k?" selected":""}>${k} - ${v.l}</option>`).join("")}</select></div>
       <div style="margin-top:6px">${(color&&!COLORS.some(c=>c.hex.toLowerCase()===color.toLowerCase()))?`<span class="lbl" id="cb-color-lbl" style="display:flex;align-items:center;gap:6px">Custom Token Color <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${escAttr(color)};border:1px solid #fff;box-shadow:0 0 0 1px var(--accent)" title="Custom color: ${escAttr((color||'').toUpperCase())}"></span></span>`:`<span class="lbl" id="cb-color-lbl">Token Color</span>`}
-        <div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;padding:3px 0">${COLORS.map(c=>`<div class="cswatch${c.hex.toLowerCase()===(color||"").toLowerCase()?" on":""}" style="background:${c.hex}" data-color="${c.hex}" data-prefix="cb" title="${c.n}" tabindex="0" role="button" aria-label="Color ${c.n}"></div>`).join("")}</div></div>
+        <div class="colors">${COLORS.map(c=>`<div class="cswatch${c.hex.toLowerCase()===(color||"").toLowerCase()?" on":""}" style="background:${c.hex}" data-color="${c.hex}" data-prefix="cb" title="${c.n}" tabindex="0" role="button" aria-label="Color ${c.n}"></div>`).join("")}</div></div>
     </div>
   </div>`;
   // Token Image controls (inline; mirrors the Map panel Background section). editIcon gates it to the
@@ -2164,7 +2179,7 @@ function renderCombatantForm(opts){
     </div>
     <div id="cb-cond-wrap" style="${hideStats?"":"display:none;"}min-width:0">
       <div style="font-size:11px;font-weight:600;color:var(--fg2)">Condition: <span id="cb-condition" style="color:${condition.color}">${condition.label}</span></div></div>
-    <label style="flex-shrink:0;display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer;padding-bottom:7px" title="When checked, the HP and AC fields are hidden so players using BattleScry don't see a creature's exact numbers; uncheck to reveal and edit. On the map, players see only a condition word (Healthy/Injured/Bloodied/Critical/Dead). Applied via !i opt -h on apply."><input type="checkbox" id="cb-hide" ${hideStats?"checked":""} style="accent-color:var(--accent)"><span>Hide HP/AC</span></label>
+    <label style="flex-shrink:0;display:flex;align-items:center;gap:5px;font-size:10px;cursor:${statsLocked?"default":"pointer"};${statsLocked?"opacity:.55;":""};padding-bottom:7px" title="${statsLocked?"Only the DM who controls this creature can see or change its HP and AC.":"When checked, the HP and AC fields are hidden so players using BattleScry don't see a creature's exact numbers; uncheck to reveal and edit. Players see only a condition word (Healthy/Injured/Bloodied/Critical/Dead). Applied via !i opt -h on apply."}"><input type="checkbox" id="cb-hide" ${hideStats?"checked":""} ${statsLocked?"disabled":""} style="accent-color:var(--accent)"><span>Hide HP/AC</span></label>
   </div>`;
   // Init-bonus-aware hints for the Initiative field (placeholder + d20 tooltip).
   const ibNum=(initBonus===""||initBonus==null)?0:(parseInt(initBonus)||0);
@@ -2220,6 +2235,8 @@ function setSidebarLayout(hasList){
   if(sp)sp.style.display=hasList?"":"none";
   if(la)la.style.display=hasList?"":"none";
 }
+// What the add-combatant preview on the map depends on; "" when there is nothing to preview.
+function addGhostKey(){const ac=S.addingCombatant;if(!ac||!(ac.location||"").trim())return"";return[ac.location,ac.size,ac.color,ac.name].join("|");}
 // Give the form the room the list does not need: the list is never taller than its rows, and on a short
 // window it is capped so the form above stays usable. The splitter still sets the upper limit.
 function fitListArea(){
@@ -2240,6 +2257,8 @@ function renderSB(){
     case"other":rOtherTab(pa,la);setSidebarLayout(true);break;
     default:pa.innerHTML="";la.innerHTML="";setSidebarLayout(true);}
   try{fitListArea();}catch(_){}
+  // Keep the map preview in step when the add form opens, closes or changes.
+  try{if(addGhostKey()!==(S._ghostKey||""))renderSVG();}catch(_){}
   document.querySelectorAll("#tabs button").forEach(b=>{b.classList.toggle("active",b.dataset.tab===S.tab);});
   requestAnimationFrame(()=>{const el=document.querySelector('.obj-item.sel');if(el)el.scrollIntoView({block:"nearest",behavior:"smooth"});});}
 
@@ -2703,7 +2722,7 @@ function rMapTabContent(){
     <div style="flex:1"><span class="lbl">&nbsp;</span><label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;height:25px;white-space:nowrap" title="Dark mode (the OTFBM 'd' option): renders the map on a dark background."><input type="checkbox" id="m-dark" ${S.darkMode?"checked":""} style="accent-color:var(--accent)">Dark Mode</label></div>
   </div>
   <div style="margin:8px 0"><span class="lbl">Grid line opacity (${Math.min(99,Math.round(S.gridOpacity*100))}%)</span><input type="range" id="m-opacity" min="0" max="99" value="${Math.min(99,Math.round(S.gridOpacity*100))}" style="width:100%;accent-color:var(--accent)"></div>
-  <div style="margin:8px 0"><span class="lbl">Grid line & axis label color</span><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;padding:3px 0">${COLORS.map(c=>`<div class="cswatch${(S.gridColor===c.code||(!S.gridColor&&c.code==="bk"))?" on":""}" style="background:${c.hex}" data-color="${c.code}" data-prefix="gcol" title="${c.n}"></div>`).join("")}</div></div>
+  <div style="margin:8px 0"><span class="lbl">Grid line & axis label color</span><div class="colors">${COLORS.map(c=>`<div class="cswatch${(S.gridColor===c.code||(!S.gridColor&&c.code==="bk"))?" on":""}" style="background:${c.hex}" data-color="${c.code}" data-prefix="gcol" title="${c.n}"></div>`).join("")}</div></div>
   </div>`;
   h+=`<details class="sec" data-section="map-view" ${S._uiMapViewOpen?'open':''} style="display:block"><summary class="sec-title" style="cursor:pointer;user-select:none">Map View</summary>
   <div style="font-size:10px;color:var(--fg3);margin:6px 0 6px">The visible portion of the grid. Type the corner cells and Update, or use Select area on map below.</div>
@@ -2811,7 +2830,7 @@ function rObjectsTabContent(st){
       h+=`<div class="sec"><div class="sec-title">Wall Properties</div>
       <div class="row"><span class="lbl" style="width:50px">Coords</span><span style="font-family:monospace;font-size:11px;color:var(--fg)">${fmtU(w.start.col,w.start.row)} → ${fmtU(w.end.col,w.end.row)}</span></div>
       <div class="row"><span class="lbl" style="width:50px">Type</span><select class="inp" id="m-walltype"><option value=""${!w.door?" selected":""}>Wall</option><option value="open"${w.door==="open"?" selected":""}>Open Door</option><option value="closed"${w.door==="closed"?" selected":""}>Closed Door</option><option value="secret"${w.door==="secret"?" selected":""}>Secret Door</option><option value="double"${w.door==="double"?" selected":""}>Double Door</option></select></div>
-      <div style="margin-top:6px"><span class="lbl">Color</span><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center">${COLORS.map(c=>'<div class="cswatch'+(w.color===c.hex||(!w.color&&c.code==="bk")?' on':'')+'" style="background:'+c.hex+'" data-color="'+c.hex+'" data-prefix="wcol" title="'+c.n+'"></div>').join("")}</div></div></div>`;}}
+      <div style="margin-top:6px"><span class="lbl">Color</span><div class="colors">${COLORS.map(c=>'<div class="cswatch'+(w.color===c.hex||(!w.color&&c.code==="bk")?' on':'')+'" style="background:'+c.hex+'" data-color="'+c.hex+'" data-prefix="wcol" title="'+c.n+'"></div>').join("")}</div></div></div>`;}}
     // Boundary: everything above this goes into the props area (Add button + draw hint + properties).
     // Everything below this goes into the list area (the Walls list section).
     h+="<!--SPLIT-->";
@@ -2843,7 +2862,7 @@ function rObjectsTabContent(st){
         h+=`<div class="sec"><div class="sec-title">Object Properties</div>
           <div class="row"><span class="lbl" style="width:50px">Type</span><select class="inp" id="m-objtype" style="flex:1;font-size:11px">${Object.keys(OBJ_META).sort().map(k=>`<option value="${k}"${k===_obj.type?" selected":""}>${OBJ_META[k].name}</option>`).join("")}</select></div>
           <div class="row" style="margin-top:4px"><span class="lbl" style="width:50px">Coords</span><span style="font-family:monospace;font-size:11px;color:var(--fg)">${_coordStr} <span style="color:var(--fg3)">(${_w}×${_h})</span></span></div>
-          <div style="margin-top:6px"><span class="lbl">Color</span><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;padding:4px 0">${COLORS.map(c=>`<div class="cswatch${c.hex.toLowerCase()===_color.toLowerCase()?" on":""}" style="background:${c.hex}" data-color="${c.hex}" data-prefix="ocol" title="${c.n}"></div>`).join("")}<input type="color" class="cswatch" value="${_color}" data-objhex="${_obj.id}" style="cursor:pointer;width:18px;height:18px;border:1px solid var(--bg3);padding:0;background:none;border-radius:3px" title="Custom color"></div></div>`;
+          <div style="margin-top:6px"><span class="lbl">Color</span><div class="colors">${COLORS.map(c=>`<div class="cswatch${c.hex.toLowerCase()===_color.toLowerCase()?" on":""}" style="background:${c.hex}" data-color="${c.hex}" data-prefix="ocol" title="${c.n}"></div>`).join("")}<input type="color" class="cswatch" value="${_color}" data-objhex="${_obj.id}" style="cursor:pointer;width:18px;height:18px;border:1px solid var(--bg3);padding:0;background:none;border-radius:3px" title="Custom color"></div></div>`;
         // Rotation/Flip controls
         if(_opts.length===0){
           h+=`<div style="font-size:10px;color:var(--fg3);font-style:italic;padding:4px 0;line-height:1.4">↻ Single-cell objects can't be rotated. Drag a corner handle to make it 1×2 or larger to enable rotation.</div>`;
@@ -2862,7 +2881,7 @@ function rObjectsTabContent(st){
     if(isPlacing){
       const objName=OBJ_META[placeType]?.name||placeType;
       h+=`<div style="font-size:10px;color:var(--accent);margin-bottom:6px;padding:0 2px">Click a cell to place <b>${objName}</b>, or click-drag to size it across multiple cells.</div>
-        <div class="sec"><div class="sec-title">Color</div><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;padding:6px 0">${COLORS.map(c=>`<div class="cswatch${c.hex.toLowerCase()===placeColor.toLowerCase()?" on":""}" style="background:${c.hex}" data-objplace-col="${c.hex}" title="${c.n}"></div>`).join("")}<input type="color" class="cswatch" value="${placeColor}" data-objplace-hex="1" style="cursor:pointer;width:18px;height:18px;border:1px solid var(--bg3);padding:0;background:none;border-radius:3px" title="Custom color"></div></div>`;
+        <div class="sec"><div class="sec-title">Color</div><div class="colors">${COLORS.map(c=>`<div class="cswatch${c.hex.toLowerCase()===placeColor.toLowerCase()?" on":""}" style="background:${c.hex}" data-objplace-col="${c.hex}" title="${c.n}"></div>`).join("")}<input type="color" class="cswatch" value="${placeColor}" data-objplace-hex="1" style="cursor:pointer;width:18px;height:18px;border:1px solid var(--bg3);padding:0;background:none;border-radius:3px" title="Custom color"></div></div>`;
       // Icon picker grid
       h+=`<div class="sec"><div class="sec-title">Object Type - click to switch</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px 0">`;
       Object.keys(OBJ_META).sort().forEach(code=>{
@@ -4384,7 +4403,7 @@ function setup(){
     // Inline Token Image controls (quick path in the Add/Edit form; mirrors the Map Background section).
     if(t.id==="cb-place-btn"){
       const f=$("cb-loc");
-      const go=()=>{S.coordPick="cb";const ms=$("map-svg");if(ms)ms.style.cursor="crosshair";if(typeof isSheet==="function"&&isSheet()&&typeof setSheetOpen==="function")setSheetOpen(false);setStatus("Tap a cell on the map to place this token");};
+      const go=()=>{S.coordPick="cb";const ms=$("map-svg");if(ms)ms.style.cursor="crosshair";if(typeof isSheet==="function"&&isSheet()&&typeof setSheetOpen==="function")setSheetOpen(false);setStatus("Tap a cell on the map to choose where this token goes");};
       if(f&&document.activeElement===f){f.blur();setTimeout(go,230);}else{go();}
       return;}
     if(t.id==="cb-img-apply"){
@@ -4652,6 +4671,7 @@ function setup(){
       S.combatants.forEach(c=>{if(c.group===S.sel.group)c.init=iv;});
       renderAll();return;}
     if(e.target.id==="cb-loc"){
+      if(S.addingCombatant){S.addingCombatant.location=e.target.value.trim();renderSVG();return;}
       if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
         const c=parseC(e.target.value);
         const _gc=S.grid.fullCols||S.grid.cols,_gr=S.grid.fullRows||S.grid.rows;
@@ -5056,10 +5076,16 @@ function setup(){
           if(S.addingCombatant){
             // Add mode: commit the new combatant and drop its token at the picked coord right away
             // (previously this only filled the Location field and waited for the Add button).
+            // Add mode: remember the cell and show a preview token there. Nothing is added until the
+            // user presses Add, so cancelling the form leaves no trace on the map or in the command.
             S.addingCombatant.location=coordStr;
             S.coordPick=null;$("map-svg").style.cursor="";
-            if(commitAddCombatant()){cbReopenLoc();return;}
-            // Commit failed (e.g. no stat block / name yet) - fall through to keep field + show popup.
+            S.tab="tokens";if(typeof isSheet==="function"&&isSheet()&&typeof setSheetOpen==="function")setSheetOpen(true);
+            renderSVG();
+            const _nm=(($("cb-name")&&$("cb-name").value)||"").trim();
+            setStatus((_nm||"The new combatant")+" will go at "+coordStr+". Finish the form, then press Add.");
+            setTimeout(()=>{const f=$("cb-init")&&!$("cb-init").value?$("cb-init"):$("cb-name")&&!$("cb-name").value?$("cb-name"):null;if(f){try{f.focus();}catch(_){}}},60);
+            return;
           }else if((S.sel.type==="token"||S.sel.type==="mixed")&&S.sel.ids.size===1){
             const tk=S.tokens.find(x=>x.id===[...S.sel.ids][0]);
             if(tk){pushU();tk.col=gp.col;tk.row=gp.row;}
@@ -6253,8 +6279,11 @@ function loadFromHashStr(hash){
     const name=entry.slice(0,ci);const sp=entry.slice(ci+1).split(":");
     const _n=v=>(v==null||v.trim()===""?undefined:(isNaN(parseInt(v,10))?undefined:parseInt(v,10)));
     const cur=_n(sp[0]),mx=_n(sp[1]),acv=_n(sp[2]);const hid=(sp[3]||"").trim()==="1";
-    const tk=S.tokens.find(t=>t.name===name);if(tk){if(cur!=null)tk.hpCur=cur;if(mx!=null)tk.hpMax=mx;if(acv!=null)tk.ac=acv;tk.hideStats=hid;}
-    const cmb=S.combatants.find(c=>c.name===name);if(cmb){if(cur!=null)cmb.hpCur=cur;if(mx!=null)cmb.hp=mx;if(acv!=null)cmb.ac=acv;cmb.hideStats=hid;}});}
+    // A 5th field means the alias withheld the numbers: this viewer does not control the combatant, so
+    // they get the hidden flag and a condition letter only (alias v0.2.49). Lock the stats for them.
+    const locked=hid&&sp.length>=5&&cur==null&&mx==null&&acv==null,hint=locked?(sp[4]||"").trim().toLowerCase():"";
+    const tk=S.tokens.find(t=>t.name===name);if(tk){if(cur!=null)tk.hpCur=cur;if(mx!=null)tk.hpMax=mx;if(acv!=null)tk.ac=acv;tk.hideStats=hid;tk.statsLocked=locked;tk.condHint=hint;}
+    const cmb=S.combatants.find(c=>c.name===name);if(cmb){if(cur!=null)cmb.hpCur=cur;if(mx!=null)cmb.hp=mx;if(acv!=null)cmb.ac=acv;cmb.hideStats=hid;cmb.statsLocked=locked;cmb.condHint=hint;}});}
   // Parse channel ID for tab scoping
   if(params.ch)S.channelId=params.ch;
   // Always ensure DM is in combatants

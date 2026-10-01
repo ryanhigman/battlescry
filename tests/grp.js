@@ -31,6 +31,23 @@ const { chromium } = require('playwright');
     clearSel();S.addingCombatant=null;loadFromHashStr('g=12x12&o=c40&t=GO1|E4|S|r|0|&np=GO2&ip=GO1:12;GO2:12&ig=Gobs:GO1,GO2');await wait(150);S.tab='tokens';renderAll();await wait(50);
     const rowsEl=[...document.querySelectorAll('#list-area [data-grpsel],#list-area [data-tid],#list-area [data-npname]')].map(e=>e.dataset.grpsel?('['+e.dataset.grpsel+']'):(e.dataset.npname||'tok')+(e.style.paddingLeft?'+':''));
     out.listOrder=rowsEl.join(' ');
+    // hidden stats withheld by the alias (5th cs field): locked for this viewer, condition from the hint
+    loadFromHashStr('g=12x12&o=c40&t=GO1|E4|S|r|0|;GO2|F4|S|r|0|&ip=GO1:12;GO2:12&cs=GO1::::1:b;GO2:7:7:15:1');await wait(150);
+    const pick=async n=>{const id=S.tokens.find(t=>t.name===n).id;S.sel={type:'token',ids:new Set([id])};S.tab='tokens';renderAll();await wait(50);return {dis:document.getElementById('cb-hide').disabled,chk:document.getElementById('cb-hide').checked,cond:document.getElementById('cb-condition').textContent,statsShown:document.getElementById('cb-stats-wrap').style.display!=='none',hp:document.getElementById('cb-hpcur').value};};
+    out.lockPlayer=await pick('GO1');out.lockDm=await pick('GO2');
+    out.cmdLocked=document.getElementById('cmd-text').textContent.slice(0,40);
+    // add form: picking a cell shows a preview and adds nothing until Add is pressed
+    clearSel();document.getElementById('btn-add-cb')?.click();await wait(50);
+    if(!S.addingCombatant){S.addingCombatant={name:'',initStr:'',initBonus:'',ac:'',hp:'',size:'M',color:'#e63c3c',hideStats:false,note:'',location:'',group:'',tokenImage:''};renderSB();await wait(50);}
+    const nTok=()=>S.tokens.filter(t=>!t.hidden).length, ghost=()=>!!document.querySelector('#map-svg circle[stroke-dasharray="6 4"]');
+    document.getElementById('cb-name').value='Boss';document.getElementById('cb-name').dispatchEvent(new Event('input',{bubbles:true}));
+    S.coordPick='cb';const svg=document.getElementById('map-svg'),r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal,k=r.width/vb.width;
+    const cx=r.left+(PAD+S.grid.offsetX+7.5*S.grid.cellSize)*k,cy=r.top+(PAD+S.grid.offsetY+6.5*S.grid.cellSize)*k;
+    svg.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,clientX:cx,clientY:cy}));await wait(100);
+    out.ghost1={ghost:ghost(),toks:nTok(),loc:document.getElementById('cb-loc')?.value,adding:!!S.addingCombatant,cmd:document.getElementById('cmd-text').textContent.slice(0,30)};
+    document.getElementById('cb-cancel').click();await wait(80);
+    out.ghostCancel={ghost:ghost(),toks:nTok(),adding:!!S.addingCombatant};
+    out.pickers=[...document.querySelectorAll('.colors')].length;
     return out;});
   let fail=0; const ok=(c,m)=>{console.log((c?'ok   ':'FAIL ')+m); if(!c)fail++;};
   ok(r.panel&&r.panelText==='2 tokens selected','multi-select panel shows ('+r.panelText+')');
@@ -39,6 +56,10 @@ const { chromium } = require('playwright');
   ok(r.mdPrevented&&r.srd==='Goblin'&&r.autoName==='GO3','typing gob then picking Goblin works ('+r.srd+', '+r.autoName+')');
   ok(r.dist==='5,15,25,25,25'&&r.distSimple===20,'token distances count squares: '+r.dist+' simple rule '+r.distSimple);
   ok(/\[Gobs\] tok\+ GO2\+/.test(r.listOrder),'unplaced group member sits under its folder: '+r.listOrder);
+  ok(r.lockPlayer.dis&&r.lockPlayer.chk&&r.lockPlayer.cond==='Bloodied'&&!r.lockPlayer.statsShown&&r.lockPlayer.hp==='','withheld stats: locked, shows Bloodied, no numbers '+JSON.stringify(r.lockPlayer));
+  ok(!r.lockDm.dis&&r.lockDm.cond==='Healthy'&&r.lockDm.hp==='7','controller still gets numbers and an unlocked box '+JSON.stringify(r.lockDm));
+  ok(r.ghost1.ghost&&r.ghost1.toks===2&&r.ghost1.loc==='H7'&&r.ghost1.adding&&/Nothing to send/.test(r.ghost1.cmd),'picking a cell previews only: '+JSON.stringify(r.ghost1));
+  ok(!r.ghostCancel.ghost&&r.ghostCancel.toks===2&&!r.ghostCancel.adding,'cancel removes the preview and adds nothing');
   ok(errs.length===0,'no page errors '+errs.join('; '));
   console.log('     export: '+r.cmd);
   await b.close(); process.exit(fail?1:0);
