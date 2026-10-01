@@ -180,7 +180,8 @@ async function handleRequest(request) {
       }
       var ext = isJpeg ? ".jpg" : ".png";
       var ctype = isJpeg ? "image/jpeg" : "image/png";
-      var key = "u/" + crypto.randomUUID().replace(/-/g, "") + ext;
+      // Token art is only needed until OTFBM has copied it, so it goes under tk/ (1 day expiry rule on the bucket).
+      var key = (form.get("kind") === "token" ? "tk/" : "u/") + crypto.randomUUID().replace(/-/g, "") + ext;
       await MAPS_BUCKET.put(key, buf, {
         httpMetadata: { contentType: ctype },
         customMetadata: { uid: sess.uid, name: sess.name || "", ts: String(Date.now()) }

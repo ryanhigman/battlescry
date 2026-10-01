@@ -8,7 +8,7 @@ Routes:
 |---|---|
 | `?url=<image>` | fetch an image with CORS headers so the site can read its pixels |
 | `?token=<image>` | get an OTFBM token shortcode |
-| `POST ?host` | upload a map or token to R2 under `u/` (Discord login required) |
+| `POST ?host` | upload a map to R2 under `u/`, or token art (form field `kind=token`) under `tk/` (Discord login required). The bucket has a lifecycle rule, "Expire token uploads", that removes `tk/` objects after 1 day: OTFBM keeps its own copy of every token, so ours is only needed for the hand-off. |
 | `POST ?enhance` | AI-upscale an image with Cloudflare Images (`upscale: "generate"`), store the result under `u/` (login required, 25 per user per day) |
 | `POST ?upload` | legacy imgbb upload |
 | `/auth/login`, `/auth/callback`, `/auth/me` | Discord OAuth and session check |
