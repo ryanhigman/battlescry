@@ -1,6 +1,11 @@
 <drac2>
 # ============================================================
-# BattleScry alias v0.2.50
+# BattleScry alias v0.2.51
+# v0.2.51: apply permissions. The DM is whoever controls the map host combatant. Anyone can move or
+#          park any token and change overlays. Only a token's controller (or the DM) can change its
+#          size, color, image or stats. Only the DM can add combatants or change the map, walls, fog,
+#          objects, or load a saved map or battle. Skipped parts are listed in the reply. Adding the
+#          word asplayer after the command applies it with player rights, for testing.
 # v0.2.50: a hidden combatant's HP and AC never go into the link, for anyone. The link is posted in the
 #          channel, so the DM's own link would hand the numbers to any player who opened it. Hidden
 #          combatants carry the hidden flag and a condition letter only; unhide in Avrae to edit them.
@@ -344,7 +349,7 @@ def _bootstrap_simple_embed():
         _bs_url += "#" + "&".join(hash_parts)
     return ('embed -title "\u2728 BattleScry - Combat Ready" '
             '-desc "Combat bootstrapped with a DM combatant. [Click here to open BattleScry](' + _bs_url + ')" '
-            '-color 0xf59e0b -footer "BattleScry v0.2.50"')
+            '-color 0xf59e0b -footer "BattleScry v0.2.51"')
 
 def _bootstrap_followup_with_cmd():
     # Two-paste path for apply/loadmap/loadbattle with no combat.
@@ -375,7 +380,7 @@ if mode and not (is_apply or is_loadmap or is_loadbattle):
             '`!bscry loadmap <name>` - load one of your saved maps.\n'
             '`!bscry loadbattle <name>` - restore a saved battle.\n\n'
             'Run `!bscry` with nothing after it to start. If no combat is running it starts one and adds a DM combatant to hold the map." '
-            '-color 0xf59e0b -footer "BattleScry v0.2.50"')
+            '-color 0xf59e0b -footer "BattleScry v0.2.51"')
 
 if c is None:
     # No active combat - bootstrap combat + DM combatant in one multiline.
@@ -447,6 +452,17 @@ try:
     c.set_metadata("bscry_host", str(_host_check.id))
 except:
     pass
+# v0.2.51: the DM is whoever controls the map host. Everyone else applies with player rights.
+_me = str(ctx.author.id)
+_is_dm = True
+try:
+    _is_dm = (str(_host_check.controller) == _me)
+except:
+    _is_dm = True
+if "asplayer" in args:
+    _is_dm = False
+    _me = "0"
+perm_skipped = []
 
 # ============================================================
 # APPLY PATH - three-way merge + writes
@@ -481,6 +497,51 @@ if is_apply:
     # Absent or "" from BS builds older than v0.1.304 -> normal three-way merge, unchanged.
     sa_str = sections[8] if len(sections) > 8 else ""
     _standalone = sa_str.strip() == "1"
+
+    # --- v0.2.51: trim the command to what this user may change ---
+    if not _is_dm:
+        _standalone = False
+        if nc_str.strip() or md_str.strip():
+            perm_skipped.append("adding combatants")
+            nc_str = ""
+            md_str = ""
+        if ed_str:
+            _keep = []
+            _drop = 0
+            for _e in ed_str.split(";"):
+                if not _e.strip():
+                    continue
+                _nm = _e.split("|")[0].replace("%20", " ").strip()
+                _cb = c.get_combatant(_nm) if _nm else None
+                if _cb and str(_cb.controller) == _me:
+                    _keep.append(_e)
+                else:
+                    _drop += 1
+            ed_str = ";".join(_keep)
+            if _drop:
+                perm_skipped.append("stats of " + str(_drop) + " combatant" + ("s" if _drop != 1 else "") + " you do not control")
+        if mv_str:
+            _keep = []
+            _drop = 0
+            for _e in mv_str.split(";"):
+                _p = _e.split("|")
+                _nm = _p[0].strip()
+                _cb = c.get_combatant(_nm) if _nm else None
+                if _cb and str(_cb.controller) != _me and len(_p) > 2:
+                    _rf, _ro = parse_note(str(_cb.note) if _cb.note else "")
+                    _rs = _rf.get("Size", "")[:1].lower()
+                    _rc = _rf.get("Color", "").split(" ")[0].lower()
+                    _rt = _rf.get("Token", "")
+                    _ls = _p[2].strip().lower() if len(_p) > 2 else ""
+                    _lc = _p[3].strip().lower() if len(_p) > 3 else ""
+                    _lt = _p[5].strip() if len(_p) > 5 else ""
+                    if (_ls and _ls != _rs) or (_lc and _lc != _rc) or (_lt and _lt != _rt):
+                        _drop += 1
+                    _e = "|".join([_p[0], _p[1], "", "", (_p[4] if len(_p) > 4 else "")])
+                _keep.append(_e)
+            mv_str = ";".join(_keep)
+            if _drop:
+                perm_skipped.append("size, color or image of " + str(_drop) + " token" + ("s" if _drop != 1 else "") + " you do not control")
 
     # Index the move entries by name so a brand-new combatant can be created already-placed:
     # its Location/Size/Color (from mv_str) are baked into the `!i add -note` below. Without this,
@@ -825,6 +886,9 @@ if is_apply:
 
     # --- Write merged map effect ---
     map_did_change = (merged_walls != remote_walls) or (merged_fow != remote_fow) or (merged_objs != remote_objs) or (final_grid != remote_grid) or (final_bg != remote_bg) or (final_opts != remote_opts) or (final_view != remote_view)
+    if map_did_change and not _is_dm:
+        perm_skipped.append("the map, walls, fog and objects")
+        map_did_change = False
     if new_ef_str and map_host and map_did_change:
         try:
             if map_host.get_effect("map"):
@@ -1178,13 +1242,13 @@ if is_apply:
     if overlays_updated:
         apply_status_parts.append(str(overlays_updated) + " overlay" + ("s" if overlays_updated != 1 else ""))
     wall_chg = len(dm_walls_added) + len(dm_walls_removed)
-    if wall_chg:
+    if wall_chg and _is_dm:
         apply_status_parts.append(str(wall_chg) + " wall" + ("s" if wall_chg != 1 else ""))
     fow_chg = len(dm_fow_added) + len(dm_fow_removed)
-    if fow_chg:
+    if fow_chg and _is_dm:
         apply_status_parts.append(str(fow_chg) + " FOW region" + ("s" if fow_chg != 1 else ""))
     obj_chg = len(dm_objs_added) + len(dm_objs_removed)
-    if obj_chg:
+    if obj_chg and _is_dm:
         apply_status_parts.append(str(obj_chg) + " object" + ("s" if obj_chg != 1 else ""))
     if saved_tokens_changed:
         apply_status_parts.append(str(saved_tokens_changed) + " saved token" + ("s" if saved_tokens_changed != 1 else ""))
@@ -1235,6 +1299,10 @@ objs = ""
 map_host = find_map_host()
 
 # Loadmap mode: write a saved map's state into the active map effect, then continue with normal flow.
+if (is_loadmap or is_loadbattle) and not _is_dm:
+    is_loadmap = False
+    is_loadbattle = False
+    loadmap_status = "Only the DM (whoever controls the map combatant) can load a saved map or battle into this combat."
 if is_loadmap and loadmap_name:
     if not map_host:
         loadmap_status = "\u26a0 No DM/Map/Lair combatant found to attach the map to. Run `!map -attach <combatant>` first."
@@ -1720,6 +1788,8 @@ if is_apply:
         desc = "✅ BattleScry changes applied\nUpdated: " + str(total_items) + " item" + ("s" if total_items != 1 else "")
         if n_conf:
             desc += "\n⚠ " + str(n_conf) + " conflict" + ("s" if n_conf != 1 else "") + " (current map takes precedence)"
+        if perm_skipped:
+            desc += "\nSkipped (DM only, or not yours): " + ", ".join(perm_skipped) + "."
         desc += "\n\n" + edit_link
         embed_str = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "Secret Mode - change details hidden"'
         # If new combatants were added, emit !i add commands first via multiline output.
@@ -1735,6 +1805,8 @@ if is_apply:
                 desc += "\n• " + msg
             if n_conf > 8:
                 desc += "\n• ...and " + str(n_conf - 8) + " more"
+        if perm_skipped:
+            desc += "\nSkipped (DM only, or not yours): " + ", ".join(perm_skipped) + "."
         desc += "\n\n" + edit_link
         # OTFBM map image
         map_img = ""
@@ -1760,7 +1832,7 @@ if is_apply:
                     map_img = _pre.rstrip("/") + "/" + _ff_path + "/?" + _post
                 else:
                     map_img = map_img.rstrip("/") + "/" + _ff_path
-        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.50"'
+        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.51"'
         if map_img:
             cmd += ' -image "' + map_img + '"'
         # If new combatants were added, emit !i add commands first via multiline output.
@@ -1797,8 +1869,8 @@ else:
         desc_parts.insert(0, loadbattle_status)
     desc = "\n\n".join(desc_parts)
     if is_loadmap or is_loadbattle:
-        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.50"'
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.51"'
     else:
-        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.50"'
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.51"'
     return out
 </drac2>
