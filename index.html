@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.321                                      https://battlescry.com
+BattleScry v0.1.322                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,7 +19,7 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.321 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
+  v0.1.322 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
             the coordinate tooltip sits below the pointer instead of over token labels. Removed the
             old background dialog, which nothing opened any more.
   v0.1.318 - Fixed: an uploaded map keeps the grid that was measured before it was resized or
@@ -380,7 +380,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.321</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.322</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -1104,12 +1104,12 @@ function cubeDist3D(a,b){
 function ptDistFt(c1,r1,c2,r2){return Math.round(Math.sqrt(((c2-c1)*5)**2+((r2-r1)*5)**2));}
 // Viewbox-coord center of a token (accounts for token size + view offset)
 function tokCenterVB(tok){const g=S.grid,cs=g.cellSize,c=tokCubeCells(tok);
-  const left=(tok.col-(g.startCol||0))*cs+g.offsetX,top=(tok.row-(g.startRow||0))*cs+g.offsetY;
+  const left=tok.col*cs+g.offsetX,top=tok.row*cs+g.offsetY;
   return{x:left+c*cs/2,y:top+c*cs/2};}
 // Closest point on a token's bbox perimeter to (tgtX,tgtY) in viewbox coords
 function tokPerimPoint(tok,tgtX,tgtY){const g=S.grid,cs=g.cellSize,c=tokCubeCells(tok);
-  const left=(tok.col-(g.startCol||0))*cs+g.offsetX,right=left+c*cs;
-  const top=(tok.row-(g.startRow||0))*cs+g.offsetY,bot=top+c*cs;
+  const left=tok.col*cs+g.offsetX,right=left+c*cs;
+  const top=tok.row*cs+g.offsetY,bot=top+c*cs;
   let x=Math.max(left,Math.min(right,tgtX)),y=Math.max(top,Math.min(bot,tgtY));
   // If target is inside the bbox, push to nearest edge
   if(tgtX>left&&tgtX<right&&tgtY>top&&tgtY<bot){
@@ -1196,6 +1196,28 @@ function scrollTo(col,row){const vp=$("map-vp"),g=S.grid;
   const py=(g.offsetY+row*g.cellSize+g.cellSize/2+PAD)*S.zoom;
   vp.scrollLeft=px-vp.clientWidth/2;vp.scrollTop=py-vp.clientHeight/2;}
 let origState=null,origBgUrl="",origCombatants=null,undoStack=[],redoStack=[];
+// Everything on the map (tokens, overlays, walls, fog, objects) stores its cell as an offset from the
+// top-left of the current Map View. So when the view's origin moves, every stored cell has to move the
+// other way, or the whole scene slides across the map and gets re-lettered. origState (the baseline the
+// export diffs against) is kept on the same origin; _sc/_sr record which origin it is on.
+function shiftEntities(st,dc,dr){
+  if(!st||(!dc&&!dr))return;
+  (st.tokens||[]).forEach(t=>{t.col-=dc;t.row-=dr;if(t.originalCol!=null)t.originalCol-=dc;if(t.originalRow!=null)t.originalRow-=dr;});
+  (st.overlays||[]).forEach(o=>{if(o.coord){o.coord.col-=dc;o.coord.row-=dr;}if(o.coord2){o.coord2.col-=dc;o.coord2.row-=dr;}});
+  (st.walls||[]).forEach(w=>{if(w.start){w.start.col-=dc;w.start.row-=dr;}if(w.end){w.end.col-=dc;w.end.row-=dr;}});
+  (st.fowRegions||[]).forEach(r=>{r.c1-=dc;r.c2-=dc;r.r1-=dr;r.r2-=dr;});
+  (st.objects||[]).forEach(o=>{o.col-=dc;o.row-=dr;if(o.col2!=null)o.col2-=dc;if(o.row2!=null)o.row2-=dr;});
+}
+function syncOrigView(){
+  if(!origState||!origState.grid)return;
+  const oc=origState._sc!=null?origState._sc:(origState.grid.startCol||0),or=origState._sr!=null?origState._sr:(origState.grid.startRow||0);
+  const nc=S.grid.startCol||0,nr=S.grid.startRow||0;
+  shiftEntities(origState,nc-oc,nr-or);origState._sc=nc;origState._sr=nr;
+}
+function setViewOrigin(sc,sr){
+  shiftEntities(S,sc-(S.grid.startCol||0),sr-(S.grid.startRow||0));
+  S.grid.startCol=sc;S.grid.startRow=sr;syncOrigView();
+}
 function snap(){return JSON.parse(JSON.stringify({tokens:S.tokens,overlays:S.overlays,walls:S.walls,objects:S.objects,fowRegions:S.fowRegions,grid:S.grid}));}
 // Baseline of combatant stats (ac/current-hp/max-hp/init/group) captured at load, so the export can diff
 // edits to combatants that already exist in Avrae and replay them via `!i opt`. snap() deliberately omits
@@ -1218,8 +1240,8 @@ window.addEventListener("beforeunload",function(e){
   const b=document.getElementById("btn-copy");
   if(b&&!b.disabled&&!S._lastExport){e.preventDefault();e.returnValue="";}
 });
-function popU(){if(!undoStack.length)return;redoStack.push(snap());const s=undoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;clearSel();setStatus("\u21a9 Undo");renderAll();}
-function redoU(){if(!redoStack.length)return;undoStack.push(snap());const s=redoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;clearSel();setStatus("\u21aa Redo");renderAll();}
+function popU(){if(!undoStack.length)return;redoStack.push(snap());const s=undoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;syncOrigView();clearSel();setStatus("\u21a9 Undo");renderAll();}
+function redoU(){if(!redoStack.length)return;undoStack.push(snap());const s=redoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;syncOrigView();clearSel();setStatus("\u21aa Redo");renderAll();}
 function clearSel(){S.sel={type:null,ids:new Set()};S._lastClick=null;}
 function allSel(type){
   if(!S.sel.ids.size)return false;
@@ -1452,8 +1474,8 @@ function renderSVG(){
   // Object placement preview rectangle
   if(S.objDraw&&S.objDraw.start&&S.placingObject){const g=S.grid,cs=g.cellSize;
     const s=S.objDraw.start,en=S.objDraw.end||s;
-    const c1=Math.min(s.col,en.col)-(g.startCol||0),c2=Math.max(s.col,en.col)-(g.startCol||0);
-    const r1=Math.min(s.row,en.row)-(g.startRow||0),r2=Math.max(s.row,en.row)-(g.startRow||0);
+    const c1=Math.min(s.col,en.col),c2=Math.max(s.col,en.col);
+    const r1=Math.min(s.row,en.row),r2=Math.max(s.row,en.row);
     const px=g.offsetX+c1*cs,py=g.offsetY+r1*cs;
     const pw=(c2-c1+1)*cs,ph=(r2-r1+1)*cs;
     // Preview the icon at drag size with rotation hint
@@ -1805,9 +1827,10 @@ function rObj(svg,obj){
   if(!OBJ_SVG[obj.type])return;
   const g=S.grid,cs=g.cellSize;
   // Apply view offset - skip if outside view
-  const oc1=obj.col-(g.startCol||0),or1=obj.row-(g.startRow||0);
-  const oc2=(obj.col2!=null?obj.col2:obj.col)-(g.startCol||0);
-  const or2=(obj.row2!=null?obj.row2:obj.row)-(g.startRow||0);
+  // Stored cells are already relative to the view (see shiftEntities).
+  const oc1=obj.col,or1=obj.row;
+  const oc2=(obj.col2!=null?obj.col2:obj.col);
+  const or2=(obj.row2!=null?obj.row2:obj.row);
   // Bounding box (use min/max so rotation doesn't break positioning)
   const c1=Math.min(oc1,oc2),c2=Math.max(oc1,oc2);
   const r1=Math.min(or1,or2),r2=Math.max(or1,or2);
@@ -2062,7 +2085,7 @@ function renderCombatantForm(opts){
   h+=`<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:9px">
     <div class="cb-tokbox" style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0">
       <div id="cb-prev-container">${renderCombatantPreview(previewToken,{totalPx:100,placeholder,editIcon})}</div>
-      ${editIcon?`<button type="button" id="cb-customize-toggle" class="btn btn-p" aria-expanded="${S.customizeOpen?"true":"false"}" style="width:100px;font-size:9px;padding:4px 2px;line-height:1.2;white-space:normal" title="${S.customizeOpen?"Remove the custom image and reset to a colored token":"Customize the token image"}">${S.customizeOpen?"- Remove Custom Token Image":"+ Customize Token Image"}</button>`:""}
+      ${editIcon?`<button type="button" id="cb-customize-toggle" class="btn btn-p" aria-expanded="${S.customizeOpen?"true":"false"}" style="width:100px;font-size:9px;padding:4px 2px;line-height:1.2;white-space:normal" title="${S.customizeOpen?(tokenImage?"Remove the custom image and reset to a colored token":"Hide the image options"):"Customize the token image"}">${S.customizeOpen?(tokenImage?"- Remove Custom Token Image":"- Hide Image Options"):"+ Customize Token Image"}</button>`:""}
     </div>
     <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
       <div><span class="lbl">${mode==="add"?"Name (required)":"Name"}</span>
@@ -2072,10 +2095,10 @@ function renderCombatantForm(opts){
       <div style="display:flex;gap:6px;align-items:flex-end">
         <div style="flex:1 1 auto;min-width:0"><span class="lbl" title="Type a coord (e.g. F5), or tap the crosshairs then tap the map">Location</span>
           <div style="display:flex;gap:4px;align-items:stretch">
-            <button type="button" id="cb-place-btn" class="btn btn-s" title="Pick the location by tapping the map" style="flex:0 0 auto;padding:0 9px;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg></button>
-            <input class="inp" id="cb-loc" value="${escAttr(location)}" placeholder="${mode==="add"?"none":"-"}" style="flex:1;min-width:0;box-sizing:border-box;font-family:monospace;font-size:11px;padding:6px 6px">
+            <button type="button" id="cb-place-btn" class="btn btn-s" title="Pick the location by tapping the map" style="flex:0 0 auto;padding:0 5px;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"></circle><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg></button>
+            <input class="inp" id="cb-loc" value="${escAttr(location)}" placeholder="${mode==="add"?"none":"-"}" style="flex:1;min-width:34px;box-sizing:border-box;font-family:monospace;font-size:11px;padding:6px 4px">
           </div></div>
-        <div style="flex:0 0 62px;min-width:0"><span class="lbl">Height (ft)</span>
+        <div style="flex:0 0 54px;min-width:0"><span class="lbl">Height (ft)</span>
           ${spinNum("cb-height",height,{step:5,min:-995,max:995,center:false})}</div>
       </div>
       <div style="margin-top:6px"><span class="lbl">Size</span>
@@ -2090,14 +2113,15 @@ function renderCombatantForm(opts){
   if(editIcon){const _stkNames=new Set(S.savedTokens.concat(S.tokenSaves).filter(x=>x&&x.name&&!S.tokenDeletes.includes(x.name)).map(x=>x.name));const savedCount=_stkNames.size;h+=`<div id="cb-customize-section" style="${S.customizeOpen?"":"display:none;"}margin:0 0 10px 0;padding:9px;border:1px solid var(--line);border-radius:6px;background:var(--bg2)">
     <div class="sec-title" style="margin-bottom:6px;font-size:11px">Customize Token Image</div>
     <div id="cb-img-info" style="font-size:10px;color:var(--fg3);margin-bottom:6px;min-height:0"></div>
-    <div class="row" style="gap:4px;align-items:center;margin-bottom:6px">
-      <input class="inp" id="cb-img-input" value="${tokenImage?escAttr(tokenImage.replace(/~$/,"")):""}" placeholder="Shortcode, saved name, or image URL" style="flex:1;min-width:0;font-family:monospace;font-size:10px">
-      <button type="button" class="btn btn-s" id="cb-img-apply" style="font-size:10px;padding:4px 12px;white-space:nowrap">Apply</button>
-      ${tokenImage?`<button type="button" class="btn btn-s" id="cb-img-save" title="Save this shortcode under an easy-to-remember name" aria-label="Save token" style="font-size:10px;padding:4px 9px;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg></button>`:""}
-    </div>
     <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:6px">
       <button type="button" class="btn btn-s" id="cb-img-lib" style="flex:1;min-width:120px;font-size:10px;padding:5px">👤 Browse Token Library</button>
       <button type="button" class="btn btn-s" id="cb-img-upload" style="flex:1;min-width:120px;font-size:10px;padding:5px">⬆️ Upload Token Image</button>
+    </div>
+    <div style="font-size:10px;color:var(--fg3);margin-bottom:3px">Or paste an image link, a saved token name, or an OTFBM shortcode</div>
+    <div class="row" style="gap:4px;align-items:center;margin-bottom:6px">
+      <input class="inp" id="cb-img-input" value="${tokenImage?escAttr(tokenImage.replace(/~$/,"")):""}" placeholder="Image link or shortcode" style="flex:1;min-width:0;font-family:monospace;font-size:10px">
+      <button type="button" class="btn btn-s" id="cb-img-apply" style="font-size:10px;padding:4px 12px;white-space:nowrap">Apply</button>
+      ${tokenImage?`<button type="button" class="btn btn-s" id="cb-img-save" title="Save this shortcode under an easy-to-remember name" aria-label="Save token" style="font-size:10px;padding:4px 9px;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>Save</button>`:""}
     </div>
     ${loginLineHtml()}
     ${savedCount?`<div style="margin-top:7px"><span id="cb-img-saved" role="button" tabindex="0" style="font-size:10px;color:var(--accent);cursor:pointer;text-decoration:underline">📂 Load saved token${savedCount>1?"s":""} (${savedCount})</span></div>`:""}
@@ -2329,10 +2353,27 @@ function rTokenProps(el){
   if(S.sel.type==="group"){
     h+=renderGroupForm(S.sel.group);
   }
+  // Several tokens selected: say so, and offer the one thing that is tedious to do one at a time.
+  if(!isAdding&&sc>1&&(S.sel.type==="token"||S.sel.type==="mixed")){
+    const mt=S.tokens.filter(x=>S.sel.ids.has(x.id)&&!x.hidden);
+    if(mt.length>1){
+      const grps=[...new Set([...S.tokens.map(x=>x.group),...S.combatants.map(c=>c.group)].filter(Boolean))].sort((a,b)=>natSort(a,b));
+      const anyGrp=mt.some(x=>x.group);
+      h+=`<div class="sec" style="border:1px solid var(--accent);border-radius:6px;padding:10px;margin-top:4px">
+        <div class="sec-title" style="color:var(--accent);margin-bottom:6px">${mt.length} tokens selected</div>
+        <div style="font-size:11px;color:var(--fg2);line-height:1.5">${mt.map(x=>escAttr(x.name)).join(", ")}</div>
+        <div style="font-size:10px;color:var(--fg3);margin-top:6px">Drag any one of them on the map to move them all together.</div>
+        <div style="margin-top:10px"><span class="lbl" title="Members of a group share one initiative turn in Avrae">Put them in an initiative group</span>
+          <div class="row" style="gap:6px"><input class="inp" id="ms-grp" list="ms-grplist" placeholder="Group name, e.g. Goblins" maxlength="40" style="flex:1;min-width:0;box-sizing:border-box;font-size:11px;padding:6px 6px"><datalist id="ms-grplist">${grps.map(g=>`<option value="${escAttr(g)}"></option>`).join("")}</datalist>
+          <button type="button" class="btn btn-p" id="ms-grp-go" style="font-size:11px;padding:6px 12px">Group</button></div></div>
+        <div class="row" style="margin-top:10px;gap:6px">${anyGrp?`<button type="button" class="btn btn-s" id="ms-ungrp" style="flex:1;font-size:11px;padding:6px">Remove from groups</button>`:""}<button type="button" class="btn btn-s" id="ms-clear" style="flex:1;font-size:11px;padding:6px">Unselect</button></div>
+      </div>`;
+    }
+  }
   // Nothing selected: say what to do next instead of leaving the panel blank.
   if(!isAdding&&!(sc>=1&&(S.sel.type==="token"||S.sel.type==="mixed"))&&S.sel.type!=="unplaced"&&S.sel.type!=="group"){
     const _wait=S.combatants.filter(c=>!c.placed&&c.name!=="DM").length;
-    h+=`<div style="font-size:12px;color:var(--fg3);line-height:1.5;padding:10px 4px">${_wait?`<b style="color:var(--accent)">${_wait} combatant${_wait>1?"s":""} not on the map yet.</b><br>Drag a name from the list below onto the map, or click a name and type a location.`:"Click a token on the map or in the list to edit it."}</div>`;
+    h+=`<div style="font-size:12px;color:var(--fg3);line-height:1.5;padding:10px 4px">${_wait?`<b style="color:var(--accent)">${_wait} combatant${_wait>1?"s":""} not on the map yet.</b><br>Drag a name from the list below onto the map, or click a name and type a location.`:"Click a token on the map or in the list to edit it.<br><span style=\"font-size:11px\">Shift or Ctrl + click picks several. Drag across empty map to box-select.</span>"}</div>`;
   }
   el.innerHTML=h;
 }
@@ -2351,7 +2392,8 @@ function renderGroupForm(name){
         <input type="number" class="inp nospin" id="cb-grp-init" value="${escAttr(gi)}" min="-50" max="200" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 6px"></div>
     </div>
     <div style="font-size:10px;color:var(--fg3);margin-top:8px">${members.length} member${members.length===1?"":"s"}: ${members.map(escAttr).join(", ")||"(none)"}</div>
-    <div class="row" style="margin-top:10px"><button class="btn btn-s" id="cb-grp-ungroup" style="flex:1;font-size:11px;padding:6px" title="Remove every member from this group (the tokens stay on the map)">Ungroup all</button></div>
+    <div style="font-size:10px;color:var(--fg3);margin-top:4px">To add a token to this group, select it and type the group name in its Init Group field.</div>
+    <div class="row" style="margin-top:10px;gap:6px">${memTok.length?`<button class="btn btn-s" id="cb-grp-select" style="flex:1;font-size:11px;padding:6px" title="Select every member on the map so you can drag them together">Select on map</button>`:""}<button class="btn btn-s" id="cb-grp-ungroup" style="flex:1;font-size:11px;padding:6px" title="Remove every member from this group (the tokens stay on the map)">Ungroup all</button></div>
   </div>`;
 }
 function rTokenList(el){let h="";
@@ -3428,7 +3470,9 @@ function renderCmd(){
   const mapNeedsUpdate=mapChanged()||(origState&&(S.walls.length!==(origState.walls||[]).length||S.fowRegions.length!==(origState.fowRegions||[]).length||S.objects.length!==(origState.objects||[]).length||S.walls.some(w=>!(origState.walls||[]).find(ow=>ow.id===w.id))||S.fowRegions.some(r=>!(origState.fowRegions||[]).find(or=>or.id===r.id))||S.objects.some(o=>{const oo=(origState.objects||[]).find(x=>x.id===o.id);return !oo||o.col!==oo.col||o.row!==oo.row||o.col2!==oo.col2||o.row2!==oo.row2||o.type!==oo.type||o.color!==oo.color;})));
   let effectText="";
   if(mapNeedsUpdate){
-    const ep=[];ep.push("Size: "+S.grid.cols+"x"+S.grid.rows);
+    const _g=S.grid,_fc=Math.max(_g.fullCols||0,(_g.startCol||0)+_g.cols),_fr=Math.max(_g.fullRows||0,(_g.startRow||0)+_g.rows);
+    const _part=_g.startCol>0||_g.startRow>0||_g.cols<_fc||_g.rows<_fr;
+    const ep=[];ep.push("Size: "+_fc+"x"+_fr);
     if(S.loadedUrl)ep.push("Background: "+S.loadedUrl);
     const opts=buildOptsStr();if(opts)ep.push("Options: "+opts);
     // Walls - each wall as -c<palette-code><start>[<door>]<end>, comma-space separated. Palette codes only per OTFBM structures.md.
@@ -3443,7 +3487,7 @@ function renderCmd(){
       const cl=fmtObjColor(o.color);
       return c1+c2+cl+"$"+o.type;});
     if(objSegs.length)ep.push("Objects: "+objSegs.join("/"));
-    ep.push("View: a1:"+S.grid.cols+"x"+S.grid.rows);
+    ep.push("View: "+(_part?(col2l(_g.startCol)+(_g.startRow+1)+":"+_g.cols+"x"+_g.rows):("a1:"+_fc+"x"+_fr)));
     // FOW regions
     const fowSegs=S.fowRegions.map(r=>fmtU(Math.min(r.c1,r.c2),Math.min(r.r1,r.r2))+":"+fmtU(Math.max(r.c1,r.c2),Math.max(r.r1,r.r2)));
     if(fowSegs.length)ep.push("FOW: "+fowSegs.join(", "));
@@ -3973,6 +4017,24 @@ function setup(){
       const _nm=$("cb-name");if(_nm){try{_nm.focus();}catch(_){}}
       return;}
     if(t.id==="cb-cancel"){S.addingCombatant=null;renderSB();return;}
+    if(t.id==="ms-clear"){clearSel();renderAll();return;}
+    if(t.id==="ms-grp-go"||t.id==="ms-ungrp"){
+      const mt=S.tokens.filter(x=>S.sel.ids.has(x.id)&&!x.hidden);if(mt.length<2)return;
+      const name=t.id==="ms-ungrp"?"":(($("ms-grp")&&$("ms-grp").value)||"").trim();
+      if(t.id==="ms-grp-go"&&!name){showError("Type a group name first");return;}
+      pushU();
+      // A group has one initiative. Joining an existing group takes its initiative; a new group takes
+      // the first selected token's.
+      let gi=name?groupInit(name):"";
+      if(name&&(gi===""||gi==null)){const f=mt.find(x=>x.init!=null&&x.init!=="");gi=f?f.init:"";}
+      mt.forEach(x=>{x.group=name;const c=S.combatants.find(c=>c.name===x.name);if(c)c.group=name;
+        if(name&&gi!==""&&gi!=null){x.init=+gi;if(c)c.init=+gi;}});
+      renderAll();setStatus(name?("Grouped "+mt.length+" tokens as "+name+"."):("Removed "+mt.length+" tokens from their groups."));return;}
+    if(t.id==="cb-grp-select"){
+      if(S.sel.type!=="group")return;
+      const g=S.sel.group,ids=S.tokens.filter(x=>x.group===g&&!x.hidden).map(x=>x.id);
+      if(!ids.length)return;
+      S.sel={type:"token",ids:new Set(ids)};renderAll();setStatus("Selected "+ids.length+" token"+(ids.length>1?"s":"")+" in "+g+". Drag one to move them all.");return;}
     if(t.id==="cb-grp-ungroup"){
       if(S.sel.type!=="group")return;
       const g=S.sel.group;pushU();
@@ -4384,13 +4446,13 @@ function setup(){
       }
       S.customizeOpen=true;
       const sec=$("cb-customize-section");if(sec)sec.style.display="";
-      const tg=$("cb-customize-toggle");if(tg){tg.setAttribute("aria-expanded","true");tg.textContent="- Remove Custom Token Image";}
+      const tg=$("cb-customize-toggle");if(tg){tg.setAttribute("aria-expanded","true");tg.textContent=($("cb-img-input")&&$("cb-img-input").value)?"- Remove Custom Token Image":"- Hide Image Options";}
       const el=$("cb-img-input");if(el){try{el.scrollIntoView({behavior:"smooth",block:"nearest"});el.focus();}catch(_){}}
       return;}
     if(t.id==="p-nptokdialog"||t.id==="cb-customize-img"||(t.closest&&t.closest(".cb-portrait-btn"))){
       S.customizeOpen=true;
       const sec=$("cb-customize-section");if(sec)sec.style.display="";
-      const tg=$("cb-customize-toggle");if(tg){tg.setAttribute("aria-expanded","true");tg.textContent="- Remove Custom Token Image";}
+      const tg=$("cb-customize-toggle");if(tg){tg.setAttribute("aria-expanded","true");tg.textContent=($("cb-img-input")&&$("cb-img-input").value)?"- Remove Custom Token Image":"- Hide Image Options";}
       const el=$("cb-img-input");
       if(el){try{el.scrollIntoView({behavior:"smooth",block:"center"});}catch(_){}el.focus();const old=el.style.boxShadow;el.style.transition="box-shadow .2s";el.style.boxShadow="0 0 0 2px var(--accent)";setTimeout(()=>{el.style.boxShadow=old;},900);}
       return;}
@@ -4431,8 +4493,12 @@ function setup(){
     if(e.target.id==="m-bgurl"){S._bgUrlDraft=e.target.value;return;}
     if(["m-cell","m-cols","m-rows"].includes(e.target.id))pushU();
     if(e.target.id==="m-cell"){const _v=+e.target.value||40;S.grid.cellSize=Math.min(CELL_MAX,Math.max(CELL_MIN,_v));if(_v!==S.grid.cellSize){e.target.value=S.grid.cellSize;setStatus("⚠ Cell size must be "+CELL_MIN+"-"+CELL_MAX+"px (OTFBM limit)");}}
-    if(e.target.id==="m-cols")S.grid.cols=Math.max(1,+e.target.value||26);
-    if(e.target.id==="m-rows")S.grid.rows=Math.max(1,+e.target.value||26);
+    // Keep the full-map size in step: on an uncropped map the full size IS cols x rows; on a cropped
+    // view the full map only ever grows to contain the view.
+    if(e.target.id==="m-cols"||e.target.id==="m-rows"){const g=S.grid,part=g.startCol>0||g.startRow>0||g.cols<(g.fullCols||g.cols)||g.rows<(g.fullRows||g.rows);
+      if(e.target.id==="m-cols")g.cols=Math.max(1,+e.target.value||26);else g.rows=Math.max(1,+e.target.value||26);
+      if(part){g.fullCols=Math.max(g.fullCols||0,(g.startCol||0)+g.cols);g.fullRows=Math.max(g.fullRows||0,(g.startRow||0)+g.rows);}
+      else{g.fullCols=g.cols;g.fullRows=g.rows;}}
     if(e.target.id==="m-ox")S.grid.offsetX=+e.target.value||0;
     if(e.target.id==="m-oy")S.grid.offsetY=+e.target.value||0;
     // Grid suggestion dropdown
@@ -4871,7 +4937,7 @@ function setup(){
     S.sel={type:types.length>1?"mixed":types[0]||"token",ids:newIds};}
 
   $("map-svg").addEventListener("mousedown",e=>{
-    e.preventDefault();const shift=e.shiftKey;const multi=e.ctrlKey||e.metaKey;// Shift=chain draw, Ctrl/Cmd=multi-select
+    e.preventDefault();const shift=e.shiftKey;const multi=e.ctrlKey||e.metaKey||(e.shiftKey&&!S.wallDraw&&!S.fowDraw&&!S.placingObject&&!S.rulerMode);// Shift=chain draw while drawing; otherwise Shift or Ctrl/Cmd=multi-select
     // Wall drawing mode - click grid vertices
     if(S.wallDraw){const pt=svgPt(e),g=S.grid,cs=g.cellSize;
       // Snap to nearest grid vertex
@@ -5389,7 +5455,7 @@ function setup(){
     // mis-detected bound never silently blocks a valid view.
     S.grid.fullCols=Math.max(S.grid.fullCols||0,S.grid.cols,ec+1);
     S.grid.fullRows=Math.max(S.grid.fullRows||0,S.grid.rows,er+1);
-    pushU();S.grid.startCol=sc;S.grid.startRow=sr;S.grid.cols=ec-sc+1;S.grid.rows=er-sr+1;
+    pushU();setViewOrigin(sc,sr);S.grid.cols=ec-sc+1;S.grid.rows=er-sr+1;
     renderAll();syncViewInputs();
     setTimeout(()=>{try{S._fitRecheck=true;zoomAt(smartFit());}catch(e){}},50);
     setStatus("✓ View set to "+sVal+" → "+eVal);}
@@ -5398,7 +5464,7 @@ function setup(){
   // Reset the Map View to the full map (used by the Reset button).
   function resetMapView(){
     const rb=$("btn-vw-reset");if(rb&&rb.disabled)return;
-    pushU();S.grid.startCol=0;S.grid.startRow=0;
+    pushU();setViewOrigin(0,0);
     S.grid.cols=S.grid.fullCols||S.grid.cols;S.grid.rows=S.grid.fullRows||S.grid.rows;
     renderAll();syncViewInputs();
     setTimeout(()=>{try{S._fitRecheck=true;zoomAt(smartFit());}catch(e){}},50);
@@ -5484,7 +5550,7 @@ function setup(){
     cropStart=null;
     if(c2-c1<1||r2-r1<1)return;
     // Apply absolute coords (add current startCol/startRow offset)
-    pushU();S.grid.startCol=(g.startCol||0)+c1;S.grid.startRow=(g.startRow||0)+r1;
+    pushU();setViewOrigin((g.startCol||0)+c1,(g.startRow||0)+r1);
     S.grid.cols=c2-c1+1;S.grid.rows=r2-r1+1;
     // Exit view-pick mode
     S.coordPick=null;svgEl.style.cursor="";
@@ -5551,7 +5617,7 @@ function setup(){
     M.footer.querySelector("#cropcfm-cancel").onclick=function(){M.close();};
     M.footer.querySelector("#cropcfm-ok").onclick=function(){
       done=true;M.close();pushU();
-      S.grid.startCol=aC1;S.grid.startRow=aR1;S.grid.cols=c2-c1+1;S.grid.rows=r2-r1+1;
+      setViewOrigin(aC1,aR1);S.grid.cols=c2-c1+1;S.grid.rows=r2-r1+1;
       exitCropSelect();renderAll();if(typeof syncViewInputs==="function")syncViewInputs();
       setTimeout(function(){try{S._fitRecheck=true;zoomAt(smartFit());}catch(_){}},50);
       setStatus("✓ View cropped to "+label);
@@ -6420,7 +6486,7 @@ function openHelp(){
   <div>• <b>Scroll wheel</b> to zoom in/out</div>
   <div>• <b>Hold Space + drag</b> to pan around the map</div>
   <div>• <b>Ctrl+Z</b> to undo, <b>Ctrl+Shift+Z</b> to redo</div>
-  <div>• <b>Ctrl+Click</b> (Cmd on Mac) to multi-select any objects - tokens, overlays, walls, FOW regions</div>
+  <div>• <b>Ctrl+Click</b> or <b>Shift+Click</b> (Cmd on Mac) to multi-select any objects - tokens, overlays, walls, FOW regions</div>
   <div>• <b>Delete</b> key to remove selected walls, overlays, or FOW regions</div>
   <div style="font-weight:bold;color:var(--accent);margin-top:12px">Tokens Tab</div>
   <div>• Click a token on the map or in the list to select and edit properties</div>
