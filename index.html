@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.324                                      https://battlescry.com
+BattleScry v0.1.325                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,7 +19,7 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.324 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
+  v0.1.325 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
             the coordinate tooltip sits below the pointer instead of over token labels. Removed the
             old background dialog, which nothing opened any more.
   v0.1.318 - Fixed: an uploaded map keeps the grid that was measured before it was resized or
@@ -382,7 +382,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.324</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.325</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -2178,8 +2178,9 @@ function renderCombatantForm(opts){
         ${spinNum("cb-ac",ac,{min:0,max:50})}</div>
     </div>
     <div id="cb-cond-wrap" style="${hideStats?"":"display:none;"}min-width:0">
-      <div style="font-size:11px;font-weight:600;color:var(--fg2)">Condition: <span id="cb-condition" style="color:${condition.color}">${condition.label}</span></div></div>
-    <label style="flex-shrink:0;display:flex;align-items:center;gap:5px;font-size:10px;cursor:${statsLocked?"default":"pointer"};${statsLocked?"opacity:.55;":""};padding-bottom:7px" title="${statsLocked?"Only the DM who controls this creature can see or change its HP and AC.":"When checked, the HP and AC fields are hidden so players using BattleScry don't see a creature's exact numbers; uncheck to reveal and edit. Players see only a condition word (Healthy/Injured/Bloodied/Critical/Dead). Applied via !i opt -h on apply."}"><input type="checkbox" id="cb-hide" ${hideStats?"checked":""} ${statsLocked?"disabled":""} style="accent-color:var(--accent)"><span>Hide HP/AC</span></label>
+      <div style="font-size:11px;font-weight:600;color:var(--fg2)">Condition: <span id="cb-condition" style="color:${condition.color}" title="${statsLocked?"HP and AC are hidden in Avrae, so only this condition word is shared with BattleScry.":""}">${condition.label}</span></div>
+      ${statsLocked?`<div style="font-size:10px;color:var(--fg3);line-height:1.4;margin-top:3px">HP and AC are hidden in Avrae. To see or edit them here, unhide it in Discord with <code style="background:var(--bg3);color:var(--accent);padding:0 4px;border-radius:3px;user-select:all">!i opt ${escAttr(/\s/.test(name)?'"'+name+'"':name)} -h</code> and run <code style="background:var(--bg3);color:var(--accent);padding:0 4px;border-radius:3px">!bscry</code> again.</div>`:""}</div>
+    <label style="flex-shrink:0;display:flex;align-items:center;gap:5px;font-size:10px;cursor:${statsLocked?"default":"pointer"};${statsLocked?"opacity:.55;":""};padding-bottom:7px" title="${statsLocked?"HP and AC are hidden in Avrae, so they are not sent to BattleScry. Unhide the creature in Discord with !i opt <name> -h to see or edit them here.":"When checked, the HP and AC fields are hidden so players using BattleScry don't see a creature's exact numbers; uncheck to reveal and edit. Players see only a condition word (Healthy/Injured/Bloodied/Critical/Dead). Applied via !i opt -h on apply."}"><input type="checkbox" id="cb-hide" ${hideStats?"checked":""} ${statsLocked?"disabled":""} style="accent-color:var(--accent)"><span>Hide HP/AC</span></label>
   </div>`;
   // Init-bonus-aware hints for the Initiative field (placeholder + d20 tooltip).
   const ibNum=(initBonus===""||initBonus==null)?0:(parseInt(initBonus)||0);
@@ -6279,8 +6280,8 @@ function loadFromHashStr(hash){
     const name=entry.slice(0,ci);const sp=entry.slice(ci+1).split(":");
     const _n=v=>(v==null||v.trim()===""?undefined:(isNaN(parseInt(v,10))?undefined:parseInt(v,10)));
     const cur=_n(sp[0]),mx=_n(sp[1]),acv=_n(sp[2]);const hid=(sp[3]||"").trim()==="1";
-    // A 5th field means the alias withheld the numbers: this viewer does not control the combatant, so
-    // they get the hidden flag and a condition letter only (alias v0.2.49). Lock the stats for them.
+    // A 5th field means the alias withheld the numbers. The link is posted in the channel, so a hidden
+    // combatant's HP and AC are never put in it (alias v0.2.50): just the flag and a condition letter.
     const locked=hid&&sp.length>=5&&cur==null&&mx==null&&acv==null,hint=locked?(sp[4]||"").trim().toLowerCase():"";
     const tk=S.tokens.find(t=>t.name===name);if(tk){if(cur!=null)tk.hpCur=cur;if(mx!=null)tk.hpMax=mx;if(acv!=null)tk.ac=acv;tk.hideStats=hid;tk.statsLocked=locked;tk.condHint=hint;}
     const cmb=S.combatants.find(c=>c.name===name);if(cmb){if(cur!=null)cmb.hpCur=cur;if(mx!=null)cmb.hp=mx;if(acv!=null)cmb.ac=acv;cmb.hideStats=hid;cmb.statsLocked=locked;cmb.condHint=hint;}});}

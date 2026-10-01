@@ -34,7 +34,7 @@ const { chromium } = require('playwright');
     // hidden stats withheld by the alias (5th cs field): locked for this viewer, condition from the hint
     loadFromHashStr('g=12x12&o=c40&t=GO1|E4|S|r|0|;GO2|F4|S|r|0|&ip=GO1:12;GO2:12&cs=GO1::::1:b;GO2:7:7:15:1');await wait(150);
     const pick=async n=>{const id=S.tokens.find(t=>t.name===n).id;S.sel={type:'token',ids:new Set([id])};S.tab='tokens';renderAll();await wait(50);return {dis:document.getElementById('cb-hide').disabled,chk:document.getElementById('cb-hide').checked,cond:document.getElementById('cb-condition').textContent,statsShown:document.getElementById('cb-stats-wrap').style.display!=='none',hp:document.getElementById('cb-hpcur').value};};
-    out.lockPlayer=await pick('GO1');out.lockDm=await pick('GO2');
+    out.lockPlayer=await pick('GO1');out.lockHint=document.getElementById('cb-cond-wrap').textContent.replace(/\s+/g,' ').trim();out.lockDm=await pick('GO2');
     out.cmdLocked=document.getElementById('cmd-text').textContent.slice(0,40);
     // add form: picking a cell shows a preview and adds nothing until Add is pressed
     clearSel();document.getElementById('btn-add-cb')?.click();await wait(50);
@@ -57,6 +57,7 @@ const { chromium } = require('playwright');
   ok(r.dist==='5,15,25,25,25'&&r.distSimple===20,'token distances count squares: '+r.dist+' simple rule '+r.distSimple);
   ok(/\[Gobs\] tok\+ GO2\+/.test(r.listOrder),'unplaced group member sits under its folder: '+r.listOrder);
   ok(r.lockPlayer.dis&&r.lockPlayer.chk&&r.lockPlayer.cond==='Bloodied'&&!r.lockPlayer.statsShown&&r.lockPlayer.hp==='','withheld stats: locked, shows Bloodied, no numbers '+JSON.stringify(r.lockPlayer));
+  ok(/!i opt GO1 -h/.test(r.lockHint),'locked stats explain how to unhide: '+r.lockHint.slice(0,120));
   ok(!r.lockDm.dis&&r.lockDm.cond==='Healthy'&&r.lockDm.hp==='7','controller still gets numbers and an unlocked box '+JSON.stringify(r.lockDm));
   ok(r.ghost1.ghost&&r.ghost1.toks===2&&r.ghost1.loc==='H7'&&r.ghost1.adding&&/Nothing to send/.test(r.ghost1.cmd),'picking a cell previews only: '+JSON.stringify(r.ghost1));
   ok(!r.ghostCancel.ghost&&r.ghostCancel.toks===2&&!r.ghostCancel.adding,'cancel removes the preview and adds nothing');

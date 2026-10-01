@@ -1,6 +1,9 @@
 <drac2>
 # ============================================================
-# BattleScry alias v0.2.49
+# BattleScry alias v0.2.50
+# v0.2.50: a hidden combatant's HP and AC never go into the link, for anyone. The link is posted in the
+#          channel, so the DM's own link would hand the numbers to any player who opened it. Hidden
+#          combatants carry the hidden flag and a condition letter only; unhide in Avrae to edit them.
 # v0.2.49: a hidden combatant's HP and AC only go into the link for the person who controls it (the DM
 #          who added it). Everyone else gets the hidden flag and a condition letter (h/i/b/c/d), so
 #          players can no longer read monster numbers from the link.
@@ -310,7 +313,7 @@ def _bootstrap_simple_embed():
                     _mx = _cb.max_hp
                     _acv = _cb.ac
                     _hd = "1" if _cb.is_hidden else ""
-                    if _hd and str(_cb.controller) != str(ctx.author.id):
+                    if _hd:
                         _cd = ""
                         if _hp is not None and _mx:
                             _cd = "d" if _hp <= 0 else ("c" if _hp * 100 <= _mx * 15 else ("b" if _hp * 2 <= _mx else ("i" if _hp < _mx else "h")))
@@ -341,7 +344,7 @@ def _bootstrap_simple_embed():
         _bs_url += "#" + "&".join(hash_parts)
     return ('embed -title "\u2728 BattleScry - Combat Ready" '
             '-desc "Combat bootstrapped with a DM combatant. [Click here to open BattleScry](' + _bs_url + ')" '
-            '-color 0xf59e0b -footer "BattleScry v0.2.49"')
+            '-color 0xf59e0b -footer "BattleScry v0.2.50"')
 
 def _bootstrap_followup_with_cmd():
     # Two-paste path for apply/loadmap/loadbattle with no combat.
@@ -372,7 +375,7 @@ if mode and not (is_apply or is_loadmap or is_loadbattle):
             '`!bscry loadmap <name>` - load one of your saved maps.\n'
             '`!bscry loadbattle <name>` - restore a saved battle.\n\n'
             'Run `!bscry` with nothing after it to start. If no combat is running it starts one and adds a DM combatant to hold the map." '
-            '-color 0xf59e0b -footer "BattleScry v0.2.49"')
+            '-color 0xf59e0b -footer "BattleScry v0.2.50"')
 
 if c is None:
     # No active combat - bootstrap combat + DM combatant in one multiline.
@@ -1490,12 +1493,7 @@ for cmb in c.combatants:
         _mx = cmb.max_hp
         _acv = cmb.ac
         _hd = "1" if cmb.is_hidden else ""
-        _mine = True
-        try:
-            _mine = (str(cmb.controller) == str(ctx.author.id))
-        except:
-            _mine = True
-        if _hd and not _mine:
+        if _hd:
             _cd = ""
             if _hp is not None and _mx:
                 _cd = "d" if _hp <= 0 else ("c" if _hp * 100 <= _mx * 15 else ("b" if _hp * 2 <= _mx else ("i" if _hp < _mx else "h")))
@@ -1762,7 +1760,7 @@ if is_apply:
                     map_img = _pre.rstrip("/") + "/" + _ff_path + "/?" + _post
                 else:
                     map_img = map_img.rstrip("/") + "/" + _ff_path
-        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.49"'
+        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.50"'
         if map_img:
             cmd += ' -image "' + map_img + '"'
         # If new combatants were added, emit !i add commands first via multiline output.
@@ -1799,8 +1797,8 @@ else:
         desc_parts.insert(0, loadbattle_status)
     desc = "\n\n".join(desc_parts)
     if is_loadmap or is_loadbattle:
-        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.49"'
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.50"'
     else:
-        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.49"'
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.50"'
     return out
 </drac2>
