@@ -1,6 +1,9 @@
 <drac2>
 # ============================================================
-# BattleScry alias v0.2.51
+# BattleScry alias v0.2.52
+# v0.2.52: (1) the link says which combatants are monsters (m) or player characters (p) in a new ck
+#          param, so BattleScry only offers stat fields for custom tokens. (2) a saved battlemap can
+#          carry custom tokens; `!bscry loadmap` adds any that are not already in combat.
 # v0.2.51: apply permissions. The DM is whoever controls the map host combatant. Anyone can move or
 #          park any token and change overlays. Only a token's controller (or the DM) can change its
 #          size, color, image or stats. Only the DM can add combatants or change the map, walls, fog,
@@ -253,6 +256,7 @@ apply_status_parts = []
 conflicts = []
 apply_ok = is_apply
 loadmap_status = ""
+lm_followup_cmds = []
 loadbattle_status = ""
 
 # ============================================================
@@ -308,6 +312,7 @@ def _bootstrap_simple_embed():
             _ip = []
             _cs = []
             _ig = {}
+            _ck = []
             for _cb in c.combatants:
                 _n = str(_cb.name)
                 if _n and _n != "DM" and ";" not in _n and "|" not in _n:
@@ -325,6 +330,10 @@ def _bootstrap_simple_embed():
                         _cs.append(_e + "::::1:" + _cd)
                     elif _hp is not None or _mx is not None or _acv is not None or _hd:
                         _cs.append(_e + ":" + (str(_hp) if _hp is not None else "") + ":" + (str(_mx) if _mx is not None else "") + ":" + (str(_acv) if _acv is not None else "") + ":" + _hd)
+                    if _cb.monster_name:
+                        _ck.append(_e + ":m")
+                    elif _cb.race:
+                        _ck.append(_e + ":p")
                     _g = _cb.group
                     if _g:
                         _gk = str(_g).replace(" ", "%20")
@@ -334,6 +343,8 @@ def _bootstrap_simple_embed():
             if _np:
                 hash_parts.append("np=" + ";".join(_np))
                 hash_parts.append("ip=" + ";".join(_ip))
+            if _ck:
+                hash_parts.append("ck=" + ";".join(_ck))
             if _cs:
                 hash_parts.append("cs=" + ";".join(_cs))
             if _ig:
@@ -349,7 +360,7 @@ def _bootstrap_simple_embed():
         _bs_url += "#" + "&".join(hash_parts)
     return ('embed -title "\u2728 BattleScry - Combat Ready" '
             '-desc "Combat bootstrapped with a DM combatant. [Click here to open BattleScry](' + _bs_url + ')" '
-            '-color 0xf59e0b -footer "BattleScry v0.2.51"')
+            '-color 0xf59e0b -footer "BattleScry v0.2.52"')
 
 def _bootstrap_followup_with_cmd():
     # Two-paste path for apply/loadmap/loadbattle with no combat.
@@ -380,7 +391,7 @@ if mode and not (is_apply or is_loadmap or is_loadbattle):
             '`!bscry loadmap <name>` - load one of your saved maps.\n'
             '`!bscry loadbattle <name>` - restore a saved battle.\n\n'
             'Run `!bscry` with nothing after it to start. If no combat is running it starts one and adds a DM combatant to hold the map." '
-            '-color 0xf59e0b -footer "BattleScry v0.2.51"')
+            '-color 0xf59e0b -footer "BattleScry v0.2.52"')
 
 if c is None:
     # No active combat - bootstrap combat + DM combatant in one multiline.
@@ -1165,6 +1176,11 @@ if is_apply:
                         "view": fields[6].strip() if len(fields) > 6 else "",
                         "fow": fields[7].strip() if len(fields) > 7 else "",
                     }
+                    # v0.2.52: field 10, custom tokens saved with the map, "^"-separated, each
+                    # name,coord,size,color,height,image,hp,ac,init,hide. Recreated by loadmap.
+                    _stk = fields[9].strip() if len(fields) > 9 else ""
+                    if _stk:
+                        _entry["tokens"] = [t.strip() for t in _stk.split("^") if t.strip()]
                     _thumb = fields[8].strip() if len(fields) > 8 else ""
                     if _thumb:
                         _entry["thumb"] = _thumb
@@ -1365,6 +1381,30 @@ if is_loadmap and loadmap_name:
             try:
                 map_host.add_effect("map", attacks=[{"attack":{"name":"map","automation":[{"type":"text","text":new_ef_str}],"_v":2}}])
                 loadmap_status = "\u2705 Loaded saved map `" + str(found_name) + "` into the active map."
+                # v0.2.52: recreate the custom tokens saved with the map, skipping any already in combat.
+                _lm_n = 0
+                for _ts in (found_entry.get("tokens", []) or []):
+                    _tf = [x.strip() for x in (str(_ts).split(",") + ["", "", "", "", "", "", "", "", "", ""])[:10]]
+                    _tn = _tf[0]
+                    if not _tn or c.get_combatant(_tn, True):
+                        continue
+                    _note = place_note_from_mvp([_tn, _tf[1], _tf[2], _tf[3], _tf[4], _tf[5]])
+                    _arg = '"' + _tn + '"' if " " in _tn else _tn
+                    _cmd = "!i add 0 " + _arg
+                    if _tf[8]:
+                        _cmd += " -p " + _tf[8]
+                    if _tf[7]:
+                        _cmd += " -ac " + _tf[7]
+                    if _tf[6]:
+                        _cmd += " -hp " + _tf[6] + " -max " + _tf[6]
+                    if _note:
+                        _cmd += ' -note "' + _note.replace('"', "'") + '"'
+                    lm_followup_cmds.append(_cmd)
+                    if _tf[9] == "1":
+                        lm_followup_cmds.append("!i opt " + _arg + " -h")
+                    _lm_n += 1
+                if _lm_n:
+                    loadmap_status += " Added " + str(_lm_n) + " saved token" + ("s" if _lm_n != 1 else "") + ". Run `!bscry` again to see " + ("them" if _lm_n != 1 else "it") + " on the map."
             except Exception as exc:
                 loadmap_status = "\u26a0 Failed to write loaded map: " + str(exc)
 
@@ -1519,6 +1559,7 @@ fn_notes = []
 ovs = []
 ip_parts = []
 cs_parts = []
+ck_parts = []
 ig_parts = {}
 
 # v0.2.47: names containing ; or | would break the link format, so they are left out and reported.
@@ -1596,6 +1637,14 @@ for cmb in c.combatants:
     try:
         if cmb.init is not None:
             ip_parts.append(sn + ":" + str(cmb.init))
+    except:
+        pass
+    # Kind capture (v0.2.52): m = monster with a stat block, p = player character. Custom is the default.
+    try:
+        if cmb.monster_name:
+            ck_parts.append(sn + ":m")
+        elif cmb.race:
+            ck_parts.append(sn + ":p")
     except:
         pass
     # Init group capture
@@ -1740,6 +1789,8 @@ if ig_parts:
     parts.append("ig=" + ig_str)
 if ip_parts:
     parts.append("ip=" + ";".join(ip_parts))
+if ck_parts:
+    parts.append("ck=" + ";".join(ck_parts))
 if cs_parts:
     parts.append("cs=" + ";".join(cs_parts))
 data = "&".join(parts)
@@ -1832,7 +1883,7 @@ if is_apply:
                     map_img = _pre.rstrip("/") + "/" + _ff_path + "/?" + _post
                 else:
                     map_img = map_img.rstrip("/") + "/" + _ff_path
-        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.51"'
+        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.52"'
         if map_img:
             cmd += ' -image "' + map_img + '"'
         # If new combatants were added, emit !i add commands first via multiline output.
@@ -1869,8 +1920,10 @@ else:
         desc_parts.insert(0, loadbattle_status)
     desc = "\n\n".join(desc_parts)
     if is_loadmap or is_loadbattle:
-        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.51"'
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.52"'
     else:
-        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.51"'
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.52"'
+    if lm_followup_cmds:
+        return "multiline\n" + "\n".join(lm_followup_cmds) + "\n!" + out
     return out
 </drac2>

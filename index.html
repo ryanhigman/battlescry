@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.326                                      https://battlescry.com
+BattleScry v0.1.327                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,7 +19,7 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.326 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
+  v0.1.327 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
             the coordinate tooltip sits below the pointer instead of over token labels. Removed the
             old background dialog, which nothing opened any more.
   v0.1.318 - Fixed: an uploaded map keeps the grid that was measured before it was resized or
@@ -382,7 +382,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.326</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.327</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -1998,6 +1998,7 @@ function escAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"
 //   <=15%  Critical  (red)
 //   <=0    Dead      (grey) - negative allowed
 const COND_HINT={h:{label:"Healthy",color:"#01c178"},i:{label:"Injured",color:"#fbd46e"},b:{label:"Bloodied",color:"#f08237"},c:{label:"Critical",color:"#e74c3c"},d:{label:"Dead",color:"#777"}};
+function tokKind(name){return (S.kinds&&S.kinds[name])||"c";}
 function computeCondition(hpCur,hpMax){
   const cur=parseInt(hpCur,10),max=parseInt(hpMax,10);
   if(isNaN(cur)||isNaN(max)||max<=0)return{label:"Unknown",color:"var(--fg3)"};
@@ -2028,9 +2029,9 @@ function syncCbSubmit(){
   const sub=document.getElementById("cb-submit");if(!sub)return;
   const nm=(document.getElementById("cb-name")?.value||"").trim();
   const iv=(document.getElementById("cb-init")?.value||"").trim();
-  const ok=nm.length>0&&iv.length>0;
+  const ok=nm.length>0;
   sub.disabled=!ok;sub.style.opacity=ok?"":".5";sub.style.cursor=ok?"":"not-allowed";
-  sub.title=ok?"":(!nm?"Name is required":"Initiative order is required");
+  sub.title=ok?"":"Name is required";
 }
 function refreshCombatantPreview(){
   const container=document.getElementById("cb-prev-container");
@@ -2116,7 +2117,7 @@ function renderCombatantForm(opts){
     // Placeholder preview (grey dashed) until user picks a color or types a name
     placeholder=!color;
     mon=d.mon||null;isMon=!!(mon&&(mon.srd||"").trim());
-    headerTitle="➕ New Combatant";headerColor="var(--accent)";
+    headerTitle="➕ New Token";headerColor="var(--accent)";
   }else if(mode==="token"){
     const t=opts.token,cb=opts.combatant||{};
     name=t.name;initStr=cb.initStr||cb.init||"";initBonus=(t.initBonus!=null?t.initBonus:(cb.initBonus!=null?cb.initBonus:""));size=t.size;color=t.color;tokenImage=t.tokenImage||"";
@@ -2138,6 +2139,7 @@ function renderCombatantForm(opts){
     placeholder=!color;
     headerTitle="Unplaced: "+cb.name;headerColor="var(--fg3)";
   }
+  const _kind=mode==="add"?"c":tokKind(name);
   const previewToken={name,size,color,tokenImage};
   // A not-yet-applied (isNew) combatant can still be renamed locally; once it is live in Avrae the
   // Name is read-only (renaming there needs Avrae's own rename command, which doesn't round-trip).
@@ -2165,7 +2167,7 @@ function renderCombatantForm(opts){
     </div>
     <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
       <div><span class="lbl">${mode==="add"?"Name (required)":"Name"}</span>
-        <input class="inp" id="cb-name" value="${escAttr(name)}" maxlength="50" placeholder="${mode==="add"?"e.g. Goblin Boss":""}" style="width:100%;box-sizing:border-box;font-size:14px;font-weight:600;padding:6px 8px"${(mode==="add"||isNewLocal)?(mode==="add"?"":" title=\"Rename this combatant (not yet applied to Avrae)\""):" readonly title=\"Renaming a combatant already in Avrae needs the Avrae rename command\""}>
+        <input class="inp" id="cb-name" value="${escAttr(name)}" maxlength="50" placeholder="${mode==="add"?"e.g. Wall A":""}" style="width:100%;box-sizing:border-box;font-size:14px;font-weight:600;padding:6px 8px"${(mode==="add"||isNewLocal)?(mode==="add"?"":" title=\"Rename this combatant (not yet applied to Avrae)\""):" readonly title=\"Renaming a combatant already in Avrae needs the Avrae rename command\""}>
         ${isMoved?`<div style="font-size:9px;color:var(--accent);font-family:monospace;margin-top:2px">Moved: ${fmtU(opts.token.originalCol,opts.token.originalRow)} → ${fmtU(opts.token.col,opts.token.row)}</div>`:""}
       </div>
       <div style="display:flex;gap:6px;align-items:flex-end">
@@ -2203,19 +2205,10 @@ function renderCombatantForm(opts){
     ${savedCount?`<div style="margin-top:7px"><span id="cb-img-saved" role="button" tabindex="0" style="font-size:10px;color:var(--accent);cursor:pointer;text-decoration:underline">📂 Load saved token${savedCount>1?"s":""} (${savedCount})</span></div>`:""}
   </div>`;}
   // Combatant Properties section: wraps the combat-stat rows (HP/AC, initiative, group).
-  h+=`<div style="margin:0 0 10px 0;padding:9px;border:1px solid var(--line);border-radius:6px;background:var(--bg2)"><div class="sec-title" style="margin-bottom:8px;font-size:11px">Combatant Properties</div>`;
-  // SRD stat block picker (optional; shown on every add): type-ahead over the SRD monsters. Picking one sets
-  // the mon tag, auto-fills Size, and seeds the Name. Lives inside the Combatant Properties section.
-  if(mode==="add"){
-    const picked=(mon&&mon.srd)||"";
-    const meta=picked?SRD_MONSTERS.find(m=>m[0].toLowerCase()===picked.toLowerCase()):null;
-    const metaLine=meta?`${SIZES[meta[1]]?SIZES[meta[1]].l:meta[1]} · ${escAttr(meta[2])} · CR ${escAttr(meta[3])} · Avrae loads HP/AC/attacks`:"Optional: load a monster's stat block (HP, AC, attacks via Avrae). Leave blank for a custom combatant.";
-    h+=`<div class="row" style="margin-bottom:8px"><div style="flex:1;position:relative"><span class="lbl" title="Optional. Load an SRD creature's stat block (HP, AC, attacks) via Avrae on add. Leave blank for a custom combatant.">Add SRD Monster to combat (optional)</span>
-      <input class="inp" id="cb-srd" value="${escAttr(picked)}" placeholder="Tap to search... e.g. Goblin" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" style="width:100%;box-sizing:border-box;font-size:12px;font-weight:600;padding:6px 8px">
-      <div id="cb-srd-list" role="listbox" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:2px;max-height:240px;overflow-y:auto;background:var(--bg2);border:1px solid var(--accent);border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.5);z-index:50;-webkit-overflow-scrolling:touch"></div>
-      <div style="font-size:9px;color:var(--fg3);margin-top:3px">${metaLine}</div>
-    </div></div>`;
-  }
+  h+=`<div style="margin:0 0 10px 0;padding:9px;border:1px solid var(--line);border-radius:6px;background:var(--bg2)"><div class="sec-title" style="margin-bottom:8px;font-size:11px">${_kind==="c"?"Stats":"Stats"}</div>`;
+  if(_kind!=="c"){
+    h+=`<div style="font-size:11px;color:var(--fg2);line-height:1.5">${_kind==="m"?"This is a monster":"This is a player character"}. Its HP, AC and initiative are managed in Avrae, not here.${group?`<br><span style="color:var(--fg3)">Initiative group: ${escAttr(group)}</span>`:""}</div></div>`;
+  }else{
   // ROW 3: Current/Max HP + AC, with a Hide HP/AC toggle. When Hide is checked the HP and AC inputs
   // are hidden entirely so a player using BattleScry can't inadvertently see a creature's exact
   // numbers; the DM unchecks to reveal and edit them. A condition word stands in while hidden.
@@ -2241,7 +2234,7 @@ function renderCombatantForm(opts){
   // ROW 4: Initiative order (required) + Init bonus + Group, all on one row. Init/Bonus stay narrow
   // (values are at most a few characters); Group takes the remaining width.
   h+=`<div class="row" style="gap:6px;align-items:flex-end;margin-top:12px">
-    <div style="flex:1.2;min-width:0"><span class="lbl" title="${memberOfGroup?`Set by group "${escAttr(group)}" - select the group folder to change it`:(mode==="add"?"Where this combatant sits in the initiative order (required). Roll or enter a value; it is passed to Avrae so it is not re-rolled.":"Local edit - Avrae round-trip pending")}">${mode==="add"?"Init order (required)":"Init order"}</span>
+    <div style="flex:1.2;min-width:0"><span class="lbl" title="${memberOfGroup?`Set by group "${escAttr(group)}" - select the group folder to change it`:(mode==="add"?"Where this combatant sits in the initiative order (required). Roll or enter a value; it is passed to Avrae so it is not re-rolled.":"Local edit - Avrae round-trip pending")}">${mode==="add"?"Init order":"Init order"}</span>
       <div style="display:flex;align-items:center;gap:4px">${!memberOfGroup?`<button type="button" class="d20-btn" id="cb-init-roll" title="Roll for initiative (1d20 ${ibOp})" aria-label="Roll for random initiative">${D20_SVG}</button>`:""}<div style="flex:1;min-width:0">${spinNum("cb-init",memberOfGroup?grpInitVal:initStr,{min:-50,max:200,placeholder:!memberOfGroup?`Enter or roll (${ibSigned} to init)`:undefined,readonly:memberOfGroup,istyle:memberOfGroup?"opacity:.55;cursor:not-allowed":""})}</div></div></div>
     <div style="flex:0.8;min-width:0"><span class="lbl" title="Initiative modifier added to the d20 when rolling. Monsters auto-fill this from their DEX; set it for PCs and NPCs.">Init bonus</span>
       ${spinNum("cb-initbonus",initBonus,{min:-20,max:30,placeholder:"0"})}</div>
@@ -2251,16 +2244,18 @@ function renderCombatantForm(opts){
       <input class="inp" id="cb-group" list="cb-grouplist" value="${escAttr(group)}" placeholder="none" maxlength="40" style="width:100%;box-sizing:border-box;font-size:11px;padding:6px 6px">
       <datalist id="cb-grouplist">${existingGroups.map(g=>`<option value="${escAttr(g)}"></option>`).join("")}</datalist></div>
   </div>`;
+  h+=`<div style="font-size:9px;color:var(--fg3);margin-top:6px;line-height:1.4">${mode==="add"?"All optional. Leave them blank for a plain marker.":"Only the DM or whoever controls this token can change these. Anyone else's changes are skipped when applied."}</div>`;
   h+=`</div>`;
+  }
   // ROW 5: Notes value kept hidden (field removed from the UI to save space; value still round-trips).
   h+=`<input type="hidden" id="cb-note" value="${escAttr(note)}">`;
   // Mode-specific buttons
   if(mode==="add"){
     const needSrd=isMon&&!(mon&&mon.srd&&mon.srd.trim());
     const noInit=!String(initStr).trim();
-    const disable=!name.trim()||needSrd||noInit;
-    const disTitle=needSrd?' title="Pick a stat block"':(!name.trim()?' title="Name is required"':(noInit?' title="Initiative order is required"':''));
-    h+=`<div class="row" style="gap:4px;margin-top:8px"><button class="btn btn-s" id="cb-cancel" style="flex:1;font-size:11px;padding:6px">Cancel</button><button class="btn btn-p" id="cb-submit"${disable?' disabled'+disTitle:''} style="flex:1;font-size:11px;padding:6px${disable?";opacity:.5;cursor:not-allowed":""}">${isMon?"Add Monster":"Add Combatant"}</button></div>`;
+    const disable=!name.trim();
+    const disTitle=!name.trim()?' title="Name is required"':'';
+    h+=`<div class="row" style="gap:4px;margin-top:8px"><button class="btn btn-s" id="cb-cancel" style="flex:1;font-size:11px;padding:6px">Cancel</button><button class="btn btn-p" id="cb-submit"${disable?' disabled'+disTitle:''} style="flex:1;font-size:11px;padding:6px${disable?";opacity:.5;cursor:not-allowed":""}">Add Token</button></div>`;
   }else if(mode==="token"){
     h+=`<div class="row" style="gap:4px;margin-top:8px">
       <button class="btn btn-s" id="p-revert" ${canRevert?"":"disabled"} style="flex:1;font-size:11px;padding:5px${canRevert?"":";opacity:.4;cursor:default"}" title="Reset this token to its original loaded state">Revert</button>
@@ -2423,7 +2418,7 @@ function rTokenProps(el){
   const isAdding=!!S.addingCombatant;
   // Single entry point. Starts a blank custom combatant; the optional SRD picker inside the form can tag
   // it as a monster (mon.srd set -> !i madd, HP/AC hidden). Left blank -> custom combatant via !i add.
-  h+=`<button class="btn btn-p" id="btn-add-cb" style="width:100%;font-size:11px;padding:6px;margin:12px 0 8px 0" title="${isAdding?"Cancel and collapse this New Combatant form":"Add a new combatant to initiative. Optionally load an SRD monster's stat block (HP, AC, attacks via Avrae) from inside the form, or leave it blank for a custom combatant, NPC, or object."}">${isAdding?"➖ Cancel New Combatant":"➕ Add New Combatant"}</button>`;
+  h+=`<button class="btn btn-p" id="btn-add-cb" style="width:100%;font-size:11px;padding:6px;margin:12px 0 8px 0" title="${isAdding?"Cancel and close this form":"Add a token to the map: a wall section, a beacon, an NPC, a marker. You can give it HP, AC and an initiative. Monsters and characters are added in Avrae and show up here on their own."}">${isAdding?"➖ Cancel New Token":"➕ Add Token"}</button>`;
   if(isAdding){
     // Unified form (mode "add") - same layout as selected-token props for consistency.
     h+=renderCombatantForm({mode:"add",data:S.addingCombatant});
@@ -2744,7 +2739,7 @@ function commitAddCombatant(){
   if(placed&&newTokId){S.sel={type:"token",ids:new Set([newTokId])};if(placedCoord)scrollTo(placedCoord.col,placedCoord.row);}
   else{S.sel={type:"unplaced",ids:new Set(),name};}
   renderAll();
-  setStatus(`✓ Added ${isMon?"monster":"combatant"} "${name}"${placed?" at "+loc:" (unplaced)"}`);
+  setStatus(`✓ Added token "${name}"${placed?" at "+loc:" (not on the map yet)"}`);
   return true;
 }
 function rMapTabContent(){
@@ -2850,7 +2845,7 @@ function rFowSection(){
 // User specifically asked these to be at the bottom and clearly labeled.
 function rSaveLoadSections(){
   let h=`<div class="sec" style="margin-top:16px;padding-top:12px;border-top:2px solid var(--bg3)"><div class="sec-title" title="Saved maps persist in Avrae and survive between sessions. Only names are stored in your !bscry link; the full map data is fetched only when you click Load.">🗺️ Save / Load Battlemap <span style="font-size:9px;color:var(--fg4);font-weight:normal;cursor:help">ⓘ</span></div>
-  <div style="font-size:9px;color:var(--fg3);margin-bottom:6px">Saves the static scene: <b>background + grid + walls + FOW + objects</b>. Not tokens or initiative.</div>
+  <div style="font-size:9px;color:var(--fg3);margin-bottom:6px">Saves the scene: <b>background, grid, walls, fog, objects</b>, plus any <b>tokens you added here</b> (walls, beacons, markers) with their HP and AC. Monsters and characters are not saved.</div>
   <div style="display:flex;gap:4px;margin-bottom:2px"><input class="inp" id="m-mapsavename" placeholder="Map name (e.g. goblin lair)" maxlength="50" style="flex:1;font-size:10px"><button class="btn btn-s" id="m-mapsave" style="font-size:9px;padding:2px 8px;white-space:nowrap">💾 Save Map</button></div>
   <div id="m-mapsave-preview" style="font-size:9px;color:var(--fg4);font-style:italic;margin-bottom:6px;min-height:12px"></div>
   ${(()=>{
@@ -2859,16 +2854,7 @@ function rSaveLoadSections(){
     if(!ct)return'<button class="btn btn-s" id="m-mapbrowse" disabled style="width:100%;font-size:10px;padding:6px;opacity:.45;cursor:default" title="No saved maps yet">🗂 Browse Saved Battlemaps</button>';
     return'<button class="btn btn-p" id="m-mapbrowse" style="width:100%;font-size:11px;padding:6px;font-weight:600" title="View thumbnails and load a saved map">🗂 Browse Saved Battlemaps ('+ct+')</button>';
   })()}</div>
-  <div class="sec"><div class="sec-title" title="Saved battles persist in Avrae and survive between sessions. Only names are stored in your !bscry link; the full battle data is fetched only when you click Load.">⚔️ Save / Load Battle <span style="font-size:9px;color:var(--fg4);font-weight:normal;cursor:help">ⓘ</span></div>
-  <div style="font-size:9px;color:var(--fg3);margin-bottom:6px">Saves <b>everything above PLUS tokens + initiative + per-combatant state</b>. Use to pause and resume an active fight.</div>
-  <div style="display:flex;gap:4px;margin-bottom:2px"><input class="inp" id="m-btlsavename" placeholder="Battle name (e.g. session 4 ambush)" maxlength="50" style="flex:1;font-size:10px"><button class="btn btn-s" id="m-btlsave" style="font-size:9px;padding:2px 8px;white-space:nowrap">⚔️ Save Battle</button></div>
-  <div id="m-btlsave-preview" style="font-size:9px;color:var(--fg4);font-style:italic;margin-bottom:6px;min-height:12px"></div>
-  <div id="m-savedbattles">${(()=>{
-    const all=[...S.savedBattles,...S.battleSaves.map(s=>s.name).filter(n=>!S.savedBattles.includes(n))].filter(n=>!S.battleDeletes.includes(n));
-    if(!all.length)return'<div style="font-size:10px;color:var(--fg3);font-style:italic">No saved battles</div>';
-    return all.map(n=>{const isPending=!!S.battleSaves.find(s=>s.name===n);
-      return'<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px"><span style="flex:1;color:var(--fg)">'+n+(isPending?' <span style="color:var(--accent);font-size:9px">(pending)</span>':"")+'</span><button class="btn btn-s m-btlload" data-btlname="'+n+'" style="font-size:9px;padding:1px 6px" title="Load this battle (copies command to clipboard for Discord)">Load</button><button class="btn btn-s m-btldel" data-btlname="'+n+'" style="font-size:9px;padding:1px 5px;color:var(--danger)" title="Delete saved battle">✕</button></div>';}).join("");}
-  )()}</div></div>`;
+`;
   return h;
 }
 function rAdvancedImportSection(){
@@ -3306,7 +3292,13 @@ function captureCurrentMapState(){
     return c1+c2+cl+"$"+o.type;});
   // Objects: BS exports with ";" in URL hash and "/" in map effect; mapBackgrounds expects "/" per Croebh
   const objects=objSegs.join("/");
-  return {mapbg,mapsize,mapoptions,walls,objects,view,fow};}
+  // Custom tokens travel with the map (name,coord,size,color,height,image,hp,ac,init,hide), so loading
+  // it into a combat recreates them. Monsters and characters never do: they are added in Avrae.
+  const cl=v=>String(v==null?"":v).replace(/[,^|;]/g,"");
+  const tokens=S.tokens.filter(t=>!t.hidden&&tokKind(t.name)==="c").map(t=>{const cb=S.combatants.find(c=>c.name===t.name)||{};
+    const hp=t.hpMax!=null?t.hpMax:(cb.hpMax!=null?cb.hpMax:(cb.hp!=null?cb.hp:""));
+    return [cl(t.name),tokParked(t)?"":fmtU(t.col,t.row),(t.size||"M").toLowerCase(),h2c(t.color),t.height||"",cl((t.tokenImage||"").replace(/~$/,"")),hp,t.ac!=null?t.ac:(cb.ac!=null?cb.ac:""),t.init!=null?t.init:(cb.init!=null?cb.init:""),(t.hideStats!=null?t.hideStats:cb.hideStats)?"1":""].join(",");}).join("^");
+  return {mapbg,mapsize,mapoptions,walls,objects,view,fow,tokens};}
 // Build an OTFBM URL from saved-map data. Mirrors Croebh's view.alias URL template
 // (line 485 in /mnt/project/view.alias): base/size/[view]/[walls]/[options]/[objects]/[fow]/?a=2&bg=...
 // Used to compute thumb URLs for saved maps so BS can render previews without uploads.
@@ -3619,7 +3611,7 @@ function renderCmd(){
   S.mapSaves.forEach(m=>{
     const enc=v=>(v||"").toString().replace(/ /g,"%20").replace(/[|;]/g,"");
     const encThumb=v=>encodeURIComponent(v||"").replace(/_/g,"%5F");
-    uvarOps.push("sm+"+enc(m.name)+"|"+enc(m.mapbg)+"|"+enc(m.mapsize)+"|"+enc(m.mapoptions)+"|"+enc(m.walls)+"|"+enc(m.objects)+"|"+enc(m.view)+"|"+enc(m.fow)+"|"+encThumb(m.thumb));});
+    uvarOps.push("sm+"+enc(m.name)+"|"+enc(m.mapbg)+"|"+enc(m.mapsize)+"|"+enc(m.mapoptions)+"|"+enc(m.walls)+"|"+enc(m.objects)+"|"+enc(m.view)+"|"+enc(m.fow)+"|"+encThumb(m.thumb)+(m.tokens?"|"+enc(m.tokens):""));});
   S.mapDeletes.forEach(name=>uvarOps.push("sm-"+name.replace(/ /g,"%20")));
   // Token labels for baked tokens: write metadata to bscry_tokenLabels AND ensure shortcode is in mapTokens via st+.
   // The shortcode entry goes through the normal st+ path (added below) since tokenLabelSaves entries also live in tokenSaves.
@@ -4116,7 +4108,7 @@ function setup(){
     // Toggle Add New Combatant form on Tokens tab
     if(t.id==="btn-add-cb"){
       if(S.addingCombatant){S.addingCombatant=null;renderSB();return;}
-      S.addingCombatant={name:"",initStr:"",initBonus:"",ac:"",hp:"",size:"M",color:"#e63c3c",hideStats:false,note:"",location:"",group:"",tokenImage:""};
+      S.addingCombatant={name:"",initStr:"",initBonus:"",ac:"",hp:"",size:"M",color:"#808080",hideStats:false,note:"",location:"",group:"",tokenImage:""};
       renderSB();
       const _nm=$("cb-name");if(_nm){try{_nm.focus();}catch(_){}}
       return;}
@@ -6381,6 +6373,10 @@ function loadFromHashStr(hash){
   // Parse combatant stats (cs=Name:cur:max:ac;Name2:...) imported from Avrae statblocks, so HP/AC come in
   // pre-filled and the export diff has a real baseline instead of blank. Names are %20-encoded by the alias
   // and already space-decoded here, matching how the ip/ig parsers above resolve token names.
+  // Combatant kinds (ck=Name:m;Name:p): m = monster with a stat block, p = player character. Anything
+  // not listed is a custom token (added with !i add or here), the only kind whose stats BattleScry edits.
+  S.kinds={};
+  if(params.ck){params.ck.split(";").forEach(e=>{const i=e.lastIndexOf(":");if(i>0)S.kinds[e.slice(0,i)]=e.slice(i+1).trim();});}
   if(params.cs){params.cs.split(";").forEach(entry=>{
     if(!entry.trim())return;const ci=entry.indexOf(":");if(ci<1)return;
     const name=entry.slice(0,ci);const sp=entry.slice(ci+1).split(":");
