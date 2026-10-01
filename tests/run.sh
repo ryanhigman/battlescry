@@ -10,7 +10,7 @@ python3 -m http.server 8765 --directory .. >/dev/null 2>&1 &
 SERVER=$!
 sleep 1
 fail=0
-for t in t t2 t3 ov up nm lay pc enh w; do
+for t in t t2 t3 ov up nm lay pc enh tok w; do
   out=$(node $t.js 2>&1) || { echo "FAIL $t"; echo "$out" | tail -5; fail=1; continue; }
   if echo "$out" | grep -qi "pageerror\|Error:"; then echo "FAIL $t"; echo "$out" | tail -5; fail=1; else echo "ok   $t"; fi
 done

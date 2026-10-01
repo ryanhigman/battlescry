@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.319                                      https://battlescry.com
+BattleScry v0.1.320                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,7 +19,7 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.319 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
+  v0.1.320 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
             the coordinate tooltip sits below the pointer instead of over token labels. Removed the
             old background dialog, which nothing opened any more.
   v0.1.318 - Fixed: an uploaded map keeps the grid that was measured before it was resized or
@@ -379,7 +379,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.319</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.320</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -906,29 +906,55 @@ function bscryConvertToJpeg(file,maxDim,quality,onDone,onError){
     img.src=objUrl;
   }catch(e){if(onError)onError(e.message||"Conversion failed.");}
 }
-// Token variant of the converter: smaller cap (tokens render small), flattens transparency onto WHITE
-// (OTFBM crops tokens to a circle on a solid background, so transparency is not preserved anyway), and
-// outputs PNG to keep small art crisp. Animated GIFs collapse to their first frame (all OTFBM uses).
-// onDone({blob,w,h,bytes}); onError(msg).
-function bscryConvertTokenPng(file,onDone,onError){
+// Token art. OTFBM keeps every token as a 160x160 image, centre-cropped to a square (measured; it does
+// not look for faces), and draws it in a circle. So the user frames the square here, and we send a
+// BSCRY_TOKEN_PX JPEG (2x what OTFBM keeps, flattened onto white because OTFBM drops transparency).
+// Animated GIFs use their first frame.
+const BSCRY_TOKEN_PX=320;
+function bscryRenderToken(img,view,onDone,onError){
   try{
-    const objUrl=URL.createObjectURL(file);
-    const img=new Image();
-    img.onload=()=>{
-      try{
-        const w=img.naturalWidth,h=img.naturalHeight;
-        if(!w||!h){URL.revokeObjectURL(objUrl);if(onError)onError("Could not read that image.");return;}
-        const scale=Math.min(1,1024/Math.max(w,h));
-        const ow=Math.max(1,Math.round(w*scale)),oh=Math.max(1,Math.round(h*scale));
-        const cv=document.createElement("canvas");cv.width=ow;cv.height=oh;
-        const ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,ow,oh);ctx.drawImage(img,0,0,ow,oh);
-        URL.revokeObjectURL(objUrl);
-        cv.toBlob((blob)=>{if(!blob){if(onError)onError("Could not encode that image.");return;}if(onDone)onDone({blob:blob,w:ow,h:oh,bytes:blob.size});},"image/png");
-      }catch(e){URL.revokeObjectURL(objUrl);if(onError)onError(e.message||"Conversion failed.");}
-    };
-    img.onerror=()=>{URL.revokeObjectURL(objUrl);if(onError)onError("Could not load that image file.");};
-    img.src=objUrl;
+    const out=Math.max(160,Math.min(BSCRY_TOKEN_PX,Math.round(view.side)));
+    const cv=document.createElement("canvas");cv.width=out;cv.height=out;
+    const ctx=cv.getContext("2d");ctx.imageSmoothingQuality="high";ctx.fillStyle="#fff";ctx.fillRect(0,0,out,out);
+    ctx.drawImage(img,view.cx-view.side/2,view.cy-view.side/2,view.side,view.side,0,0,out,out);
+    cv.toBlob((blob)=>{if(!blob){if(onError)onError("Could not encode that image.");return;}if(onDone)onDone({blob:blob,w:out,h:out,bytes:blob.size});},"image/jpeg",0.9);
   }catch(e){if(onError)onError(e.message||"Conversion failed.");}
+}
+// Framing window: drag to move, slider / wheel / pinch to zoom. onUse({cx,cy,side}) in source pixels.
+function bscryTokenCropModal(img,onUse,onCancel){
+  const w=img.naturalWidth,h=img.naturalHeight,V=260,minSide=Math.min(w,h);
+  const lo=Math.min(minSide,Math.max(24,minSide/8));
+  const v={cx:w/2,cy:h/2,side:minSide};let done=false;
+  const M=smartModal({title:"Frame your token",size:"sm",onClose:()=>{if(!done&&onCancel)onCancel();}});
+  M.body.innerHTML=`<div style="font-size:12px;color:var(--fg2);line-height:1.5;margin-bottom:10px">Tokens are drawn as a circle. Drag the picture to move it and use the slider to zoom.</div>
+    <div id="tkc-view" style="position:relative;width:${V}px;height:${V}px;margin:0 auto 10px;overflow:hidden;border-radius:8px;background:#fff;touch-action:none;cursor:grab;user-select:none">
+      <canvas id="tkc-cv" width="${V*2}" height="${V*2}" style="width:${V}px;height:${V}px;display:block"></canvas>
+      <div style="position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 200px rgba(0,0,0,.6);border:2px solid var(--accent);box-sizing:border-box;pointer-events:none"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <span style="font-size:11px;color:var(--fg3)">Zoom</span>
+      <input type="range" id="tkc-zoom" min="0" max="100" value="0" style="flex:1" aria-label="Zoom">
+      <span style="font-size:10px;color:var(--fg3)">On the map</span>
+      <canvas id="tkc-mini" width="96" height="96" style="width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#fff"></canvas>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn btn-s" id="tkc-cancel" style="font-size:12px;padding:6px 14px">Cancel</button><button type="button" class="btn btn-p" id="tkc-use" style="font-size:12px;padding:6px 18px">Use this token</button></div>`;
+  const q=(id)=>M.body.querySelector(id),cv=q("#tkc-cv"),mini=q("#tkc-mini"),view=q("#tkc-view"),zoom=q("#tkc-zoom");
+  const clamp=()=>{v.side=Math.max(lo,Math.min(minSide,v.side));v.cx=Math.max(v.side/2,Math.min(w-v.side/2,v.cx));v.cy=Math.max(v.side/2,Math.min(h-v.side/2,v.cy));};
+  const draw=()=>{clamp();for(const c of [cv,mini]){const x=c.getContext("2d");x.imageSmoothingQuality="high";x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(img,v.cx-v.side/2,v.cy-v.side/2,v.side,v.side,0,0,c.width,c.height);}};
+  const setZoom=(t)=>{t=Math.max(0,Math.min(100,t));zoom.value=String(t);v.side=lo>=minSide?minSide:minSide*Math.pow(lo/minSide,t/100);draw();};
+  zoom.oninput=()=>setZoom(+zoom.value);
+  view.addEventListener("wheel",(e)=>{e.preventDefault();setZoom(+zoom.value+(e.deltaY<0?6:-6));},{passive:false});
+  const pts=new Map();let pinch=0;
+  view.addEventListener("pointerdown",(e)=>{try{view.setPointerCapture(e.pointerId);}catch(_){}pts.set(e.pointerId,{x:e.clientX,y:e.clientY});view.style.cursor="grabbing";pinch=0;});
+  view.addEventListener("pointermove",(e)=>{const p=pts.get(e.pointerId);if(!p)return;
+    if(pts.size>=2){pts.set(e.pointerId,{x:e.clientX,y:e.clientY});const a=[...pts.values()];const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch&&d>0){v.side=v.side*pinch/d;clamp();if(lo<minSide)zoom.value=String(Math.round(100*Math.log(v.side/minSide)/Math.log(lo/minSide)));draw();}pinch=d;return;}
+    const k=v.side/V;v.cx-=(e.clientX-p.x)*k;v.cy-=(e.clientY-p.y)*k;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});draw();});
+  const up=(e)=>{pts.delete(e.pointerId);pinch=0;if(!pts.size)view.style.cursor="grab";};
+  view.addEventListener("pointerup",up);view.addEventListener("pointercancel",up);
+  q("#tkc-cancel").onclick=M.close;
+  q("#tkc-use").onclick=()=>{done=true;clamp();M.close();onUse({cx:v.cx,cy:v.cy,side:v.side});};
+  draw();
+  return{view:v,draw:draw,setZoom:setZoom};
 }
 // Upload a converted blob to our R2 bucket via the login-gated Worker route. Requires a session.
 function bscryHostBlob(blob,filename,onDone,onError){
@@ -974,20 +1000,21 @@ function uploadImage(file,statusEl,onSuccess,kind){
   // predicted: "key-pull / throttle risk breaks ALL users' images at once".
   // The Worker sniffs magic bytes and accepts JPEG or PNG only, so convert before sending:
   //   kind "bg"    -> 5000px JPEG  (bscryConvertToJpeg)
-  //   kind "token" -> 1024px PNG   (bscryConvertTokenPng; alpha is flattened, OTFBM discards it anyway)
+  //   kind "token" -> 320px square JPEG framed by the user (bscryTokenCropModal + bscryRenderToken)
   // Login is enforced upstream in beginImageUpload; the guard here is for any future direct caller,
   // because hosted user content must stay attributable (the Worker stamps uid/name/ts on the object).
   const isTok=kind==="token";
   const validExts=["jpg","jpeg","png","gif","webp"];const ext=file.name.split(".").pop().toLowerCase();
   if(!validExts.includes(ext)){statusEl.innerHTML='<span style="color:var(--danger)">⚠ Only jpg, png, gif or webp images are supported.</span>';return;}
   // The file is converted and shrunk in the browser before upload, so this guards memory, not hosting.
-  if(file.size>10*1024*1024){statusEl.innerHTML='<span style="color:var(--danger)">⚠ File too large (max 10MB). Most good maps are 1 to 2MB as a JPEG.</span>';return;}
+  if(file.size>10*1024*1024){statusEl.innerHTML='<span style="color:var(--danger)">⚠ File too large (max 10MB).'+(isTok?'':' Most good maps are 1 to 2MB as a JPEG.')+'</span>';return;}
   if(!BSCRY_SESSION||!BSCRY_SESSION.token){statusEl.innerHTML='<span style="color:var(--danger)">⚠ Log in with Discord to upload.</span>';return;}
   // Client-side dimension check
   const objUrl=URL.createObjectURL(file);const img=new Image();
   img.onload=()=>{
-    const w=img.naturalWidth,h=img.naturalHeight;URL.revokeObjectURL(objUrl);
-    if(w<100||h<100){statusEl.innerHTML='<span style="color:var(--danger)">⚠ Image too small ('+w+'×'+h+'). Min 100×100.</span>';return;}
+    const w=img.naturalWidth,h=img.naturalHeight;if(!isTok)URL.revokeObjectURL(objUrl);
+    const minPx=isTok?40:100;
+    if(w<minPx||h<minPx){URL.revokeObjectURL(objUrl);statusEl.innerHTML='<span style="color:var(--danger)">⚠ Image too small ('+w+'×'+h+'). Min '+minPx+'×'+minPx+'.</span>';return;}
     if(w>8000||h>8000){statusEl.innerHTML='<span style="color:var(--danger)">⚠ Image too large ('+w+'×'+h+'). Max 8000×8000.</span>';return;}
     const kb=Math.round(file.size/1024);
     statusEl.innerHTML='<span style="color:var(--accent)">⏳ Preparing '+file.name+' ('+w+'×'+h+', '+(kb>1024?(kb/1024).toFixed(1)+'MB':kb+'KB')+')...</span>';
@@ -996,11 +1023,11 @@ function uploadImage(file,statusEl,onSuccess,kind){
       statusEl.innerHTML='<span style="color:var(--accent)">⏳ Uploading '+out.w+'×'+out.h+'...</span>';
       const _done=(url,enh)=>{statusEl.innerHTML='<span style="color:var(--accent)">✓</span> Uploaded! '+out.w+'×'+out.h+(enh?' · AI enhanced':'')+'<span style="color:var(--accent)"> ✓ Hosted on BattleScry</span>';onSuccess(url,out.w,out.h);};
       const _err=(err)=>{statusEl.innerHTML='<span style="color:var(--danger)">⚠ '+err+'</span>';};
-      if(isTok)bscryHostBlob(out.blob,base+".png",(u)=>_done(u,false),_err);
+      if(isTok)bscryHostBlob(out.blob,base+".jpg",(u)=>_done(u,false),_err);
       else bscryHostMap(out,base+".jpg",_done,_err,(t)=>{statusEl.innerHTML='<span style="color:var(--accent)">⏳ '+t+'</span>';});
     };
     const onFail=(e)=>{statusEl.innerHTML='<span style="color:var(--danger)">⚠ '+(e||"Could not process that image.")+'</span>';};
-    if(isTok)bscryConvertTokenPng(file,onConverted,onFail);
+    if(isTok){statusEl.innerHTML='';bscryTokenCropModal(img,(view)=>{statusEl.innerHTML='<span style="color:var(--accent)">⏳ Preparing token...</span>';bscryRenderToken(img,view,(out)=>{URL.revokeObjectURL(objUrl);onConverted(out);},(e)=>{URL.revokeObjectURL(objUrl);onFail(e);});},()=>{URL.revokeObjectURL(objUrl);statusEl.innerHTML='';});}
     else bscryConvertToJpeg(file,5000,0.85,onConverted,onFail);
   };
   img.onerror=()=>{URL.revokeObjectURL(objUrl);statusEl.innerHTML='<span style="color:var(--danger)">⚠ Could not read image</span>';};
@@ -4284,12 +4311,21 @@ function setup(){
       const all=S.savedTokens.concat(S.tokenSaves).filter(x=>x.name&&!S.tokenDeletes.includes(x.name));
       const saved=all.find(x=>x.name.toLowerCase()===v.toLowerCase());
       if(saved){apply(saved.shortcode);return;}
-      // 2) Image URL -> tokenize via OTFBM
+      // 2) Image URL -> tokenize via OTFBM. Some sites refuse OTFBM's fetcher; when that happens and the
+      // user is logged in, fetch it ourselves, let them frame it, host it, and tokenize our copy.
       if(/^https?:\/\//i.test(v)){const info=$("cb-img-info");if(info)info.innerHTML='<span style="color:var(--accent)">⏳ Tokenizing image...</span>';
+        const viaUs=(why)=>{const i2=$("cb-img-info");
+          if(!BSCRY_SESSION||!BSCRY_SESSION.token){if(i2)i2.innerHTML='<span style="color:var(--danger)">⚠ OTFBM could not fetch that image (some sites block it). Log in with Discord and press Apply again, or save the image and use Upload Token Image.</span>';return;}
+          if(i2)i2.innerHTML='<span style="color:var(--accent)">⏳ Fetching the image...</span>';
+          fetch(PROXY_URL+encodeURIComponent(v)).then(r=>{if(!r.ok)throw new Error("fetch "+r.status);return r.blob();}).then(bl=>{
+            if(!/^image\//.test(bl.type||"")){if(i2)i2.innerHTML='<span style="color:var(--danger)">⚠ That link is not an image. Use a direct link to a jpg, png, gif or webp.</span>';return;}
+            const ext=({"image/jpeg":"jpg","image/png":"png","image/gif":"gif","image/webp":"webp"})[bl.type]||"jpg";
+            const go=()=>uploadImage(new File([bl],"token."+ext,{type:bl.type}),i2||document.createElement("div"),(u)=>bscryTokenize(u,apply,$("cb-img-info")),"token");
+            if(!promptDismissed("bscry-upload-ack-2"))showUploadAckPrompt(()=>{setPromptDismissed("bscry-upload-ack-2",true);go();});else go();
+          }).catch(()=>{if(i2)i2.innerHTML='<span style="color:var(--danger)">⚠ Could not fetch that image. Check the link, or save the image and use Upload Token Image.</span>';});};
         fetch(PROXY_URL.replace("?url=","?token=")+encodeURIComponent(v)).then(r=>r.json()).then(d=>{
-          if(d&&d.shortcode){apply(d.shortcode);}
-          else{const i2=$("cb-img-info");if(i2)i2.innerHTML='<span style="color:var(--danger)">⚠ '+((d&&d.error)||"Could not tokenize that URL")+'</span>';}
-        }).catch(()=>{const i2=$("cb-img-info");if(i2)i2.innerHTML='<span style="color:var(--danger)">⚠ Request failed - check the URL</span>';});
+          if(d&&d.shortcode){apply(d.shortcode);}else viaUs();
+        }).catch(()=>viaUs());
         return;}
       // 3) Shortcode
       if(/^[a-zA-Z0-9]{1,8}~?$/.test(v)){apply(v);return;}
@@ -4298,12 +4334,7 @@ function setup(){
     if(t.id==="cb-img-upload"){
       const tk=srdTargetToken();if(!tk){showError("Select a token first");return;}
       const info=$("cb-img-info");
-      beginImageUpload((url)=>{
-        if(info)info.innerHTML='<span style="color:var(--accent)">⏳ Tokenizing...</span>';
-        fetch(PROXY_URL.replace("?url=","?token=")+encodeURIComponent(url)).then(r=>r.json()).then(d=>{
-          if(d&&d.shortcode){pushU();tk.tokenImage=d.shortcode.replace(/~$/,"")+"~";renderAll();}
-          else{if(info)info.innerHTML='<span style="color:var(--danger)">⚠ '+((d&&d.error)||"Could not tokenize the image")+'</span>';}
-        }).catch(()=>{if(info)info.innerHTML='<span style="color:var(--danger)">⚠ Tokenize request failed</span>';});
+      beginImageUpload((url)=>{bscryTokenize(url,(code)=>{pushU();tk.tokenImage=code.replace(/~$/,"")+"~";renderAll();},info);
       },info,"token");
       return;}
     if(t.id==="cb-img-saved"){const tk=srdTargetToken();if(!tk){showError("Select a token first");return;}showLoadTokenPopup(tk);return;}
@@ -6806,7 +6837,15 @@ function setPromptDismissed(key,v){try{if(v)localStorage.setItem(key,"1");else l
 // Shared gate for hosting a user's own image (map background or token art). Discord login gives real
 // accountability for hosted files; then a one-time content acknowledgment; then the file picker and
 // upload. onUploaded(url,w,h) runs on success. statusEl receives progress/errors (uploadImage needs it).
-// kind: "bg" (default) converts to a 5000px JPEG; "token" to a 1024px PNG. See uploadImage.
+// kind: "bg" (default) converts to a 5000px JPEG; "token" opens the framing window and sends a 320px square. See uploadImage.
+// Turn a hosted image URL into an OTFBM token shortcode. onCode(shortcode); errors go to infoEl.
+function bscryTokenize(url,onCode,infoEl){
+  if(infoEl)infoEl.innerHTML='<span style="color:var(--accent)">⏳ Tokenizing...</span>';
+  fetch(PROXY_URL.replace("?url=","?token=")+encodeURIComponent(url)).then(r=>r.json()).then(d=>{
+    if(d&&d.shortcode){onCode(d.shortcode);}
+    else{if(infoEl)infoEl.innerHTML='<span style="color:var(--danger)">⚠ OTFBM could not make a token from that image. Try again in a moment.</span>';}
+  }).catch(()=>{if(infoEl)infoEl.innerHTML='<span style="color:var(--danger)">⚠ Tokenize request failed. Try again in a moment.</span>';});
+}
 function beginImageUpload(onUploaded,statusEl,kind){
   if(!BSCRY_SESSION||!BSCRY_SESSION.token){showUploadLoginPrompt();return;}
   if(!promptDismissed("bscry-upload-ack-2")){showUploadAckPrompt(()=>{setPromptDismissed("bscry-upload-ack-2",true);pickAndUploadImage(onUploaded,statusEl,kind);});return;}

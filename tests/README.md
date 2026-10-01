@@ -22,6 +22,7 @@ What each script covers:
 | `gd.js` | grid detection against synthetic maps with known grids (`gen_maps.py`) |
 | `pick.js` | Map tab layout dropdown for pasted image URLs |
 | `enh.js` | Enhance button against a simulated Worker |
+| `tok.js` | Token image upload: framing window, 320px output, limits, URL fallback |
 | `w.js`, `ux.js` | welcome dialog on phones; phone and desktop screenshots into `shots/` |
 
 `maps/` and `shots/` are generated and ignored by git.
