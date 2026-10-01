@@ -1,0 +1,1766 @@
+<drac2>
+# ============================================================
+# BattleScry alias v0.2.47
+# v0.2.47: combatants whose names contain ; or | are left out of the link (they would corrupt it)
+#          and named in the embed so the DM can rename them.
+# v0.2.46: no more false position conflicts when tokens are on the map but no map effect is
+#          attached yet. With no baseline at all, the BattleScry edit wins as documented.
+# v0.2.45: link embed wording matches the site (Copy for Discord, phones supported) and the
+#          Data String - Local Testing field is gone from the public embed.
+# v0.2.44: the link from a bootstrap (combat running, no map host yet) now lists the combatants
+#          already in initiative, so BattleScry opens with them in the unplaced list.
+# v0.2.43: (1) `!bscry help`, or any unknown subcommand, shows usage instead of falling through to
+#          the export path and bootstrapping a combat. (2) The map host is remembered by combatant
+#          id in combat metadata (bscry_host), so a host renamed BEFORE the first map is attached
+#          is still found and no second DM is added. (3) The export skips the real host, whatever
+#          it is named, not only a combatant literally called DM; overlay notes addressed to DM
+#          land on the host. (4) The three-way-merge BASE is stored per combat and per user in
+#          combat metadata (bscry_load_<user id>) instead of one uvar shared by every channel, so
+#          running !bscry in a second game no longer invalidates an open session in the first.
+#          The old uvar is still written and is the fallback. (5) Links carry ch=<channel id> so
+#          BattleScry can tell two games open in one browser apart.
+# v0.2.42: the apply embed's map preview is fixed. Avrae memoises SimpleCombatant.attacks on
+#          FIRST access per wrapper (AliasStatBlock._attacks) and add_effect() only refreshes
+#          .effects, never .attacks. find_map_host() scanned .attacks on every combatant in
+#          c.combatants BEFORE the map effect was written, freezing a pre-write snapshot on the
+#          exact wrapper objects Croebh's maplib later reads (its load_data() scans
+#          combat().combatants[].attacks). Result: get_link() returned None and the embed had no
+#          -image on a fresh combat, and would have shown the PRE-apply map on an existing one.
+#          Host lookup now uses get_effect("map", True), which reads through to the combatant
+#          and memoises nothing, and every read of the map text goes through map_text_of(), which
+#          uses a throwaway wrapper. No wrapper in c.combatants has .attacks touched before the
+#          write, so maplib memoises post-write state and renders the current map.
+# v0.2.41: apply now honours a standalone flag from BattleScry (section 9, `sa`). A BS session
+#          opened directly at battlescry.com never sees Avrae's map, so it has no meaningful
+#          BASE and its map fields are a DECLARATION, not a diff. Previously those were
+#          three-way merged against the `bscry_load` uvar left over from an earlier session,
+#          which conflicted on all four map scalars and silently discarded the map the user
+#          had just picked. With the flag set, BASE is cleared and Size/Background/Options/View
+#          are taken as given. Flag absent (older BS) -> unchanged three-way merge.
+# v0.2.40: the host combatant that holds the map effect is now found by looking for the
+#          combatant carrying a `map` attack, falling back to the DM/Map/Lair name match.
+#          Renaming the host in Avrae after attach no longer orphans the map state (the
+#          old name-only lookup would miss it and bootstrap a fresh DM). One shared
+#          find_map_host() helper replaces the three identical name loops.
+# v0.2.39: the `cs` export param gains a 4th field, the hidden flag (cs=name:cur:max:ac:h), set from
+#          cmb.is_hidden, so BattleScry preserves a combatant's hidden-stats state on import.
+# v0.2.38: export now includes each combatant's current HP, max HP, and AC in a new `cs` link
+#          param (cs=name:cur:max:ac;...), so BattleScry imports those stats instead of blanks.
+#          Read from cmb.hp / cmb.max_hp / cmb.ac; any that are None are emitted empty.
+# v0.2.37: edits to existing combatants now round-trip. New apply section 8 (ed): each entry
+#          name|ac|hpCur|hpMax|init|group carries only the fields BS saw change, replayed as one
+#          `!i opt "name" -ac N -hp cur -max maxhp -p init -group G` (changed flags only). Counted
+#          in the applied-summary as "N updated combatant(s)". Section absent (older BS) -> skipped.
+# v0.2.36: new combatants now carry their init bonus (apply section 6, field 9); the
+#          followup `!i add` uses it as the modifier ("!i add <bonus> name") instead of
+#          a hardcoded 0. Field absent (older BS export) -> defaults to 0, unchanged.
+# v0.2.35: applied-summary now counts SRD monster-adds ("N monster(s)") so the embed no
+#          longer says "No changes" when only monsters were added. Counts emitted `!i madd`
+#          followups (post-dedupe), parallel to the existing new-combatant count.
+# v0.2.34: SRD monster-adds. New apply section 6 (md): one `!i madd <name> (<source>)`
+#          per SRD-tagged token, source tag emitted UNQUOTED so Avrae reads it as a
+#          source filter (quoting it triggers the disambiguation prompt). Placement note
+#          folds in from the matching move entry by name; dedupe + nc_names skip mirror
+#          the new-combatant path. Source travels as an alnum code mapped to the literal
+#          tag in SRC (free SRD set = "brlegacy" -> "(BR; legacy)").
+# v0.2.33: export embed copy - "Click to edit current map in BattleScry" link is now an H1
+#          header (bigger), and the How to Use steps renumbered to #1:..#4: with step 1
+#          noting the link opens in a new window (desktop only).
+# v0.2.32: new combatants added via apply are now created already-placed - their
+#          Location/Size/Color (from the move section) are folded into the `!i add -note`,
+#          and they are skipped in the move pass. Fixes "shows in init but not on the map".
+# v0.2.31: replaced 5 `del X[key]` statements with X.pop(key) - Avrae Draconic forbids the
+#          `del` statement (it raised FeatureNotAvailable on overlay/saved-item removal).
+# Round-trip data layer between BS (battlescry.com) and Avrae/OTFBM.
+# Storage uvars: mapTokens, mapBackgrounds, mapBattles, bscry_tokenLabels (all JSON).
+# Modes: (none)=export, apply=write changes, loadmap=replay saved map, loadbattle=replay saved battle.
+# ============================================================
+c = combat()
+args = &ARGS&
+
+# Defensive: strip accidentally-pasted `!bscry <mode>` prefix from args.
+# Common typo: user types `!bscry apply ` then pastes BS's full export (which also starts
+# with `!bscry apply`), yielding args=["apply", "!bscry", "apply", "<data>"]. We detect
+# the doubled `mode + bscry + mode` pattern at the start and squash it back to `mode + <data>`.
+_modes = ["apply", "loadmap", "loadbattle"]
+while len(args) >= 3 and str(args[0]) in _modes and str(args[1]).lower() in ["!bscry", "bscry"] and str(args[2]) == str(args[0]):
+    args = [args[0]] + args[3:]
+
+# ============================================================
+# Helpers
+# ============================================================
+def get_field(txt, name):
+    label = name + ": "
+    i = txt.find(label)
+    if i < 0:
+        return ""
+    start = i + len(label)
+    j_tilde = txt.find(" ~", start)
+    j_quote = txt.find("'", start)
+    candidates = []
+    if j_tilde > start:
+        candidates.append(j_tilde)
+    if j_quote > start:
+        candidates.append(j_quote)
+    if not candidates:
+        return txt[start:].strip()
+    return txt[start:min(candidates)].strip()
+
+def parse_note(note_str):
+    flds = {}
+    order = []
+    if not note_str:
+        return flds, order
+    for fld in note_str.lstrip("# ").split(" | "):
+        fld = fld.strip()
+        ci = fld.find(": ")
+        if ci > -1:
+            k = fld[:ci].strip()
+            v = fld[ci+2:].strip()
+            if k not in flds:
+                order.append(k)
+            flds[k] = v
+    return flds, order
+
+def build_note(flds, order):
+    p = []
+    for k in order:
+        if k in flds and flds[k] != "":
+            p.append(k + ": " + flds[k])
+    return " | ".join(p)
+
+def parse_hash_kv(hstr):
+    d = {}
+    if not hstr:
+        return d
+    for pair in hstr.split("&"):
+        if "=" in pair:
+            ei = pair.find("=")
+            d[pair[:ei]] = pair[ei+1:]
+    return d
+
+def parse_set(s, sep):
+    out = set()
+    if s:
+        for x in s.split(sep):
+            x = x.strip()
+            if x:
+                out.add(x)
+    return out
+
+def merge_set(local, base, remote):
+    # Three-way merge for sets: start from REMOTE, apply DM diffs.
+    # No conflicts reported - set additions are inherently mergeable.
+    result = set(remote)
+    for x in local:
+        if x not in base:
+            result.add(x)
+    for x in base:
+        if x not in local:
+            result.discard(x)
+    return result
+
+def merge_scalar(local, base, remote, name, desc_tmpl, conflicts):
+    # Three-way merge for scalars. Returns merged value. Logs conflict if both changed.
+    if not local:
+        return remote
+    if local == base:
+        return remote
+    if remote == base:
+        return local
+    if local == remote:
+        return local
+    # Conflict - server wins
+    conflicts.append((name, desc_tmpl))
+    return remote
+
+# Size and color display name maps (for note field formatting)
+SZ_NAMES = {"t":"T (Tiny)","s":"S (Small)","m":"M (Medium)","l":"L (Large)","h":"H (Huge)","g":"G (Gargantuan)"}
+CL_NAMES = {"r":"r (red)","b":"b (blue)","g":"g (green)","y":"y (yellow)","pk":"pk (pink)","p":"p (purple)","c":"c (cyan)","bn":"bn (brown)","o":"o (orange)","w":"w (white)","bk":"bk (black)"}
+# Monster-add source codes -> literal Avrae source tags (emitted UNQUOTED after the name).
+# Free SRD set is uniformly "(BR; legacy)". The literal tag lives here, not in the data,
+# so a future label change is a one-line fix and the semicolon never hits a delimiter.
+SRC = {"brlegacy": "(BR; legacy)", "mm2024": "(MM-2024)", "mmlegacy": "(MM; legacy)"}
+
+def place_note_from_mvp(mvp):
+    # Build the OTFBM placement note (Location/Size/Color/Height/Token) from a move entry
+    # list (name|coord|size|color|height|token). Mirrors the new-combatant placement fold
+    # so a monster-add lands already-positioned via its `!i madd -note`.
+    if not mvp:
+        return ""
+    flds = {}
+    order = []
+    _coord = mvp[1].strip() if len(mvp) > 1 else ""
+    _size = (mvp[2].strip() if len(mvp) > 2 else "").lower()
+    _color = (mvp[3].strip() if len(mvp) > 3 else "").lower()
+    _height = mvp[4].strip() if len(mvp) > 4 else ""
+    _token = mvp[5].strip() if len(mvp) > 5 else ""
+    if _coord:
+        flds["Location"] = _coord
+        order.append("Location")
+    if _size:
+        flds["Size"] = SZ_NAMES.get(_size, _size.upper())
+        order.append("Size")
+    if _color:
+        flds["Color"] = CL_NAMES.get(_color, _color)
+        order.append("Color")
+    if _height and _height != "0":
+        flds["Height"] = _height + " ft."
+        order.append("Height")
+    if _token:
+        flds["Token"] = _token
+        order.append("Token")
+    return build_note(flds, order)
+
+# ============================================================
+# Argument parsing
+# ============================================================
+mode = args[0] if len(args) > 0 else ""
+is_apply = mode == "apply"
+is_loadmap = mode == "loadmap"
+is_loadbattle = mode == "loadbattle"
+loadmap_name = ""
+if is_loadmap and len(args) > 1:
+    # Join remaining args to support unquoted multi-word names: `!bscry loadmap dungeon level 1`
+    loadmap_name = " ".join(args[1:]).strip()
+loadbattle_name = ""
+if is_loadbattle and len(args) > 1:
+    loadbattle_name = " ".join(args[1:]).strip()
+secret = False
+data_idx = 1
+
+if is_apply:
+    if len(args) > 1 and args[1] == "-h":
+        secret = True
+        data_idx = 2
+
+# Apply-mode results
+apply_status_parts = []
+conflicts = []
+apply_ok = is_apply
+loadmap_status = ""
+loadbattle_status = ""
+
+# ============================================================
+# AUTO-BOOTSTRAP - if no combat, or combat exists but no host combatant, emit a multiline block
+# that initializes the missing pieces then re-invokes the original command. Avrae processes each
+# line of the returned string as a separate command (multiline adds 1s delays between them).
+# ============================================================
+def _rerun_cmd():
+    # Reconstruct the original invocation string for the post-bootstrap follow-up embed.
+    if is_apply:
+        s = "!bscry apply"
+        if secret:
+            s += " -h"
+        if len(args) > data_idx:
+            s += " " + args[data_idx]
+        return s
+    if is_loadmap:
+        return "!bscry loadmap " + loadmap_name
+    if is_loadbattle:
+        return "!bscry loadbattle " + loadbattle_name
+    return "!bscry"
+
+def _bootstrap_simple_embed():
+    # Seamless path for bare `!bscry` (no apply/loadmap/loadbattle args) with no combat.
+    # Build a BS link with saved tokens/maps/battles in the hash so the sidebar populates.
+    # No combat state yet (DM is being added by multiline above us) so no map state encoded.
+    hash_parts = []
+    try:
+        _mt = load_json(get_uvar("mapTokens") or "{}")
+        if _mt:
+            _ents = [str(k).replace(" ", "%20") + ":" + str(v) for k, v in _mt.items()]
+            hash_parts.append("st=" + ";".join(_ents))
+    except:
+        pass
+    try:
+        _mb = load_json(get_uvar("mapBackgrounds") or "{}")
+        if _mb:
+            _names = [str(k).replace(" ", "%20") for k in _mb.keys()]
+            hash_parts.append("sm=" + ";".join(_names))
+    except:
+        pass
+    try:
+        _mbat = load_json(get_uvar("mapBattles") or "{}")
+        if _mbat:
+            _names = [str(k).replace(" ", "%20") for k in _mbat.keys()]
+            hash_parts.append("sb=" + ";".join(_names))
+    except:
+        pass
+    # v0.2.44: combat already has combatants but no host yet - list them so the editor is not empty.
+    try:
+        if c is not None:
+            _np = []
+            _ip = []
+            for _cb in c.combatants:
+                _n = str(_cb.name)
+                if _n and _n != "DM" and ";" not in _n and "|" not in _n:
+                    _e = _n.replace(" ", "%20")
+                    _np.append(_e)
+                    _ip.append(_e + ":" + str(_cb.init))
+            if _np:
+                hash_parts.append("np=" + ";".join(_np))
+                hash_parts.append("ip=" + ";".join(_ip))
+    except:
+        pass
+    try:
+        hash_parts.append("ch=" + str(ctx.channel.id))
+    except:
+        pass
+    _bs_url = "https://www.battlescry.com/"
+    if hash_parts:
+        _bs_url += "#" + "&".join(hash_parts)
+    return ('embed -title "\u2728 BattleScry - Combat Ready" '
+            '-desc "Combat bootstrapped with a DM combatant. [Click here to open BattleScry](' + _bs_url + ')" '
+            '-color 0xf59e0b -footer "BattleScry v0.2.47"')
+
+def _bootstrap_followup_with_cmd():
+    # Two-paste path for apply/loadmap/loadbattle with no combat.
+    # User's clipboard still has the original command they just pasted - tell them to paste it again.
+    # No need to embed the command itself; they can recover it from clipboard or scrollback.
+    return ('embed -title "\u2705 BattleScry - Combat Ready" '
+            '-desc "Combat bootstrapped with a DM combatant. Paste your command again to continue." -color 0x22c55e')
+
+def _bootstrap_block(prefix_lines, simple):
+    # prefix_lines: list of bootstrap commands ('!i begin', '!i add 0 DM -p 50') or just ['!i add 0 DM -p 50']
+    # simple: True for bare !bscry (seamless), False for apply/loadmap/loadbattle (two-paste)
+    body = _bootstrap_simple_embed() if simple else _bootstrap_followup_with_cmd()
+    return "multiline\n" + "\n".join(prefix_lines) + "\n!" + body
+
+# Per-user, per-combat key for the merge BASE (see v0.2.43 note).
+_base_key = "bscry_load"
+try:
+    _base_key = "bscry_load_" + str(ctx.author.id)
+except:
+    pass
+
+# Anything other than a bare `!bscry` or a known mode is a help request or a typo. Answer it here,
+# before the bootstrap below, so `!bscry help` never starts a combat as a side effect.
+if mode and not (is_apply or is_loadmap or is_loadbattle):
+    return ('embed -title "BattleScry - Help" '
+            '-desc "`!bscry` - get a link to edit this channel\'s battle map in your browser.\n'
+            '`!bscry apply <data>` - paste the command BattleScry copies for you to apply your changes.\n'
+            '`!bscry loadmap <name>` - load one of your saved maps.\n'
+            '`!bscry loadbattle <name>` - restore a saved battle.\n\n'
+            'Run `!bscry` with nothing after it to start. If no combat is running it starts one and adds a DM combatant to hold the map." '
+            '-color 0xf59e0b -footer "BattleScry v0.2.47"')
+
+if c is None:
+    # No active combat - bootstrap combat + DM combatant in one multiline.
+    # First line has no `!` prefix - Avrae auto-prepends it when substituting alias output
+    # into the user's message position (matches how text aliases like `!riftbegin` work).
+    return _bootstrap_block(["!i begin", "!i add 0 DM -p 50"], not (is_apply or is_loadmap or is_loadbattle))
+
+# Resolve the host combatant that carries the map state. The durable signal is the `map`
+# EFFECT on the combatant, not its name: a user can rename the host in Avrae after the map is
+# attached, and the effect stays put. Fall back to the DM/Map/Lair name convention for the
+# first-ever attach (before any map effect exists) and for bootstrap. Strict name match so
+# "Lair Actions" never picks up "Lair".
+#
+# Detect via get_effect(), NOT by scanning .attacks. Avrae memoises SimpleCombatant.attacks on
+# first access per wrapper and add_effect() never clears it, so scanning .attacks here would
+# freeze a pre-write snapshot on the long-lived c.combatants wrappers. Croebh's maplib reads
+# those same wrappers (load_data() scans combat().combatants[].attacks), so it would then render
+# a missing or stale preview. get_effect() reads through to the combatant and memoises nothing.
+def find_map_host():
+    for _cb in c.combatants:
+        try:
+            if _cb.get_effect("map", True):
+                return _cb
+        except:
+            pass
+    # No map attached yet. If an earlier run recorded which combatant is the host, use it, so a host
+    # renamed before the first map is attached is still found instead of a second DM being added.
+    try:
+        _hid = c.get_metadata("bscry_host")
+        if _hid:
+            for _cb in c.combatants:
+                if str(_cb.id) == str(_hid):
+                    return _cb
+    except:
+        pass
+    for _nm in ["DM", "Map", "Lair"]:
+        _h = c.get_combatant(_nm, True)
+        if _h:
+            return _h
+    return None
+
+# Read the `map` effect text WITHOUT memoising .attacks on a c.combatants wrapper.
+# SimpleCombat.get_combatant() constructs a brand new SimpleCombatant on every call, and the
+# .attacks memo is per wrapper, so a throwaway wrapper absorbs the snapshot and the long-lived
+# one stays clean for maplib to populate after the write. Falls back to the passed host if the
+# name lookup misses (renamed mid-run, or a name Avrae cannot match).
+def map_text_of(host):
+    if host is None:
+        return ""
+    _p = c.get_combatant(host.name, True) or host
+    try:
+        for _atk in _p.attacks:
+            if _atk.name == "map":
+                try:
+                    return _atk.raw.automation[-1].text or ""
+                except:
+                    return ""
+    except:
+        pass
+    return ""
+
+# Pre-check for a host combatant (see find_map_host above).
+_host_check = find_map_host()
+if _host_check is None:
+    # Combat is active but no DM/Map/Lair - just add a DM combatant.
+    return _bootstrap_block(["!i add 0 DM -p 50"], not (is_apply or is_loadmap or is_loadbattle))
+# Remember the host by id so a later rename cannot orphan it (read back in find_map_host).
+try:
+    c.set_metadata("bscry_host", str(_host_check.id))
+except:
+    pass
+
+# ============================================================
+# APPLY PATH - three-way merge + writes
+# ============================================================
+if is_apply:
+    raw = args[data_idx] if len(args) > data_idx else ""
+    raw = raw.replace("%7C", "|").replace("%7B", "{").replace("%7D", "}").replace("%20", " ")
+    sections = raw.split("::")
+    mv_str = sections[0] if len(sections) > 0 else ""
+    nt_str = sections[1] if len(sections) > 1 else ""
+    ef_str = sections[2] if len(sections) > 2 else ""
+    uv_str = sections[3] if len(sections) > 3 else ""
+    # Section 5: free-floating overlay shortcodes (no -t target) - rendered inline in the response
+    # embed's -image URL only. Not persisted to combat state. ";"-separated OTFBM shortcodes like
+    # "c20rG12;t30bA5E5". The alias appends them as "*<sc>" path segments to map_img.
+    ff_str = sections[4] if len(sections) > 4 else ""
+    # Section 6: new combatants added via BS's Add Combatant form. Format:
+    # name|init|ac|hp|hide|note|color|size;next;... Empty fields are valid (no value set).
+    # Alias runs `!i add 0 name -p init -ac N -hp N -note "..."` for each, plus `-h` toggle if hidden.
+    # New combatants must be processed BEFORE token moves so subsequent ops can reference them.
+    nc_str = sections[5] if len(sections) > 5 else ""
+    # Section 7: SRD monster-adds. Format per entry (`;`-separated, `|`-fielded):
+    #   combatantName|srdName|sourceCode|init|group|hp|ac   (only combatantName + srdName required)
+    # Emits one `!i madd <srdName> <tag> -name "..." [...] -note "..."` per entry. Placement is
+    # folded in from the matching mv_str entry by name, identical to the nc path.
+    md_str = sections[6] if len(sections) > 6 else ""
+    # Section 8: edits to combatants already in Avrae (ed). Parsed below, just after the md adds.
+    ed_str = sections[7] if len(sections) > 7 else ""
+    # Section 9: standalone flag (sa). "1" means the BattleScry session was opened directly at
+    # battlescry.com rather than through a !bscry link, so it never observed Avrae's map and holds
+    # no meaningful BASE - its map fields are a DECLARATION of the map it wants, not a diff.
+    # Absent or "" from BS builds older than v0.1.304 -> normal three-way merge, unchanged.
+    sa_str = sections[8] if len(sections) > 8 else ""
+    _standalone = sa_str.strip() == "1"
+
+    # Index the move entries by name so a brand-new combatant can be created already-placed:
+    # its Location/Size/Color (from mv_str) are baked into the `!i add -note` below. Without this,
+    # the move pass would run before the followup `!i add` exists and the token would never get a
+    # Location note - so it shows in initiative but not on the map.
+    mv_by_name = {}
+    if mv_str:
+        for _e in mv_str.split(";"):
+            _e = _e.strip()
+            if not _e or "|" not in _e:
+                continue
+            _p = _e.split("|")
+            if _p[0]:
+                mv_by_name[_p[0]] = _p
+    nc_names = set()
+
+    # Parse new combatant entries into `!i add` followup commands. Emitted via multiline output
+    # at the end of the apply so they run before the response embed. Format per entry:
+    # name|init|ac|hp|hide|note|color|size (only `name` required; empty fields skip the flag).
+    # Placement (coord/size/color) comes from the matching mv_str entry and is folded into -note.
+    nc_followup_cmds = []
+    if nc_str:
+        for entry in nc_str.split(";"):
+            entry = entry.strip()
+            if not entry or "|" not in entry:
+                continue
+            fields = entry.split("|")
+            nm = fields[0].strip()
+            if not nm:
+                continue
+            # Skip if combatant already exists - avoids duplicate-add errors on re-paste of apply
+            if c.get_combatant(nm, True):
+                continue
+            nc_names.add(nm)
+            init_v = fields[1].strip() if len(fields) > 1 else ""
+            ac_v = fields[2].strip() if len(fields) > 2 else ""
+            hp_v = fields[3].strip() if len(fields) > 3 else ""
+            hide_v = fields[4].strip() if len(fields) > 4 else ""
+            note_v = fields[5].strip() if len(fields) > 5 else ""
+            ib_v = fields[8].strip() if len(fields) > 8 else ""
+            # Build the placement note (Location/Size/Color/Height/Token) from this combatant's
+            # mv_str entry, so the new combatant is created already on the map at the right cell.
+            place_flds = {}
+            place_order = []
+            mvp = mv_by_name.get(nm)
+            if mvp:
+                _coord = mvp[1].strip() if len(mvp) > 1 else ""
+                _size = (mvp[2].strip() if len(mvp) > 2 else "").lower()
+                _color = (mvp[3].strip() if len(mvp) > 3 else "").lower()
+                _height = mvp[4].strip() if len(mvp) > 4 else ""
+                _token = mvp[5].strip() if len(mvp) > 5 else ""
+                if _coord:
+                    place_flds["Location"] = _coord
+                    place_order.append("Location")
+                if _size:
+                    place_flds["Size"] = SZ_NAMES.get(_size, _size.upper())
+                    place_order.append("Size")
+                if _color:
+                    place_flds["Color"] = CL_NAMES.get(_color, _color)
+                    place_order.append("Color")
+                if _height and _height != "0":
+                    place_flds["Height"] = _height + " ft."
+                    place_order.append("Height")
+                if _token:
+                    place_flds["Token"] = _token
+                    place_order.append("Token")
+            place_note = build_note(place_flds, place_order)
+            # Combine placement fields with any free-text note from the Add Combatant form.
+            final_note = place_note
+            if note_v:
+                final_note = (place_note + " | " + note_v) if place_note else note_v
+            # Build !i add command - quoting name only if it has spaces (Avrae quirk)
+            nm_arg = '"' + nm + '"' if " " in nm else nm
+            cmd = "!i add " + (ib_v if ib_v else "0") + " " + nm_arg
+            if init_v:
+                cmd += " -p " + init_v
+            if ac_v:
+                cmd += " -ac " + ac_v
+            if hp_v:
+                cmd += " -hp " + hp_v + " -max " + hp_v
+            if final_note:
+                # Escape any embedded quotes in the note
+                cmd += ' -note "' + final_note.replace('"', "'") + '"'
+            nc_followup_cmds.append(cmd)
+            # Hidden toggle is a separate command
+            if hide_v == "1":
+                nc_followup_cmds.append("!i opt " + nm_arg + " -h")
+
+    # --- SRD monster-adds (md_str): one `!i madd` per SRD-tagged token. ----------------
+    # srdName + source tag are emitted UNQUOTED (Avrae reads the parenthetical as a source
+    # filter only when bare; quoting it triggers the disambiguation prompt). The -name and
+    # -note values are quoted. Placement note is folded in from the matching mv_str entry.
+    # Dedupe by existing combatant (madd does not self-dedupe) and add to nc_names so the
+    # move pass skips them this run (they are created already-placed via the madd -note).
+    if md_str:
+        for m_entry in md_str.split(";"):
+            m_entry = m_entry.strip()
+            if not m_entry or "|" not in m_entry:
+                continue
+            mf = m_entry.split("|")
+            m_cn = mf[0].strip()
+            m_srd = mf[1].strip() if len(mf) > 1 else ""
+            if not m_cn or not m_srd:
+                continue
+            if c.get_combatant(m_cn, True):
+                continue
+            nc_names.add(m_cn)
+            m_src = mf[2].strip() if len(mf) > 2 else ""
+            m_init = mf[3].strip() if len(mf) > 3 else ""
+            m_group = mf[4].strip() if len(mf) > 4 else ""
+            m_hp = mf[5].strip() if len(mf) > 5 else ""
+            m_ac = mf[6].strip() if len(mf) > 6 else ""
+            m_tag = SRC.get(m_src, "(BR; legacy)")
+            m_note = place_note_from_mvp(mv_by_name.get(m_cn))
+            mcmd = "!i madd " + m_srd + " " + m_tag + ' -name "' + m_cn + '"'
+            if m_init:
+                mcmd += " -p " + m_init
+            if m_group:
+                mcmd += " -group " + m_group
+            if m_hp:
+                mcmd += " -hp " + m_hp
+            if m_ac:
+                mcmd += " -ac " + m_ac
+            if m_note:
+                mcmd += ' -note "' + m_note.replace('"', "'") + '"'
+            nc_followup_cmds.append(mcmd)
+
+    # --- Section 8: replay edits to existing combatants via `!i opt` ----------------------
+    # BS sends name|ac|hpCur|hpMax|init|group with only the changed fields populated (empty = no
+    # change). Emit one `!i opt "name"` per entry carrying just the changed flags. These ride the
+    # same followup list as the new-combatant adds and run after them; they target combatants that
+    # already exist in Avrae's initiative. %20 in name/group decodes back to a space.
+    ed_updated = 0
+    if ed_str:
+        for entry in ed_str.split(";"):
+            entry = entry.strip()
+            if not entry or "|" not in entry:
+                continue
+            ef = entry.split("|")
+            e_name = ef[0].replace("%20", " ").strip()
+            if not e_name:
+                continue
+            e_ac = ef[1].strip() if len(ef) > 1 else ""
+            e_hpcur = ef[2].strip() if len(ef) > 2 else ""
+            e_hpmax = ef[3].strip() if len(ef) > 3 else ""
+            e_init = ef[4].strip() if len(ef) > 4 else ""
+            e_group = ef[5].replace("%20", " ").strip() if len(ef) > 5 else ""
+            e_arg = '"' + e_name + '"' if " " in e_name else e_name
+            opt = "!i opt " + e_arg
+            changed = False
+            if e_ac:
+                opt += " -ac " + e_ac
+                changed = True
+            if e_hpcur:
+                opt += " -hp " + e_hpcur
+                changed = True
+            if e_hpmax:
+                opt += " -max " + e_hpmax
+                changed = True
+            if e_init:
+                opt += " -p " + e_init
+                changed = True
+            if e_group:
+                opt += ' -group "' + e_group + '"'
+                changed = True
+            if changed:
+                nc_followup_cmds.append(opt)
+                ed_updated += 1
+
+    # --- Read BASE from uvar (set during last !bscry) ---
+    base_hash_str = ""
+    try:
+        base_hash_str = c.get_metadata(_base_key) or ""
+    except:
+        base_hash_str = ""
+    _base_from_meta = True if base_hash_str else False
+    if not base_hash_str:
+        base_hash_str = get_uvar("bscry_load") or ""
+    if base_hash_str:
+        base_hash_str = base_hash_str.replace("%7C", "|").replace("%7B", "{").replace("%7D", "}").replace("%20", " ")
+    base = parse_hash_kv(base_hash_str)
+
+    # Parse BASE tokens - name -> {coord, size, color, height, token}
+    base_toks = {}
+    if base.get("t"):
+        for entry in base["t"].split(";"):
+            if not entry:
+                continue
+            parts = entry.split("|")
+            if len(parts) >= 2:
+                nm = parts[0].strip()
+                if nm:
+                    base_toks[nm] = {
+                        "coord": parts[1].strip() if len(parts) > 1 else "",
+                        "size": parts[2].strip() if len(parts) > 2 else "",
+                        "color": parts[3].strip() if len(parts) > 3 else "",
+                        "height": parts[4].strip() if len(parts) > 4 else "",
+                        "token": parts[5].strip() if len(parts) > 5 else ""
+                    }
+
+    base_walls = parse_set(base.get("w", ""), ",")
+    base_fow = parse_set(base.get("fw", ""), ",")
+    base_objs = parse_set(base.get("ob", ""), ";")
+    base_grid = base.get("g", "")
+    base_bg = base.get("bg", "")
+    base_opts = base.get("o", "")
+    base_view = base.get("vw", "")
+
+    # --- Read REMOTE map effect (current Discord/Avrae state) ---
+    map_host = find_map_host()
+
+    remote_walls = set()
+    remote_fow = set()
+    remote_objs = set()
+    remote_grid = ""
+    remote_bg = ""
+    remote_opts = ""
+    remote_view = ""
+
+    if map_host:
+        cur_text = map_text_of(map_host)
+        if cur_text:
+            remote_walls = parse_set(get_field(cur_text, "Walls"), ", ")
+            remote_fow = parse_set(get_field(cur_text, "FOW"), ", ")
+            remote_objs = parse_set(get_field(cur_text, "Objects"), "/")
+            remote_grid = get_field(cur_text, "Size")
+            remote_bg = get_field(cur_text, "Background")
+            remote_opts = get_field(cur_text, "Options")
+            remote_view = get_field(cur_text, "View")
+
+    # Detect fresh combat: if the host has no map effect at all, bscry_load is stale (from a
+    # previous session/combat). Clear BASE so the three-way merge degenerates to "no conflicts,
+    # local wins" - which is correct semantics for an apply into a freshly-bootstrapped combat.
+    _fresh_combat = not (remote_grid or remote_bg or remote_opts or remote_view or remote_walls or remote_fow or remote_objs)
+    # A standalone session (section 9) has no BASE for the same reason a fresh combat does not:
+    # nothing BattleScry holds describes Avrae's current map, so bscry_load is not its baseline.
+    # Clearing BASE also makes merge_set additive (remote | local), so a standalone export adds its
+    # walls/FOW/objects without deleting anything already on the map.
+    # v0.2.46: BASE now lives in this combat's metadata, so it is only stale when it came from the
+    # old uvar fallback. A combat with tokens placed but no map effect yet keeps its BASE.
+    _no_base = (_fresh_combat and not _base_from_meta) or _standalone
+    if _no_base:
+        base_toks = {}
+        base_walls = set()
+        base_fow = set()
+        base_objs = set()
+        base_grid = ""
+        base_bg = ""
+        base_opts = ""
+        base_view = ""
+
+    # --- Parse LOCAL (BattleScry's intended state) from ef_str ---
+    local_walls = parse_set(get_field(ef_str, "Walls"), ", ")
+    local_fow = parse_set(get_field(ef_str, "FOW"), ", ")
+    local_objs = parse_set(get_field(ef_str, "Objects"), "/")
+    local_grid = get_field(ef_str, "Size")
+    local_bg = get_field(ef_str, "Background")
+    local_opts = get_field(ef_str, "Options")
+    local_view = get_field(ef_str, "View")
+
+    # If BS sent empty ef_str, it's signaling "no changes to the map effect" (not "delete all").
+    # Mirror remote into local so the merge becomes a no-op (no writes, no false-conflicts, nothing removed).
+    if not ef_str.strip():
+        local_walls = set(remote_walls)
+        local_fow = set(remote_fow)
+        local_objs = set(remote_objs)
+        local_grid = remote_grid
+        local_bg = remote_bg
+        local_opts = remote_opts
+        local_view = remote_view
+
+    # --- Merge map sets (walls, FOW, objects) ---
+    merged_walls = merge_set(local_walls, base_walls, remote_walls)
+    merged_fow = merge_set(local_fow, base_fow, remote_fow)
+    merged_objs = merge_set(local_objs, base_objs, remote_objs)
+
+    # Set-change detection for status (DM additions/removals that survived merge)
+    dm_walls_added = local_walls - base_walls
+    dm_walls_removed = base_walls - local_walls
+    srv_walls_added = remote_walls - base_walls
+    dm_fow_added = local_fow - base_fow
+    dm_fow_removed = base_fow - local_fow
+    dm_objs_added = local_objs - base_objs
+    dm_objs_removed = base_objs - local_objs
+
+    # --- Merge map scalars (size, bg, opts, view) ---
+    if _standalone:
+        # No BASE to merge against, so BattleScry's map fields are taken as given. Anything BS left
+        # empty falls back to the current map rather than blanking it. No conflicts are logged,
+        # because there is no baseline that could meaningfully disagree - the three-way merge would
+        # otherwise compare against an unrelated earlier session and discard the user's map.
+        final_grid = local_grid if local_grid else remote_grid
+        final_bg = local_bg if local_bg else remote_bg
+        final_opts = local_opts if local_opts else remote_opts
+        final_view = local_view if local_view else remote_view
+    else:
+        final_grid = merge_scalar(local_grid, base_grid, remote_grid, "Map size",
+            "Map size (you edited " + (base_grid or "?") + "→" + (local_grid or "?") + ", but it's now " + (remote_grid or "?") + ")",
+            conflicts)
+        final_bg = merge_scalar(local_bg, base_bg, remote_bg, "Background",
+            "Background image changed since you loaded",
+            conflicts)
+        final_opts = merge_scalar(local_opts, base_opts, remote_opts, "Map options",
+            "Map options changed since you loaded",
+            conflicts)
+        final_view = merge_scalar(local_view, base_view, remote_view, "View",
+            "View settings changed since you loaded",
+            conflicts)
+
+    # --- Detect set conflicts: walls/FOW/objects DM removed but server modified ---
+    # (Currently captured implicitly via merge_set - server wins. We can also surface as info.)
+    # Items in (BASE - LOCAL) that REMOTE also has are "DM removed, but server also touched":
+    # since we have no IDs, we treat these as DM-only removals (apply removal). No conflict.
+    # Items in (BASE - REMOTE) that LOCAL still has are "server removed, DM kept" → conflict.
+    walls_srv_removed_dm_kept = (base_walls - remote_walls) & local_walls
+    for w in walls_srv_removed_dm_kept:
+        conflicts.append(("Walls", "Walls: " + w + " was removed from the map since you loaded"))
+    fow_srv_removed_dm_kept = (base_fow - remote_fow) & local_fow
+    for f in fow_srv_removed_dm_kept:
+        conflicts.append(("FOW", "FOW: " + f + " was removed from the map since you loaded"))
+    objs_srv_removed_dm_kept = (base_objs - remote_objs) & local_objs
+    for o in objs_srv_removed_dm_kept:
+        conflicts.append(("Objects", "Object " + o + " was removed from the map since you loaded"))
+
+    # --- Build merged map effect text ---
+    ep = []
+    if final_grid:
+        ep.append("Size: " + final_grid)
+    if final_bg:
+        ep.append("Background: " + final_bg)
+    if final_opts:
+        ep.append("Options: " + final_opts)
+    if merged_walls:
+        ep.append("Walls: " + ", ".join(list(merged_walls)))
+    if merged_objs:
+        ep.append("Objects: " + "/".join(list(merged_objs)))
+    if final_view:
+        ep.append("View: " + final_view)
+    if merged_fow:
+        ep.append("FOW: " + ", ".join(list(merged_fow)))
+    new_ef_str = " ~ ".join(ep)
+
+    # --- Write merged map effect ---
+    map_did_change = (merged_walls != remote_walls) or (merged_fow != remote_fow) or (merged_objs != remote_objs) or (final_grid != remote_grid) or (final_bg != remote_bg) or (final_opts != remote_opts) or (final_view != remote_view)
+    if new_ef_str and map_host and map_did_change:
+        try:
+            if map_host.get_effect("map"):
+                map_host.remove_effect("map")
+        except:
+            pass
+        try:
+            map_host.add_effect("map", attacks=[{"attack":{"name":"map","automation":[{"type":"text","text":new_ef_str}],"_v":2}}])
+        except Exception as exc:
+            conflicts.append(("Map effect", "Failed to write map effect: " + str(exc)))
+
+    # --- Three-way merge tokens (mv_str) ---
+    tokens_updated = 0
+    handled_names = set()
+
+    if mv_str:
+        for entry in mv_str.split(";"):
+            entry = entry.strip()
+            if not entry or "|" not in entry:
+                continue
+            parts = entry.split("|")
+            name = parts[0]
+            if not name:
+                continue
+            # New combatants are created already-placed via their followup `!i add -note`, and they
+            # don't exist during this run yet - skip them here to avoid a false "not in combat" conflict.
+            if name in nc_names:
+                continue
+            handled_names.add(name)
+            local_coord = parts[1].strip() if len(parts) > 1 else ""
+            local_size = (parts[2].strip() if len(parts) > 2 else "").lower()
+            local_color = (parts[3].strip() if len(parts) > 3 else "").lower()
+            local_height = parts[4].strip() if len(parts) > 4 else ""
+            local_token = parts[5].strip() if len(parts) > 5 else ""
+
+            cmb = c.get_combatant(name)
+            if not cmb:
+                conflicts.append(("token", name + " is no longer in combat - change skipped"))
+                continue
+
+            note = str(cmb.note) if cmb.note else ""
+            flds, order = parse_note(note)
+
+            base_t = base_toks.get(name, {})
+            base_coord = base_t.get("coord", "")
+            base_size = (base_t.get("size", "") or "").lower()
+            base_color = (base_t.get("color", "") or "").lower()
+            base_height = base_t.get("height", "") or ""
+            base_token = base_t.get("token", "") or ""
+
+            remote_coord = flds.get("Location", "")
+            remote_size_d = flds.get("Size", "")
+            remote_size = remote_size_d[:1].lower() if remote_size_d else ""
+            remote_color_d = flds.get("Color", "")
+            remote_color = remote_color_d.split(" ")[0].lower() if remote_color_d else ""
+            remote_height_d = flds.get("Height", "")
+            remote_height = remote_height_d.split(" ")[0] if remote_height_d else ""
+            remote_token = flds.get("Token", "")
+
+            tok_changed = False
+
+            # Location merge
+            if local_coord:
+                if local_coord == base_coord:
+                    pass
+                elif remote_coord == base_coord or not remote_coord or _no_base:
+                    if "Location" not in order:
+                        order.insert(0, "Location")
+                    flds["Location"] = local_coord
+                    tok_changed = True
+                elif local_coord == remote_coord:
+                    pass
+                else:
+                    conflicts.append(("token", name + "'s position (you edited " + base_coord + "→" + local_coord + ", but it's now at " + remote_coord + ")"))
+
+            # Size merge
+            if local_size:
+                if local_size == base_size:
+                    pass
+                elif remote_size == base_size or not remote_size:
+                    flds["Size"] = SZ_NAMES.get(local_size, local_size.upper())
+                    if "Size" not in order:
+                        order.append("Size")
+                    tok_changed = True
+                elif local_size == remote_size:
+                    pass
+                else:
+                    conflicts.append(("token", name + "'s size changed externally - yours discarded"))
+
+            # Color merge
+            if local_color:
+                if local_color == base_color:
+                    pass
+                elif remote_color == base_color or not remote_color:
+                    flds["Color"] = CL_NAMES.get(local_color, local_color)
+                    if "Color" not in order:
+                        order.append("Color")
+                    tok_changed = True
+                elif local_color == remote_color:
+                    pass
+                else:
+                    conflicts.append(("token", name + "'s color changed externally - yours discarded"))
+
+            # Height merge
+            if local_height and local_height != "0":
+                if local_height == base_height:
+                    pass
+                elif remote_height == base_height or not remote_height:
+                    flds["Height"] = local_height + " ft."
+                    if "Height" not in order:
+                        order.append("Height")
+                    tok_changed = True
+                elif local_height == remote_height:
+                    pass
+                else:
+                    conflicts.append(("token", name + "'s height changed externally - yours discarded"))
+
+            # Token image merge
+            if local_token:
+                if local_token == base_token:
+                    pass
+                elif remote_token == base_token or not remote_token:
+                    flds["Token"] = local_token
+                    if "Token" not in order:
+                        order.append("Token")
+                    tok_changed = True
+                elif local_token == remote_token:
+                    pass
+                else:
+                    conflicts.append(("token", name + "'s token image changed externally - yours discarded"))
+
+            if tok_changed:
+                cmb.set_note(build_note(flds, order))
+                tokens_updated += 1
+
+    # --- Overlay-only note updates (nt_str) - merge Overlay/Aim fields into current note ---
+    overlays_updated = 0
+    if nt_str:
+        for entry in nt_str.split(";;"):
+            if "~" not in entry:
+                continue
+            ti = entry.find("~")
+            n = entry[:ti].strip()
+            new_note_str = entry[ti+1:]
+            if n in handled_names:
+                # Token was already merged above - also apply overlay fields from this note
+                pass
+            cmb = c.get_combatant(n) or (map_host if n == "DM" else None)
+            if not cmb:
+                continue
+
+            cur_note = str(cmb.note) if cmb.note else ""
+            cur_flds, cur_order = parse_note(cur_note)
+            new_flds, new_order = parse_note(new_note_str)
+
+            # Merge: overlay-related fields come from LOCAL; non-overlay fields preserved from REMOTE.
+            # Slots: "Overlay" is slot 0 (unnumbered, OTFBM *), "Overlay1".."Overlay10" are slots 1-10 (OTFBM *1..*10).
+            # Matches Croebh's map.alias range(1,11) in line 705. Underlays share the same slot family (leading 'u' in the value).
+            ov_keys = ["Overlay", "Overlay1", "Overlay2", "Overlay3", "Overlay4", "Overlay5", "Overlay6", "Overlay7", "Overlay8", "Overlay9", "Overlay10",
+                       "Aim", "Aim1", "Aim2", "Aim3", "Aim4", "Aim5", "Aim6", "Aim7", "Aim8", "Aim9", "Aim10"]
+            merged = dict(cur_flds)
+            merged_order = list(cur_order)
+            # Set or replace overlay fields per LOCAL
+            for k in ov_keys:
+                if k in new_flds and new_flds[k]:
+                    if k not in merged_order:
+                        merged_order.append(k)
+                    merged[k] = new_flds[k]
+            # Remove overlay fields LOCAL doesn't have (DM removed them)
+            for k in ov_keys:
+                if k not in new_flds and k in merged:
+                    merged.pop(k)
+                    if k in merged_order:
+                        merged_order.remove(k)
+
+            new_note_built = build_note(merged, merged_order)
+            if new_note_built != cur_note:
+                cmb.set_note(new_note_built)
+                overlays_updated += 1
+
+    # --- Apply uvar ops (4th section): st+/st-/sm+/sm-/sb+/sb-/tl+/tl-, joined by ;;
+    # st: saved tokens (writes to mapTokens, JSON dict {name: shortcode}, lowercased per Croebh convention).
+    # sm: saved maps (writes to mapBackgrounds, JSON dict {name: {mapbg, mapsize, mapoptions, walls, objects, view, fow}}, lowercased).
+    # sb: saved battles (writes to mapBattles, JSON dict {name: {mapattach: {...}, CombatantName: {...}, ...}}, lowercased name).
+    # tl: token label metadata for baked tokens (writes to bscry_tokenLabels JSON {name: {orig, text, size, color, bg, pos}}).
+    #     A baked token has BOTH a st+ entry (shortcode in mapTokens) AND a tl+ entry (metadata in bscry_tokenLabels).
+    # Names already have underscores decoded to spaces by line 122. All names lowercased on write to mapTokens for !map compatibility.
+    saved_tokens_changed = 0
+    saved_maps_changed = 0
+    saved_battles_changed = 0
+    token_labels_changed = 0
+    if uv_str:
+        # Read current uvars. mapTokens, mapBackgrounds, mapBattles, and bscry_tokenLabels are all JSON dicts.
+        cur_mt_raw = get_uvar("mapTokens") or "{}"
+        cur_mb_raw = get_uvar("mapBackgrounds") or "{}"
+        cur_mbat_raw = get_uvar("mapBattles") or "{}"
+        cur_tl_raw = get_uvar("bscry_tokenLabels") or "{}"
+
+        # Parse mapTokens (JSON dict {name: shortcode}). Tolerate malformed JSON by starting fresh.
+        try:
+            mt_dict = load_json(cur_mt_raw)
+            if not mt_dict:
+                mt_dict = {}
+        except:
+            mt_dict = {}
+
+        # Parse mapBackgrounds (JSON dict {name: {mapbg, mapsize, mapoptions, walls, objects, view, fow}}).
+        try:
+            mb_dict = load_json(cur_mb_raw)
+            if not mb_dict:
+                mb_dict = {}
+        except:
+            mb_dict = {}
+
+        # Parse mapBattles (JSON dict {name: {mapattach: {...}, CombatantName: {...}, ...}}).
+        try:
+            mbat_dict = load_json(cur_mbat_raw)
+            if not mbat_dict:
+                mbat_dict = {}
+        except:
+            mbat_dict = {}
+
+        # Parse bscry_tokenLabels (JSON dict {name: {orig, text, size, color, bg, pos}}).
+        try:
+            tl_dict = load_json(cur_tl_raw)
+            if not tl_dict:
+                tl_dict = {}
+        except:
+            tl_dict = {}
+
+        # Apply each op
+        for op in uv_str.split(";;"):
+            op = op.strip()
+            if not op or len(op) < 4:
+                continue
+            kind = op[:2]
+            sign = op[2]
+            rest = op[3:].strip()
+            if not rest:
+                continue
+            if kind == "st" and sign == "+":
+                if ":" in rest:
+                    ci = rest.find(":")
+                    name = rest[:ci].strip().lower()  # Croebh convention: mapTokens is lowercased
+                    code = rest[ci+1:].strip().lower()
+                    if name and code:
+                        mt_dict[name] = code
+                        saved_tokens_changed += 1
+            elif kind == "st" and sign == "-":
+                key = rest.lower()
+                if key in mt_dict:
+                    mt_dict.pop(key)
+                    saved_tokens_changed += 1
+            elif kind == "sm" and sign == "+":
+                # Format: name|mapbg|mapsize|mapoptions|walls|objects|view|fow|thumb (9 fields).
+                # walls/objects come in as Croebh-format strings; split into arrays for storage.
+                # thumb (field 9) is an OTFBM URL BS computes client-side at save time. Used by BS
+                # to preview saved maps before loading. Croebh's `!map -mapload` ignores unknown
+                # fields, so adding `thumb` is non-breaking.
+                fields = rest.split("|")
+                if len(fields) >= 1 and fields[0].strip():
+                    name = fields[0].strip().lower()
+                    walls_str = fields[4] if len(fields) > 4 else ""
+                    objs_str = fields[5] if len(fields) > 5 else ""
+                    # Walls are ", "-separated; Objects use "/" in OTFBM but BS hash uses ";"
+                    walls_arr = [w.strip() for w in walls_str.split(",") if w.strip()] if walls_str else []
+                    objs_arr = [o.strip() for o in objs_str.replace(";", "/").split("/") if o.strip()] if objs_str else []
+                    _entry = {
+                        "mapbg": fields[1].strip() if len(fields) > 1 else "",
+                        "mapsize": fields[2].strip() if len(fields) > 2 else "",
+                        "mapoptions": fields[3].strip() if len(fields) > 3 else "",
+                        "walls": walls_arr,
+                        "objects": objs_arr,
+                        "view": fields[6].strip() if len(fields) > 6 else "",
+                        "fow": fields[7].strip() if len(fields) > 7 else "",
+                    }
+                    _thumb = fields[8].strip() if len(fields) > 8 else ""
+                    if _thumb:
+                        _entry["thumb"] = _thumb
+                    mb_dict[name] = _entry
+                    saved_maps_changed += 1
+            elif kind == "sm" and sign == "-":
+                key = rest.lower()
+                if key in mb_dict:
+                    mb_dict.pop(key)
+                    saved_maps_changed += 1
+            elif kind == "sb" and sign == "+":
+                # Format: sb+<JSON>. The JSON is `{"BattleName": {mapattach: {...}, CombatantName: {...}, ...}}` (one top-level key).
+                # Using JSON-as-payload instead of pipe-fields because per-combatant data is variable-length and unbounded-field-count.
+                try:
+                    entry_dict = load_json(rest)
+                    if entry_dict:
+                        for name, data in entry_dict.items():
+                            key = str(name).strip().lower()
+                            if key and data:
+                                mbat_dict[key] = data
+                                saved_battles_changed += 1
+                except:
+                    pass
+            elif kind == "sb" and sign == "-":
+                key = rest.lower()
+                if key in mbat_dict:
+                    mbat_dict.pop(key)
+                    saved_battles_changed += 1
+            elif kind == "tl" and sign == "+":
+                # Format: name|orig|text|size|color|bg|pos (7 fields). Shortcode lives in mapTokens via paired st+.
+                fields = rest.split("|")
+                if len(fields) >= 1 and fields[0].strip():
+                    name = fields[0].strip().lower()
+                    tl_dict[name] = {
+                        "orig": fields[1].strip().lower() if len(fields) > 1 else "",
+                        "text": fields[2] if len(fields) > 2 else "",
+                        "size": fields[3] if len(fields) > 3 else "M",
+                        "color": fields[4] if len(fields) > 4 else "w",
+                        "bg": fields[5] if len(fields) > 5 else "bk",
+                        "pos": fields[6] if len(fields) > 6 else "bc",
+                    }
+                    token_labels_changed += 1
+            elif kind == "tl" and sign == "-":
+                key = rest.lower()
+                if key in tl_dict:
+                    tl_dict.pop(key)
+                    token_labels_changed += 1
+
+        # Write back. mapTokens, mapBackgrounds, mapBattles, and bscry_tokenLabels are all JSON.
+        new_mt_json = dump_json(mt_dict)
+        new_mb_json = dump_json(mb_dict)
+        new_mbat_json = dump_json(mbat_dict)
+        new_tl_json = dump_json(tl_dict)
+        # Soft-warn if any uvar approaches the 9000-char limit.
+        if len(new_mt_json) > 8000:
+            warns.append("\u26a0 mapTokens uvar approaching size limit (" + str(len(new_mt_json)) + "/9000 chars). Consider deleting unused saved tokens.")
+        if len(new_mb_json) > 8000:
+            warns.append("\u26a0 mapBackgrounds uvar approaching size limit (" + str(len(new_mb_json)) + "/9000 chars). Consider deleting unused saved maps.")
+        if len(new_mbat_json) > 8000:
+            warns.append("\u26a0 mapBattles uvar approaching size limit (" + str(len(new_mbat_json)) + "/9000 chars). Consider deleting unused saved battles.")
+        if len(new_tl_json) > 8000:
+            warns.append("\u26a0 bscry_tokenLabels uvar approaching size limit (" + str(len(new_tl_json)) + "/9000 chars). Consider deleting unused baked tokens.")
+        if saved_tokens_changed:
+            set_uvar("mapTokens", new_mt_json)
+        if saved_maps_changed:
+            set_uvar("mapBackgrounds", new_mb_json)
+        if saved_battles_changed:
+            set_uvar("mapBattles", new_mbat_json)
+        if token_labels_changed:
+            set_uvar("bscry_tokenLabels", new_tl_json)
+
+    # --- Build apply status parts ---
+    if tokens_updated:
+        apply_status_parts.append(str(tokens_updated) + " token" + ("s" if tokens_updated != 1 else ""))
+    if overlays_updated:
+        apply_status_parts.append(str(overlays_updated) + " overlay" + ("s" if overlays_updated != 1 else ""))
+    wall_chg = len(dm_walls_added) + len(dm_walls_removed)
+    if wall_chg:
+        apply_status_parts.append(str(wall_chg) + " wall" + ("s" if wall_chg != 1 else ""))
+    fow_chg = len(dm_fow_added) + len(dm_fow_removed)
+    if fow_chg:
+        apply_status_parts.append(str(fow_chg) + " FOW region" + ("s" if fow_chg != 1 else ""))
+    obj_chg = len(dm_objs_added) + len(dm_objs_removed)
+    if obj_chg:
+        apply_status_parts.append(str(obj_chg) + " object" + ("s" if obj_chg != 1 else ""))
+    if saved_tokens_changed:
+        apply_status_parts.append(str(saved_tokens_changed) + " saved token" + ("s" if saved_tokens_changed != 1 else ""))
+    if saved_maps_changed:
+        apply_status_parts.append(str(saved_maps_changed) + " saved map" + ("s" if saved_maps_changed != 1 else ""))
+    if saved_battles_changed:
+        apply_status_parts.append(str(saved_battles_changed) + " saved battle" + ("s" if saved_battles_changed != 1 else ""))
+    if token_labels_changed:
+        apply_status_parts.append(str(token_labels_changed) + " baked label" + ("s" if token_labels_changed != 1 else ""))
+    # The map effect itself. Without this a standalone export that only swaps the background
+    # reports "No changes" even though the map was rewritten, which reads as a silent failure.
+    if map_did_change:
+        apply_status_parts.append("map")
+    # New combatants added via BS's Add Combatant form. Count the followup `!i add` commands
+    # we'll emit (each combatant produces 1 add + optionally 1 hide-toggle, so use a name set).
+    nc_added = 0
+    for _c in nc_followup_cmds:
+        if _c.startswith("!i add "):
+            nc_added += 1
+    if nc_added:
+        apply_status_parts.append(str(nc_added) + " new combatant" + ("s" if nc_added != 1 else ""))
+
+    # SRD monsters added via the md section. Count the followup `!i madd` commands we'll emit
+    # (one per monster, post-dedupe). `!i madd ` does not match the `!i add ` test above, so the
+    # two counts never overlap. A re-paste emits nothing, so this honestly reports 0.
+    md_added = 0
+    for _c in nc_followup_cmds:
+        if _c.startswith("!i madd "):
+            md_added += 1
+    if md_added:
+        apply_status_parts.append(str(md_added) + " monster" + ("s" if md_added != 1 else ""))
+
+    # Existing combatants whose ac/hp/maxhp/init/group BS changed, replayed via `!i opt` (section 8).
+    if ed_updated:
+        apply_status_parts.append(str(ed_updated) + " updated combatant" + ("s" if ed_updated != 1 else ""))
+
+# ============================================================
+# EXPORT PATH / URL BUILDER - reads current state, builds BS URL
+# (runs for both !bscry and as the click-link in !bscry apply)
+# ============================================================
+bg = ""
+gs = ""
+opts = ""
+vw = ""
+walls = ""
+fow = ""
+objs = ""
+map_host = find_map_host()
+
+# Loadmap mode: write a saved map's state into the active map effect, then continue with normal flow.
+if is_loadmap and loadmap_name:
+    if not map_host:
+        loadmap_status = "\u26a0 No DM/Map/Lair combatant found to attach the map to. Run `!map -attach <combatant>` first."
+    else:
+        try:
+            mb_raw = get_uvar("mapBackgrounds") or "{}"
+            mb_dict = load_json(mb_raw)
+            if not mb_dict:
+                mb_dict = {}
+        except:
+            mb_dict = {}
+        # Find entry by case-insensitive substring match (matches Croebh's `-mapload` behavior).
+        # Tolerant of underscore-vs-space mismatch: BS slugifies "Goblin Lair" to "goblin_lair" but
+        # Croebh-saved keys may contain spaces ("goblin lair"). Normalize both sides for the match.
+        target_lower = loadmap_name.lower().replace("_", " ")
+        found_name = None
+        found_entry = None
+        for k, v in mb_dict.items():
+            k_norm = str(k).lower().replace("_", " ")
+            if target_lower in k_norm:
+                found_name = k
+                found_entry = v
+                break
+        if not found_entry:
+            loadmap_status = "\u26a0 No saved map matching `" + loadmap_name + "` found in mapBackgrounds."
+        else:
+            # Build a map effect text matching Croebh's format: `Field: value ~ Field: value ~ ...`
+            ep = []
+            mb = str(found_entry.get("mapbg", "") or "")
+            ms = str(found_entry.get("mapsize", "") or "")
+            mo = str(found_entry.get("mapoptions", "") or "")
+            mv = str(found_entry.get("view", "") or "")
+            mw = found_entry.get("walls", []) or []
+            mo_objs = found_entry.get("objects", []) or []
+            mf = str(found_entry.get("fow", "") or "")
+            mj = found_entry.get("json", []) or []
+            if mb:
+                ep.append("Background: " + mb)
+            if ms:
+                ep.append("Size: " + ms)
+            if mo:
+                ep.append("Options: " + mo)
+            if mv:
+                ep.append("View: " + mv)
+            if mw:
+                ep.append("Walls: " + ", ".join([str(x) for x in mw]))
+            if mo_objs:
+                ep.append("Objects: " + "/".join([str(x) for x in mo_objs]))
+            if mf:
+                ep.append("FOW: " + mf)
+            if mj:
+                ep.append("Json: " + ", ".join([str(x) for x in mj]))
+            new_ef_str = " ~ ".join(ep)
+            # Replace the existing map effect with the loaded one.
+            try:
+                if map_host.get_effect("map"):
+                    map_host.remove_effect("map")
+            except:
+                pass
+            try:
+                map_host.add_effect("map", attacks=[{"attack":{"name":"map","automation":[{"type":"text","text":new_ef_str}],"_v":2}}])
+                loadmap_status = "\u2705 Loaded saved map `" + str(found_name) + "` into the active map."
+            except Exception as exc:
+                loadmap_status = "\u26a0 Failed to write loaded map: " + str(exc)
+
+# Loadbattle mode: replay a saved battle. Writes the mapattach state into the active map effect AND
+# restores per-combatant notes (location, size, color, etc) on each saved combatant still in combat.
+# Mirrors Croebh's `!map -loadbattle` behavior: aborts if any saved combatant is missing from active combat.
+if is_loadbattle and loadbattle_name:
+    if not map_host:
+        loadbattle_status = "\u26a0 No DM/Map/Lair combatant found to attach the map to. Run `!map -attach <combatant>` first."
+    else:
+        try:
+            mbat_raw = get_uvar("mapBattles") or "{}"
+            mbat_dict = load_json(mbat_raw)
+            if not mbat_dict:
+                mbat_dict = {}
+        except:
+            mbat_dict = {}
+        # Tolerant of underscore-vs-space mismatch (see loadmap notes).
+        target_lower = loadbattle_name.lower().replace("_", " ")
+        found_btl_name = None
+        found_btl_entry = None
+        for k, v in mbat_dict.items():
+            k_norm = str(k).lower().replace("_", " ")
+            if target_lower in k_norm and v:
+                found_btl_name = k
+                found_btl_entry = v
+                break
+        if not found_btl_entry:
+            loadbattle_status = "\u26a0 No saved battle matching `" + loadbattle_name + "` found in mapBattles."
+        else:
+            # Validate all combatants exist (Croebh aborts otherwise to avoid silent half-loads).
+            missing = []
+            for ck in found_btl_entry.keys():
+                if ck == "mapattach":
+                    continue
+                if not c.get_combatant(str(ck), True):
+                    missing.append(str(ck))
+            if missing:
+                loadbattle_status = "\u26a0 Add the combatant" + ("s " if len(missing) > 1 else " ") + "`" + ", ".join(missing) + "` to load this battle (Croebh's loadbattle behavior)."
+            else:
+                # Write the mapattach state via the same effect-text format used by loadmap.
+                mapattach = found_btl_entry.get("mapattach") or {}
+                if mapattach:
+                    ep = []
+                    mb = str(mapattach.get("mapbg", "") or "")
+                    ms = str(mapattach.get("mapsize", "") or "")
+                    mo = str(mapattach.get("mapoptions", "") or "")
+                    mv = str(mapattach.get("view", "") or "")
+                    mw = mapattach.get("walls", []) or []
+                    mo_objs = mapattach.get("objects", []) or []
+                    mf = str(mapattach.get("fow", "") or "")
+                    mj = mapattach.get("json", []) or []
+                    if mb:
+                        ep.append("Background: " + mb)
+                    if ms:
+                        ep.append("Size: " + ms)
+                    if mo:
+                        ep.append("Options: " + mo)
+                    if mv:
+                        ep.append("View: " + mv)
+                    if mw:
+                        ep.append("Walls: " + ", ".join([str(x) for x in mw]))
+                    if mo_objs:
+                        ep.append("Objects: " + "/".join([str(x) for x in mo_objs]))
+                    if mf:
+                        ep.append("FOW: " + mf)
+                    if mj:
+                        ep.append("Json: " + ", ".join([str(x) for x in mj]))
+                    new_ef_str = " ~ ".join(ep)
+                    try:
+                        if map_host.get_effect("map"):
+                            map_host.remove_effect("map")
+                    except:
+                        pass
+                    try:
+                        map_host.add_effect("map", attacks=[{"attack":{"name":"map","automation":[{"type":"text","text":new_ef_str}],"_v":2}}])
+                    except Exception as exc:
+                        loadbattle_status = "\u26a0 Failed to write loaded battle map: " + str(exc)
+                # Restore per-combatant notes from saved fields.
+                # Lowercase storage keys ("location", "size", ...) are title-cased to match the BS/Croebh note format ("Location: A5 | Size: M (Medium)").
+                restored = 0
+                for ck, cv in found_btl_entry.items():
+                    if ck == "mapattach":
+                        continue
+                    if not cv:
+                        continue
+                    cmb = c.get_combatant(str(ck), True)
+                    if not cmb:
+                        continue
+                    parts = []
+                    for fk, fv in cv.items():
+                        if fv is None or fv == "":
+                            continue
+                        key_title = fk[0].upper() + fk[1:] if fk else fk
+                        parts.append(key_title + ": " + str(fv))
+                    try:
+                        cmb.set_note(" | ".join(parts))
+                        restored += 1
+                    except:
+                        pass
+                if not loadbattle_status:
+                    loadbattle_status = "\u2705 Loaded saved battle `" + str(found_btl_name) + "` (" + str(restored) + " combatant" + ("s" if restored != 1 else "") + " updated)."
+
+if map_host:
+    txt = map_text_of(map_host)
+    if not txt:
+        for e in map_host.effects:
+            if e.name == "map" and e.attacks:
+                txt = str(e.attacks)
+                break
+    if txt:
+        v = get_field(txt, "Size")
+        if v:
+            gs = v
+        v = get_field(txt, "Background")
+        if v:
+            bg = v
+        v = get_field(txt, "Options")
+        if v:
+            opts = v
+        v = get_field(txt, "View")
+        if v:
+            vw = v
+        v = get_field(txt, "Walls")
+        if v:
+            walls = v
+        v = get_field(txt, "FOW")
+        if v:
+            fow = v
+        v = get_field(txt, "Objects")
+        if v:
+            objs = v
+
+# Token shortcode map - resolve "name" -> shortcode via mapTokens uvar (Croebh's JSON format).
+tkmap = {}
+try:
+    raw_tkmap = get_uvar("mapTokens") or "{}"
+    parsed_tk = load_json(raw_tkmap)
+    if parsed_tk:
+        for k, v in parsed_tk.items():
+            ks = str(k).strip().lower()
+            vs = str(v).strip()
+            if ks and vs:
+                tkmap[ks] = vs
+except:
+    tkmap = {}
+
+# Tokens, overlays, unplaced, full-notes, init order, init groups
+tparts = []
+np_parts = []
+fn_notes = []
+ovs = []
+ip_parts = []
+cs_parts = []
+ig_parts = {}
+
+# v0.2.47: names containing ; or | would break the link format, so they are left out and reported.
+bad_names = []
+for cmb in c.combatants:
+    nm = cmb.name
+    if not nm or nm == "DM" or (map_host and nm == map_host.name):
+        continue
+    if ";" in nm or "|" in nm:
+        bad_names.append(nm)
+        continue
+    note = str(cmb.note) if cmb.note else ""
+    flds, order = parse_note(note)
+    loc = flds.get("Location", "")
+    sz = flds.get("Size", "")
+    cl = flds.get("Color", "")
+    ht = flds.get("Height", "")
+    tk = flds.get("Token", "")
+    # Compact size/color codes
+    sz_code = sz[:1].lower() if sz else "m"
+    cl_code = cl.split(" ")[0].lower() if cl else "b"
+    ht_n = ht.split(" ")[0] if ht else "0"
+    # Resolve shortcode via tkmap if it's a name reference
+    if tk and tk.lower() in tkmap:
+        tk = tkmap[tk.lower()]
+    # Extract all numbered Overlay/Aim fields ("Overlay" + "Overlay2" + ..., "Aim" + "Aim2" + ...)
+    ov_fields = {}
+    aim_fields = {}
+    for k in flds:
+        if k.startswith("Overlay"):
+            num = k.replace("Overlay", "")
+            ov_fields[num] = flds[k]
+        elif k.startswith("Aim"):
+            num = k.replace("Aim", "")
+            aim_fields[num] = flds[k]
+    sn = nm.replace(" ", "%20")
+    # Combatant stats (current HP / max HP / AC) for import into BattleScry. Any that are None emit empty.
+    try:
+        _hp = cmb.hp
+        _mx = cmb.max_hp
+        _acv = cmb.ac
+        _hd = "1" if cmb.is_hidden else ""
+        if _hp is not None or _mx is not None or _acv is not None or _hd:
+            cs_parts.append(sn + ":" + (str(_hp) if _hp is not None else "") + ":" + (str(_mx) if _mx is not None else "") + ":" + (str(_acv) if _acv is not None else "") + ":" + _hd)
+    except:
+        pass
+    if loc:
+        tparts.append(sn + "|" + loc + "|" + sz_code.upper() + "|" + cl_code + "|" + ht_n + "|" + tk)
+        # Build overlay entries: name~ovStr[@aim]
+        for num, ov_str in ov_fields.items():
+            aim_target = aim_fields.get(num, "")
+            entry = sn + "~" + ov_str
+            if aim_target:
+                entry += "@" + aim_target.replace(" ", "%20")
+            ovs.append(entry)
+    else:
+        # Unplaced - still capture overlays attached to them
+        for num, ov_str in ov_fields.items():
+            aim_target = aim_fields.get(num, "")
+            entry = sn + "~" + ov_str
+            if aim_target:
+                entry += "@" + aim_target.replace(" ", "%20")
+            ovs.append(entry)
+        np_parts.append(sn)
+    # Full notes for round-trip (preserves any field BS doesn't model)
+    if note:
+        clean = note.lstrip("# ").strip()
+        fn_notes.append(sn + "~" + clean)
+    # Init order capture
+    try:
+        if cmb.init is not None:
+            ip_parts.append(sn + ":" + str(cmb.init))
+    except:
+        pass
+    # Init group capture
+    try:
+        if hasattr(cmb, "group") and cmb.group:
+            gname = cmb.group.name if hasattr(cmb.group, "name") else str(cmb.group)
+            if gname:
+                gkey = gname.replace(" ", "%20")
+                if gkey not in ig_parts:
+                    ig_parts[gkey] = []
+                ig_parts[gkey].append(sn)
+    except:
+        pass
+
+# Saved tokens / maps / battles from uvars (preserved across round-trips).
+# st= comes from mapTokens (shared with Croebh's !map -savetoken). tl= comes from bscry_tokenLabels (BS-only metadata, joined to mapTokens for the shortcode).
+saved_tokens_str = ""
+saved_maps_str = ""
+map_thumbs_str = ""
+saved_battles_str = ""
+tl_string = ""
+mt_parsed = {}
+try:
+    mt_raw = get_uvar("mapTokens") or "{}"
+    mt_parsed = load_json(mt_raw)
+    if not mt_parsed:
+        mt_parsed = {}
+except:
+    mt_parsed = {}
+# Format st= as name:code;name:code from mapTokens dict. Names with spaces become underscores per BS hash convention.
+try:
+    st_entries = []
+    for k, v in mt_parsed.items():
+        ks = str(k).strip().replace(" ", "%20")
+        vs = str(v).strip()
+        if ks and vs:
+            st_entries.append(ks + ":" + vs)
+    saved_tokens_str = ";".join(st_entries)
+except:
+    pass
+try:
+    mb_raw = get_uvar("mapBackgrounds") or "{}"
+    mb_parsed = load_json(mb_raw)
+    if not mb_parsed:
+        mb_parsed = {}
+    # sm= carries only the names. Full state stays in mapBackgrounds; load via `!bscry loadmap <name>`.
+    # tm= carries thumb URLs (OTFBM URLs) keyed by name, for BS to preview saved maps before loading.
+    # Format: name1|encoded_url1;;name2|encoded_url2. Thumbs are already percent-encoded by BS (via
+    # encodeURIComponent) so URL chars don't break the URL hash. BS decodes on receive.
+    sm_names = []
+    tm_entries = []
+    for k, v in mb_parsed.items():
+        ks = str(k).strip().replace(" ", "%20")
+        if ks:
+            sm_names.append(ks)
+            if v:
+                _thumb = v.get("thumb", "") if v else ""
+                if _thumb:
+                    tm_entries.append(ks + "|" + str(_thumb))
+    saved_maps_str = ";".join(sm_names)
+    map_thumbs_str = ";;".join(tm_entries)
+except:
+    map_thumbs_str = ""
+    pass
+try:
+    mbat_raw = get_uvar("mapBattles") or "{}"
+    mbat_parsed = load_json(mbat_raw)
+    if not mbat_parsed:
+        mbat_parsed = {}
+    # sb= carries only the names. Full state stays in mapBattles; load via `!bscry loadbattle <name>`.
+    sb_names = []
+    for k in mbat_parsed.keys():
+        ks = str(k).strip().replace(" ", "%20")
+        if ks:
+            sb_names.append(ks)
+    saved_battles_str = ";".join(sb_names)
+except:
+    pass
+# Build tl= by joining bscry_tokenLabels (metadata) with mapTokens (for the shortcode that's already in st=).
+# tl format: name|orig|text|size|color|bg|pos (7 fields; shortcode lives in st= for the same name).
+try:
+    tl_raw = get_uvar("bscry_tokenLabels") or "{}"
+    tl_parsed = load_json(tl_raw)
+    if not tl_parsed:
+        tl_parsed = {}
+    tl_entries = []
+    for name, meta in tl_parsed.items():
+        ns = str(name).strip().replace(" ", "%20")
+        if not ns or not meta:
+            continue
+        text_field = str(meta.get("text", "")).replace(" ", "%20")
+        tl_entries.append("|".join([
+            ns,
+            str(meta.get("orig", "")),
+            text_field,
+            str(meta.get("size", "M")),
+            str(meta.get("color", "w")),
+            str(meta.get("bg", "bk")),
+            str(meta.get("pos", "bc")),
+        ]))
+    tl_string = ";".join(tl_entries)
+except:
+    tl_string = ""
+
+parts = []
+if gs:
+    parts.append("g=" + gs)
+if opts:
+    parts.append("o=" + opts)
+if bg:
+    parts.append("bg=" + bg)
+if vw:
+    parts.append("vw=" + vw)
+if tparts:
+    parts.append("t=" + ";".join(tparts))
+if ovs:
+    parts.append("ov=" + ";".join(ovs))
+if np_parts:
+    parts.append("np=" + ";".join(np_parts))
+if walls:
+    parts.append("w=" + walls)
+if fow:
+    parts.append("fw=" + fow)
+if objs:
+    obs = objs.replace("/", ";").replace("; ", ";").replace(", ", ";")
+    parts.append("ob=" + obs)
+if fn_notes:
+    parts.append("fn=" + ";;".join(fn_notes))
+if saved_tokens_str:
+    parts.append("st=" + saved_tokens_str)
+if saved_maps_str:
+    parts.append("sm=" + saved_maps_str)
+if map_thumbs_str:
+    parts.append("tm=" + map_thumbs_str)
+if saved_battles_str:
+    parts.append("sb=" + saved_battles_str)
+if tl_string:
+    parts.append("tl=" + tl_string)
+if ig_parts:
+    ig_str = ";".join([k + ":" + ",".join(v) for k, v in ig_parts.items()])
+    parts.append("ig=" + ig_str)
+if ip_parts:
+    parts.append("ip=" + ";".join(ip_parts))
+if cs_parts:
+    parts.append("cs=" + ";".join(cs_parts))
+data = "&".join(parts)
+TOOL = "https://www.battlescry.com/"
+encoded = data.replace("|", "%7C").replace(")", "%29").replace("(", "%28").replace("{", "%7B").replace("}", "%7D").replace(" ", "%20")
+# Loadmap success marker - BS reads this to show a "loaded successfully" modal, then strips it
+# from the URL bar via history.replaceState. Not stored in bscry_load uvar (so it doesn't persist).
+url_hash = encoded
+if is_loadmap and loadmap_status and loadmap_status.startswith("\u2705") and loadmap_name:
+    _lm_safe = str(loadmap_name).replace(" ", "%20")
+    url_hash = encoded + ("&" if encoded else "") + "_lm=" + _lm_safe
+elif is_loadbattle and loadbattle_status and loadbattle_status.startswith("\u2705") and loadbattle_name:
+    _lb_safe = str(loadbattle_name).replace(" ", "%20")
+    url_hash = encoded + ("&" if encoded else "") + "_lb=" + _lb_safe
+# Channel id, so BattleScry can tell two games open in the same browser apart. URL only, not BASE.
+try:
+    url_hash = url_hash + ("&" if url_hash else "") + "ch=" + str(ctx.channel.id)
+except:
+    pass
+url = TOOL + "#" + url_hash
+
+# Store new BASE for next round-trip (whatever state is current now). Without the _lm/_lb marker -
+# that's transient UI signal, not state.
+try:
+    c.set_metadata(_base_key, encoded)
+except:
+    pass
+set_uvar("bscry_load", encoded)
+
+# ============================================================
+# RETURN - apply embed or standard !bscry embed
+# ============================================================
+if is_apply:
+    updated_str = ", ".join(apply_status_parts) if apply_status_parts else "No changes"
+    n_conf = len(conflicts)
+    edit_link = "[Click to keep editing in BattleScry →](" + url + ")"
+    if secret:
+        # Hide details - just counts. "map" is a bare label with no leading count, so it is
+        # counted as one item rather than parsed as a number.
+        total_items = 0
+        for p in apply_status_parts:
+            try:
+                total_items += int(p.split(" ")[0])
+            except:
+                total_items += 1
+        desc = "✅ BattleScry changes applied\nUpdated: " + str(total_items) + " item" + ("s" if total_items != 1 else "")
+        if n_conf:
+            desc += "\n⚠ " + str(n_conf) + " conflict" + ("s" if n_conf != 1 else "") + " (current map takes precedence)"
+        desc += "\n\n" + edit_link
+        embed_str = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "Secret Mode - change details hidden"'
+        # If new combatants were added, emit !i add commands first via multiline output.
+        # They run before the embed shows, so the embed reflects the post-add state.
+        if nc_followup_cmds:
+            return "multiline\n" + "\n".join(nc_followup_cmds) + "\n!" + embed_str
+        return embed_str
+    else:
+        desc = "✅ BattleScry changes applied\nUpdated: " + updated_str
+        if n_conf:
+            desc += "\n\n⚠ " + str(n_conf) + " conflict" + ("s" if n_conf != 1 else "") + " (current map takes precedence):"
+            for cat, msg in conflicts[:8]:
+                desc += "\n• " + msg
+            if n_conf > 8:
+                desc += "\n• ...and " + str(n_conf - 8) + " more"
+        desc += "\n\n" + edit_link
+        # OTFBM map image
+        map_img = ""
+        try:
+            using(m='43a980ab-fcae-4baa-9d66-260b2b0d8672')
+            m.load_data()
+            map_img = m.get_link()
+        except:
+            map_img = ""
+        # If BS sent free-floating overlay shortcodes, insert them as "*<shortcode>/" path
+        # segments before the URL's query string. OTFBM renders these inline. They don't persist:
+        # the next !map view regenerates the URL without them.
+        if ff_str and map_img:
+            ff_parts = []
+            for _sc in ff_str.split(";"):
+                _sc = _sc.strip()
+                if _sc:
+                    ff_parts.append("*" + _sc)
+            if ff_parts:
+                _ff_path = "/".join(ff_parts)
+                if "?" in map_img:
+                    _pre, _post = map_img.split("?", 1)
+                    map_img = _pre.rstrip("/") + "/" + _ff_path + "/?" + _post
+                else:
+                    map_img = map_img.rstrip("/") + "/" + _ff_path
+        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.47"'
+        if map_img:
+            cmd += ' -image "' + map_img + '"'
+        # If new combatants were added, emit !i add commands first via multiline output.
+        # The commands run before the embed shows, so by the time the user sees the apply summary,
+        # the new combatants are already in initiative. Duplicate-name protection is in the parser
+        # so re-pasting the same apply twice is safe (subsequent runs skip already-added names).
+        if nc_followup_cmds:
+            return "multiline\n" + "\n".join(nc_followup_cmds) + "\n!" + cmd
+        return cmd
+else:
+    # Standard !bscry embed (or loadmap result, which also uses this path with loadmap_status set)
+    link = "# [Click to edit current map in BattleScry](" + url + ")"
+    short = data if len(data) < 1000 else data[:997] + "..."
+    map_link = ""
+    try:
+        using(m='43a980ab-fcae-4baa-9d66-260b2b0d8672')
+        m.load_data()
+        map_link = m.get_link()
+    except:
+        map_link = ""
+    thumb = ' -thumb "' + map_link + '"' if map_link else ""
+    if is_loadbattle:
+        title = "🔮 BattleScry - Loaded Battle"
+    elif is_loadmap:
+        title = "🔮 BattleScry - Loaded Map"
+    else:
+        title = "🔮 BattleScry"
+    desc_parts = [link]
+    if bad_names:
+        desc_parts.append("\u26a0 Not shown in BattleScry: " + ", ".join(bad_names) + ". Rename them without ; or | to place them on the map.")
+    if loadmap_status:
+        desc_parts.insert(0, loadmap_status)
+    if loadbattle_status:
+        desc_parts.insert(0, loadbattle_status)
+    desc = "\n\n".join(desc_parts)
+    if is_loadmap or is_loadbattle:
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.47"'
+    else:
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.47"'
+    return out
+</drac2>
