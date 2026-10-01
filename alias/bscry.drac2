@@ -1,6 +1,9 @@
 <drac2>
 # ============================================================
-# BattleScry alias v0.2.47
+# BattleScry alias v0.2.48
+# v0.2.48: (1) initiative groups now come back in the link. hasattr does not exist in Draconic, so the
+#          group lookup failed silently and BattleScry never saw existing groups. (2) the link from a
+#          bootstrap also carries hidden-stat and group info, so monsters open red and grouped.
 # v0.2.47: combatants whose names contain ; or | are left out of the link (they would corrupt it)
 #          and named in the embed so the DM can rename them.
 # v0.2.46: no more false position conflicts when tokens are on the map but no map effect is
@@ -292,15 +295,33 @@ def _bootstrap_simple_embed():
         if c is not None:
             _np = []
             _ip = []
+            _cs = []
+            _ig = {}
             for _cb in c.combatants:
                 _n = str(_cb.name)
                 if _n and _n != "DM" and ";" not in _n and "|" not in _n:
                     _e = _n.replace(" ", "%20")
                     _np.append(_e)
                     _ip.append(_e + ":" + str(_cb.init))
+                    _hp = _cb.hp
+                    _mx = _cb.max_hp
+                    _acv = _cb.ac
+                    _hd = "1" if _cb.is_hidden else ""
+                    if _hp is not None or _mx is not None or _acv is not None or _hd:
+                        _cs.append(_e + ":" + (str(_hp) if _hp is not None else "") + ":" + (str(_mx) if _mx is not None else "") + ":" + (str(_acv) if _acv is not None else "") + ":" + _hd)
+                    _g = _cb.group
+                    if _g:
+                        _gk = str(_g).replace(" ", "%20")
+                        if _gk not in _ig:
+                            _ig[_gk] = []
+                        _ig[_gk].append(_e)
             if _np:
                 hash_parts.append("np=" + ";".join(_np))
                 hash_parts.append("ip=" + ";".join(_ip))
+            if _cs:
+                hash_parts.append("cs=" + ";".join(_cs))
+            if _ig:
+                hash_parts.append("ig=" + ";".join([k + ":" + ",".join(v) for k, v in _ig.items()]))
     except:
         pass
     try:
@@ -312,7 +333,7 @@ def _bootstrap_simple_embed():
         _bs_url += "#" + "&".join(hash_parts)
     return ('embed -title "\u2728 BattleScry - Combat Ready" '
             '-desc "Combat bootstrapped with a DM combatant. [Click here to open BattleScry](' + _bs_url + ')" '
-            '-color 0xf59e0b -footer "BattleScry v0.2.47"')
+            '-color 0xf59e0b -footer "BattleScry v0.2.48"')
 
 def _bootstrap_followup_with_cmd():
     # Two-paste path for apply/loadmap/loadbattle with no combat.
@@ -343,7 +364,7 @@ if mode and not (is_apply or is_loadmap or is_loadbattle):
             '`!bscry loadmap <name>` - load one of your saved maps.\n'
             '`!bscry loadbattle <name>` - restore a saved battle.\n\n'
             'Run `!bscry` with nothing after it to start. If no combat is running it starts one and adds a DM combatant to hold the map." '
-            '-color 0xf59e0b -footer "BattleScry v0.2.47"')
+            '-color 0xf59e0b -footer "BattleScry v0.2.48"')
 
 if c is None:
     # No active combat - bootstrap combat + DM combatant in one multiline.
@@ -1495,8 +1516,9 @@ for cmb in c.combatants:
         pass
     # Init group capture
     try:
-        if hasattr(cmb, "group") and cmb.group:
-            gname = cmb.group.name if hasattr(cmb.group, "name") else str(cmb.group)
+        _grp = cmb.group
+        if _grp:
+            gname = str(_grp)
             if gname:
                 gkey = gname.replace(" ", "%20")
                 if gkey not in ig_parts:
@@ -1722,7 +1744,7 @@ if is_apply:
                     map_img = _pre.rstrip("/") + "/" + _ff_path + "/?" + _post
                 else:
                     map_img = map_img.rstrip("/") + "/" + _ff_path
-        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.47"'
+        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.48"'
         if map_img:
             cmd += ' -image "' + map_img + '"'
         # If new combatants were added, emit !i add commands first via multiline output.
@@ -1759,8 +1781,8 @@ else:
         desc_parts.insert(0, loadbattle_status)
     desc = "\n\n".join(desc_parts)
     if is_loadmap or is_loadbattle:
-        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.47"'
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.48"'
     else:
-        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.47"'
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.48"'
     return out
 </drac2>
