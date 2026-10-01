@@ -1,6 +1,10 @@
 <drac2>
 # ============================================================
-# BattleScry alias v0.2.52
+# BattleScry alias v0.2.53
+# v0.2.53: (1) groups: a group's initiative is changed on the group itself (`!i opt <group> -p`), since
+#          Avrae ignores it on a member; a group field of - takes a combatant out of its group.
+#          (2) saved battles are retired: no loadbattle mode and no sb names in the link. Saved
+#          battlemaps carry tokens instead (v0.2.52). The mapBattles uvar is left untouched.
 # v0.2.52: (1) the link says which combatants are monsters (m) or player characters (p) in a new ck
 #          param, so BattleScry only offers stat fields for custom tokens. (2) a saved battlemap can
 #          carry custom tokens; `!bscry loadmap` adds any that are not already in combat.
@@ -99,7 +103,7 @@ args = &ARGS&
 # Common typo: user types `!bscry apply ` then pastes BS's full export (which also starts
 # with `!bscry apply`), yielding args=["apply", "!bscry", "apply", "<data>"]. We detect
 # the doubled `mode + bscry + mode` pattern at the start and squash it back to `mode + <data>`.
-_modes = ["apply", "loadmap", "loadbattle"]
+_modes = ["apply", "loadmap"]
 while len(args) >= 3 and str(args[0]) in _modes and str(args[1]).lower() in ["!bscry", "bscry"] and str(args[2]) == str(args[0]):
     args = [args[0]] + args[3:]
 
@@ -235,7 +239,7 @@ def place_note_from_mvp(mvp):
 mode = args[0] if len(args) > 0 else ""
 is_apply = mode == "apply"
 is_loadmap = mode == "loadmap"
-is_loadbattle = mode == "loadbattle"
+is_loadbattle = False  # saved battles retired in v0.2.53; `!bscry loadbattle` now shows the help
 loadmap_name = ""
 if is_loadmap and len(args) > 1:
     # Join remaining args to support unquoted multi-word names: `!bscry loadmap dungeon level 1`
@@ -298,13 +302,6 @@ def _bootstrap_simple_embed():
             hash_parts.append("sm=" + ";".join(_names))
     except:
         pass
-    try:
-        _mbat = load_json(get_uvar("mapBattles") or "{}")
-        if _mbat:
-            _names = [str(k).replace(" ", "%20") for k in _mbat.keys()]
-            hash_parts.append("sb=" + ";".join(_names))
-    except:
-        pass
     # v0.2.44: combat already has combatants but no host yet - list them so the editor is not empty.
     try:
         if c is not None:
@@ -360,7 +357,7 @@ def _bootstrap_simple_embed():
         _bs_url += "#" + "&".join(hash_parts)
     return ('embed -title "\u2728 BattleScry - Combat Ready" '
             '-desc "Combat bootstrapped with a DM combatant. [Click here to open BattleScry](' + _bs_url + ')" '
-            '-color 0xf59e0b -footer "BattleScry v0.2.52"')
+            '-color 0xf59e0b -footer "BattleScry v0.2.53"')
 
 def _bootstrap_followup_with_cmd():
     # Two-paste path for apply/loadmap/loadbattle with no combat.
@@ -388,10 +385,10 @@ if mode and not (is_apply or is_loadmap or is_loadbattle):
     return ('embed -title "BattleScry - Help" '
             '-desc "`!bscry` - get a link to edit this channel\'s battle map in your browser.\n'
             '`!bscry apply <data>` - paste the command BattleScry copies for you to apply your changes.\n'
-            '`!bscry loadmap <name>` - load one of your saved maps.\n'
-            '`!bscry loadbattle <name>` - restore a saved battle.\n\n'
+            '`!bscry loadmap <name>` - load one of your saved maps, with the tokens saved in it.\n'
+            '\n'
             'Run `!bscry` with nothing after it to start. If no combat is running it starts one and adds a DM combatant to hold the map." '
-            '-color 0xf59e0b -footer "BattleScry v0.2.52"')
+            '-color 0xf59e0b -footer "BattleScry v0.2.53"')
 
 if c is None:
     # No active combat - bootstrap combat + DM combatant in one multiline.
@@ -686,6 +683,7 @@ if is_apply:
     # same followup list as the new-combatant adds and run after them; they target combatants that
     # already exist in Avrae's initiative. %20 in name/group decodes back to a space.
     ed_updated = 0
+    ed_grp_init = {}
     if ed_str:
         for entry in ed_str.split(";"):
             entry = entry.strip()
@@ -712,15 +710,36 @@ if is_apply:
             if e_hpmax:
                 opt += " -max " + e_hpmax
                 changed = True
+            # v0.2.53: a group has one initiative, set on the group. Avrae ignores -p on a member, so
+            # work out which group this combatant will be in and set it there, once, after the moves.
+            _tgt_grp = ""
+            if e_group and e_group != "-":
+                _tgt_grp = e_group
+            elif not e_group:
+                try:
+                    _ecb = c.get_combatant(e_name)
+                    if _ecb and _ecb.group:
+                        _tgt_grp = str(_ecb.group)
+                except:
+                    _tgt_grp = ""
             if e_init:
-                opt += " -p " + e_init
+                if _tgt_grp:
+                    ed_grp_init[_tgt_grp] = e_init
+                else:
+                    opt += " -p " + e_init
                 changed = True
-            if e_group:
+            if e_group == "-":
+                opt += " -group None"
+                changed = True
+            elif e_group:
                 opt += ' -group "' + e_group + '"'
                 changed = True
             if changed:
-                nc_followup_cmds.append(opt)
+                if opt != "!i opt " + e_arg:
+                    nc_followup_cmds.append(opt)
                 ed_updated += 1
+        for _gn, _gi in ed_grp_init.items():
+            nc_followup_cmds.append('!i opt "' + _gn + '" -p ' + _gi)
 
     # --- Read BASE from uvar (set during last !bscry) ---
     base_hash_str = ""
@@ -1408,106 +1427,6 @@ if is_loadmap and loadmap_name:
             except Exception as exc:
                 loadmap_status = "\u26a0 Failed to write loaded map: " + str(exc)
 
-# Loadbattle mode: replay a saved battle. Writes the mapattach state into the active map effect AND
-# restores per-combatant notes (location, size, color, etc) on each saved combatant still in combat.
-# Mirrors Croebh's `!map -loadbattle` behavior: aborts if any saved combatant is missing from active combat.
-if is_loadbattle and loadbattle_name:
-    if not map_host:
-        loadbattle_status = "\u26a0 No DM/Map/Lair combatant found to attach the map to. Run `!map -attach <combatant>` first."
-    else:
-        try:
-            mbat_raw = get_uvar("mapBattles") or "{}"
-            mbat_dict = load_json(mbat_raw)
-            if not mbat_dict:
-                mbat_dict = {}
-        except:
-            mbat_dict = {}
-        # Tolerant of underscore-vs-space mismatch (see loadmap notes).
-        target_lower = loadbattle_name.lower().replace("_", " ")
-        found_btl_name = None
-        found_btl_entry = None
-        for k, v in mbat_dict.items():
-            k_norm = str(k).lower().replace("_", " ")
-            if target_lower in k_norm and v:
-                found_btl_name = k
-                found_btl_entry = v
-                break
-        if not found_btl_entry:
-            loadbattle_status = "\u26a0 No saved battle matching `" + loadbattle_name + "` found in mapBattles."
-        else:
-            # Validate all combatants exist (Croebh aborts otherwise to avoid silent half-loads).
-            missing = []
-            for ck in found_btl_entry.keys():
-                if ck == "mapattach":
-                    continue
-                if not c.get_combatant(str(ck), True):
-                    missing.append(str(ck))
-            if missing:
-                loadbattle_status = "\u26a0 Add the combatant" + ("s " if len(missing) > 1 else " ") + "`" + ", ".join(missing) + "` to load this battle (Croebh's loadbattle behavior)."
-            else:
-                # Write the mapattach state via the same effect-text format used by loadmap.
-                mapattach = found_btl_entry.get("mapattach") or {}
-                if mapattach:
-                    ep = []
-                    mb = str(mapattach.get("mapbg", "") or "")
-                    ms = str(mapattach.get("mapsize", "") or "")
-                    mo = str(mapattach.get("mapoptions", "") or "")
-                    mv = str(mapattach.get("view", "") or "")
-                    mw = mapattach.get("walls", []) or []
-                    mo_objs = mapattach.get("objects", []) or []
-                    mf = str(mapattach.get("fow", "") or "")
-                    mj = mapattach.get("json", []) or []
-                    if mb:
-                        ep.append("Background: " + mb)
-                    if ms:
-                        ep.append("Size: " + ms)
-                    if mo:
-                        ep.append("Options: " + mo)
-                    if mv:
-                        ep.append("View: " + mv)
-                    if mw:
-                        ep.append("Walls: " + ", ".join([str(x) for x in mw]))
-                    if mo_objs:
-                        ep.append("Objects: " + "/".join([str(x) for x in mo_objs]))
-                    if mf:
-                        ep.append("FOW: " + mf)
-                    if mj:
-                        ep.append("Json: " + ", ".join([str(x) for x in mj]))
-                    new_ef_str = " ~ ".join(ep)
-                    try:
-                        if map_host.get_effect("map"):
-                            map_host.remove_effect("map")
-                    except:
-                        pass
-                    try:
-                        map_host.add_effect("map", attacks=[{"attack":{"name":"map","automation":[{"type":"text","text":new_ef_str}],"_v":2}}])
-                    except Exception as exc:
-                        loadbattle_status = "\u26a0 Failed to write loaded battle map: " + str(exc)
-                # Restore per-combatant notes from saved fields.
-                # Lowercase storage keys ("location", "size", ...) are title-cased to match the BS/Croebh note format ("Location: A5 | Size: M (Medium)").
-                restored = 0
-                for ck, cv in found_btl_entry.items():
-                    if ck == "mapattach":
-                        continue
-                    if not cv:
-                        continue
-                    cmb = c.get_combatant(str(ck), True)
-                    if not cmb:
-                        continue
-                    parts = []
-                    for fk, fv in cv.items():
-                        if fv is None or fv == "":
-                            continue
-                        key_title = fk[0].upper() + fk[1:] if fk else fk
-                        parts.append(key_title + ": " + str(fv))
-                    try:
-                        cmb.set_note(" | ".join(parts))
-                        restored += 1
-                    except:
-                        pass
-                if not loadbattle_status:
-                    loadbattle_status = "\u2705 Loaded saved battle `" + str(found_btl_name) + "` (" + str(restored) + " combatant" + ("s" if restored != 1 else "") + " updated)."
-
 if map_host:
     txt = map_text_of(map_host)
     if not txt:
@@ -1780,8 +1699,6 @@ if saved_maps_str:
     parts.append("sm=" + saved_maps_str)
 if map_thumbs_str:
     parts.append("tm=" + map_thumbs_str)
-if saved_battles_str:
-    parts.append("sb=" + saved_battles_str)
 if tl_string:
     parts.append("tl=" + tl_string)
 if ig_parts:
@@ -1883,7 +1800,7 @@ if is_apply:
                     map_img = _pre.rstrip("/") + "/" + _ff_path + "/?" + _post
                 else:
                     map_img = map_img.rstrip("/") + "/" + _ff_path
-        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.52"'
+        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.53"'
         if map_img:
             cmd += ' -image "' + map_img + '"'
         # If new combatants were added, emit !i add commands first via multiline output.
@@ -1920,9 +1837,9 @@ else:
         desc_parts.insert(0, loadbattle_status)
     desc = "\n\n".join(desc_parts)
     if is_loadmap or is_loadbattle:
-        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.52"'
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.53"'
     else:
-        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.52"'
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.53"'
     if lm_followup_cmds:
         return "multiline\n" + "\n".join(lm_followup_cmds) + "\n!" + out
     return out
