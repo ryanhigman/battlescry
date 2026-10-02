@@ -21,6 +21,15 @@ im.resize((1100,850)).save('maps/Tavern-22x17.jpg',quality=85)
 im.resize((1000,800)).save('maps/Cave 60x48.jpg',quality=85)
 im.resize((1920,2688)).save('maps/Big-Map-100x140.jpg',quality=85)
 "; fi
+if [ ! -f maps/banner_g50.jpg ]; then python3 -c "
+from PIL import Image, ImageDraw
+g=Image.open('maps/g50_1200x900.jpg').convert('RGB')
+im=Image.new('RGB',(1200,1200))
+d=ImageDraw.Draw(im)
+for y in range(300): d.line([(0,y),(1200,y)],fill=(200-y//3,120+y//4,90+y//5))
+d.ellipse([400,40,700,340],fill=(250,200,150)); d.polygon([(600,200),(1100,150),(1150,260),(700,280)],fill=(40,50,80))
+im.paste(g,(0,300)); im.save('maps/banner_g50.jpg',quality=90)
+"; fi
 if [ ! -f maps/noise_2600.jpg ]; then python3 -c "
 from PIL import Image
 import numpy as np
@@ -30,7 +39,7 @@ python3 -m http.server 8765 --directory .. >/dev/null 2>&1 &
 SERVER=$!
 sleep 1
 fail=0
-for t in t t2 t3 ov up nm lay pc enh tok vw grp sc sm rh nmh w; do
+for t in t t2 t3 ov up nm lay pc enh tok vw grp sc sm rh nmh ext w; do
   out=$(node $t.js 2>&1) || { echo "FAIL $t"; echo "$out" | tail -5; fail=1; continue; }
   if echo "$out" | grep -qi "pageerror\|Error:"; then echo "FAIL $t"; echo "$out" | tail -5; fail=1; else echo "ok   $t"; fi
 done

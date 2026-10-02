@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.342                                      https://battlescry.com
+BattleScry v0.1.343                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,9 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.343 - Added: when a printed grid covers only part of an image (a title banner, border or
+            legend has none), the map is set to the gridded part. Large offsets now preview
+            correctly.
   v0.1.342 - Fixed: a printed grid that runs past 99 squares now gets the "too big for Avrae"
             warning on pasted links too, instead of quietly switching to a different layout.
   v0.1.341 - Added: a map named as more than 99 squares each way (100x140) can be hosted with its
@@ -413,7 +416,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.342</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.343</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -830,7 +833,8 @@ function bscryPlanBgScale(img,w,h,maxDim,name){
     if(longest*scale>maxDim){const c2=Math.floor(C*maxDim/(longest*scale));if(c2>=20){C=c2;scale=C/S;}else{C=0;scale=maxDim/longest;}}
     if(scale>4){C=0;scale=1;}
     if(Math.abs(scale-1)*longest<1.5)scale=1;
-    return{sq:S,scale:scale,cell:C,srcCell:Math.round(g.cell*10)/10,square:Math.round(S*10)/10,kind:g.kind,ox:g.ox*scale,oy:g.oy*scale,per:g.per||0,nc:g.per?g.cols:0,nr:g.per?g.rows:0};
+    return{sq:S,scale:scale,cell:C,srcCell:Math.round(g.cell*10)/10,square:Math.round(S*10)/10,kind:g.kind,ox:(g.region?g.region.x0:g.ox)*scale,oy:(g.region?g.region.y0:g.oy)*scale,per:g.per||0,nc:g.per?g.cols:0,nr:g.per?g.rows:0,
+      gw:g.region?Math.floor(g.region.cols*g.cell/S+0.02):0,gh:g.region?Math.floor(g.region.rows*g.cell/S+0.02):0};
   }
   for(let k=1;k<=12;k++){if(longest/k<=maxDim)return{scale:1/k,cell:0,srcCell:0,kind:""};}
   return{scale:maxDim/longest,cell:0,srcCell:0,kind:""};
@@ -922,15 +926,45 @@ function bscryFindGrid(img,w,h){
       // On plain floor tiles every line is alike, so the multiple scores the same and is ignored.
       if(mult[P0]&&!(score>=1.25*(baseScore[mult[P0]]||Infinity)))continue;
       const beats=!best||(P0<best.P0*0.7?(score>=0.3*best.score&&cover>=0.7):(score*cover>best.score*best.cover&&!(best.P0<P0*0.7&&best.score>=0.3*score&&best.cover>=0.7)));
-      if(beats)best={P0:P0,P:(fx.P*fx.n+fy.P*fy.n)/(fx.n+fy.n),ox:centre(mx,fx.o,fx.P),oy:centre(my,fy.o,fy.P),score:score,cover:cover,n:Math.max(fx.n,fy.n),dP:Math.abs(fx.P-fy.P),nmin:Math.min(fx.n,fy.n),soft:Math.max(fx.soft,fy.soft)};}
+      if(beats)best={P0:P0,P:(fx.P*fx.n+fy.P*fy.n)/(fx.n+fy.n),ox:centre(mx,fx.o,fx.P),oy:centre(my,fy.o,fy.P),score:score,cover:cover,n:Math.max(fx.n,fy.n),dP:Math.abs(fx.P-fy.P),nmin:Math.min(fx.n,fy.n),soft:Math.max(fx.soft,fy.soft),fxo:fx.o,fyo:fy.o,Px:fx.P,Py:fy.P,cx:fx.cover,cy:fy.cover};}
     return best;};
+  // Which grid lines are really there. A line counts when it shows in at least 3 of the 12 bands. Returns the
+  // first and last line index that sit in a solid run (4 of the next 5 present), so a stray edge in a title
+  // banner does not count. Used to leave a grid-less strip (banner, border, legend) out of the map.
+  const extent=(bands,o,P)=>{const cl=bands.map(b=>clean(b)),n=cl[0].length,mean=cl.map(p=>{let m=0;for(let i=0;i<n;i++)m+=p[i];return (m/n)||1e-9;});
+    const pres=[];for(let x=o;x<n-1;x+=P){const i=Math.round(x);let c=0;for(let b=0;b<B;b++){if(cl[b][i]>2.5*mean[b])c++;}pres.push(c>=3);}
+    const solid=(k,dir)=>{if(!pres[k])return false;let c=0,t=0;for(let j=1;j<=5;j++){const q=k+dir*j;if(q<0||q>=pres.length)break;t++;if(pres[q])c++;}return t<3||c>=t-1;};
+    let a=0;while(a<pres.length&&!solid(a,1))a++;let z=pres.length-1;while(z>=0&&!solid(z,-1))z--;
+    if(a>=z)return{a:0,z:pres.length-1,n:pres.length};
+    // Only cut a strip that has no grid at all. Where a faint grid fades over water or darkness the lines
+    // are still stronger than the gaps between them; in a banner they are no different.
+    const sum=new Float32Array(n);for(let b=0;b<B;b++){const p=cl[b];for(let i=0;i<n;i++)sum[i]+=p[i]/mean[b];}
+    const bare=(k0,k1)=>{let on=0,off=0,c=0;for(let k=k0;k<=k1;k++){const i=Math.round(o+k*P),j=Math.round(o+k*P+P/2);if(i<0||j>=n)continue;on+=sum[i];off+=sum[j];c++;}return c>=3&&on<1.3*off+1e-6;};
+    if(a>=3&&!bare(0,a-1))a=0;
+    if(pres.length-1-z>=3&&!bare(z+1,pres.length-1))z=pres.length-1;
+    return{a:a,z:z,n:pres.length};};
+  const region=(b)=>{if(!b)return null;let ex,ey;try{ex=extent(bx,b.fxo,b.Px);ey=extent(by,b.fyo,b.Py);}catch(e){return null;}
+    const tl=(e)=>e.a>=3,tr=(e)=>e.n-1-e.z>=3;
+    if(!tl(ex)&&!tr(ex)&&!tl(ey)&&!tr(ey))return null;
+    return{ex:ex,ey:ey,tlx:tl(ex),trx:tr(ex),tly:tl(ey),try_:tr(ey)};};
   const fin=(b,kind)=>{let cell=b.P/sc;
     // Snap to a whole pixel when the drift across the whole image would be under 3px.
     if(Math.abs(cell-Math.round(cell))*b.n<3)cell=Math.round(cell);
     const tol=Math.max(2.5,cell*0.04);
     const mod=(v)=>{let m=((v%cell)+cell)%cell;if(cell-m<tol||m<tol)m=0;return Math.round(m);};
-    return{kind:kind,cell:cell,ox:mod(b.ox/sc),oy:mod(b.oy/sc),score:Math.round(b.score*10)/10,cover:Math.round(b.cover*100)/100};};
+    const out={kind:kind,cell:cell,ox:mod(b.ox/sc),oy:mod(b.oy/sc),score:Math.round(b.score*10)/10,cover:Math.round(b.cover*100)/100};
+    const rg=b.rg;
+    if(rg){ // the grid covers only part of the image: say where it starts and how many squares it spans
+      // Keep the start on the same line phase as the snapped offset, so it lands exactly on a grid line.
+      const snap=(raw,ph)=>Math.max(0,Math.round(ph+Math.round((raw-ph)/cell)*cell));
+      const x0=rg.tlx?snap((b.ox+rg.ex.a*b.Px)/sc,out.ox):out.ox,y0=rg.tly?snap((b.oy+rg.ey.a*b.Py)/sc,out.oy):out.oy;
+      const cols=rg.trx?(rg.ex.z-(rg.tlx?rg.ex.a:0)):Math.floor((w-x0)/cell+0.02),rows=rg.try_?(rg.ey.z-(rg.tly?rg.ey.a:0)):Math.floor((h-y0)/cell+0.02);
+      if(cols>=3&&rows>=3)out.region={x0:x0,y0:y0,cols:cols,rows:rows};}
+    return out;};
   const strict=tryQ(Math.floor(B/2)-1);
+  // Lines missing from a banner or border should not count against the grid: judge coverage inside its extent.
+  if(strict){strict.rg=strict.score>=4?region(strict):null;if(strict.rg){const r=strict.rg,fx_=r.ex.n/Math.max(1,r.ex.z-r.ex.a+1),fy_=r.ey.n/Math.max(1,r.ey.z-r.ey.a+1);
+    strict.cover=Math.min(1,Math.min(strict.cx*fx_,strict.cy*fy_));}}
   if(strict&&strict.score>=BSCRY_GRID_T.gs&&strict.cover>=BSCRY_GRID_T.gc)return fin(strict,"grid");
   // A faint printed grid: weaker lines, but they run the whole image (this is the median of 12 bands),
   // there are many of them, and the spacing measured across and down agrees to a few hundredths of a pixel.
@@ -982,7 +1016,7 @@ function bscryConvertToJpeg(file,maxDim,quality,onDone,onError){
         const ow=cv.width,oh=cv.height;
         URL.revokeObjectURL(objUrl);
         // Aim for a 1-2MB file: step the JPEG quality down from the requested value to 0.70 while it is over 2MB.
-        const finish=(blob,srcBlob)=>{if(onDone)onDone({blob:blob,srcBlob:srcBlob||null,w:ow,h:oh,bytes:blob.size,srcW:w,srcH:h,srcCell:plan.srcCell,cell:plan.cell,ox:Math.round(plan.ox||0),oy:Math.round(plan.oy||0),scale:plan.scale,kind:plan.kind,fitted:!!plan.fitted,per:plan.per||0,nc:plan.nc||0,nr:plan.nr||0,divisor:plan.scale<1?Math.round(1/plan.scale):1});};
+        const finish=(blob,srcBlob)=>{if(onDone)onDone({blob:blob,srcBlob:srcBlob||null,w:ow,h:oh,bytes:blob.size,srcW:w,srcH:h,srcCell:plan.srcCell,cell:plan.cell,ox:Math.round(plan.ox||0),oy:Math.round(plan.oy||0),scale:plan.scale,kind:plan.kind,fitted:!!plan.fitted,per:plan.per||0,nc:plan.nc||0,nr:plan.nr||0,gw:plan.gw||0,gh:plan.gh||0,divisor:plan.scale<1?Math.round(1/plan.scale):1});};
         const enc=(q)=>{cv.toBlob((blob)=>{
           if(!blob){if(onError)onError("Could not encode that image.");return;}
           if(blob.size>2*1024*1024&&q>0.701){enc(Math.max(0.7,q-0.05));return;}
@@ -1093,7 +1127,7 @@ function bscryEnhance(srcUrl,w,h,onDone0,onFail){
 function bscryHostMap(out,filename,onDone0,onError,onStatus){
   // Remember the grid measured on the original, keyed by the hosted URL. AI upscaling can smooth faint
   // grid lines away, so the Map tab must not rely on re-measuring the hosted copy.
-  const onDone=(u,enh)=>{if(out.cell)window._bscryGridHint={url:u,cell:out.cell,ox:out.ox||0,oy:out.oy||0,kind:out.kind||"grid",w:out.w,h:out.h,per:out.per||0,nc:out.nc||0,nr:out.nr||0};onDone0(u,enh);};
+  const onDone=(u,enh)=>{if(out.cell)window._bscryGridHint={url:u,cell:out.cell,ox:out.ox||0,oy:out.oy||0,kind:out.kind||"grid",w:out.w,h:out.h,per:out.per||0,nc:out.nc||0,nr:out.nr||0,gw:out.gw||0,gh:out.gh||0};onDone0(u,enh);};
   if(!out.srcBlob||Math.max(out.srcW||0,out.srcH||0)>BSCRY_ENH_MAX_SRC){bscryHostBlob(out.blob,filename,(u)=>onDone(u,false),onError);return;}
   if(onStatus)onStatus("Uploading...");
   bscryHostBlob(out.srcBlob,filename,(u0)=>{
@@ -1270,12 +1304,12 @@ function cubeDist3D(a,b){
 function ptDistFt(c1,r1,c2,r2){return Math.round(Math.sqrt(((c2-c1)*5)**2+((r2-r1)*5)**2));}
 // Viewbox-coord center of a token (accounts for token size + view offset)
 function tokCenterVB(tok){const g=S.grid,cs=g.cellSize,c=tokCubeCells(tok);
-  const left=tok.col*cs+g.offsetX,top=tok.row*cs+g.offsetY;
+  const left=tok.col*cs+gOX(g),top=tok.row*cs+gOY(g);
   return{x:left+c*cs/2,y:top+c*cs/2};}
 // Closest point on a token's bbox perimeter to (tgtX,tgtY) in viewbox coords
 function tokPerimPoint(tok,tgtX,tgtY){const g=S.grid,cs=g.cellSize,c=tokCubeCells(tok);
-  const left=tok.col*cs+g.offsetX,right=left+c*cs;
-  const top=tok.row*cs+g.offsetY,bot=top+c*cs;
+  const left=tok.col*cs+gOX(g),right=left+c*cs;
+  const top=tok.row*cs+gOY(g),bot=top+c*cs;
   let x=Math.max(left,Math.min(right,tgtX)),y=Math.max(top,Math.min(bot,tgtY));
   // If target is inside the bbox, push to nearest edge
   if(tgtX>left&&tgtX<right&&tgtY>top&&tgtY<bot){
@@ -1358,8 +1392,8 @@ function placeUnplacedCombatant(name,col,row){
 }
 // Scroll viewport to center on a grid position
 function scrollTo(col,row){const vp=$("map-vp"),g=S.grid;
-  const px=(g.offsetX+col*g.cellSize+g.cellSize/2+PAD)*S.zoom;
-  const py=(g.offsetY+row*g.cellSize+g.cellSize/2+PAD)*S.zoom;
+  const px=(gOX(g)+col*g.cellSize+g.cellSize/2+PAD)*S.zoom;
+  const py=(gOY(g)+row*g.cellSize+g.cellSize/2+PAD)*S.zoom;
   vp.scrollLeft=px-vp.clientWidth/2;vp.scrollTop=py-vp.clientHeight/2;}
 let origState=null,origBgUrl="",origCombatants=null,undoStack=[],redoStack=[];
 // Everything on the map (tokens, overlays, walls, fog, objects) stores its cell as an offset from the
@@ -1443,6 +1477,13 @@ function safeHash(){try{return location.hash||"";}catch(e){return "";}}
 function setSafeHash(v){try{if(location.protocol!=="file:")location.hash=v;}catch(e){}}const NS="http://www.w3.org/2000/svg";
 const sEl=(t,a)=>{const e=document.createElementNS(NS,t);for(const[k,v]of Object.entries(a||{}))if(v!=null)e.setAttribute(k,v);return e;};
 document.addEventListener("load",e=>{if(e.target&&e.target.id==="map-img"){try{renderSVG();}catch(_){}}},true);
+// The grid offset can be large when the grid starts well inside the image (below a title banner, say).
+// Everything on the map is drawn relative to the grid, so drawing uses only the part of the offset that is
+// under one square (gOX/gOY); the whole-square remainder (gSX/gSY) just slides the picture.
+function gOX(g){g=g||S.grid;const c=g.cellSize||1,v=g.offsetX||0;return ((v%c)+c)%c;}
+function gOY(g){g=g||S.grid;const c=g.cellSize||1,v=g.offsetY||0;return ((v%c)+c)%c;}
+function gSX(g){g=g||S.grid;return (g.offsetX||0)-gOX(g);}
+function gSY(g){g=g||S.grid;return (g.offsetY||0)-gOY(g);}
 function renderAll(){renderSVG();renderSB();renderCmd();if(typeof syncViewInputs==="function")syncViewInputs();if(typeof positionZoomPanel==="function")positionZoomPanel();const _tbb=document.getElementById("tb-border");if(_tbb)_tbb.checked=!!S.noBorder;}
 // Draw curved double-arrow rotate icon at position
 function drawRotIcon(wrap,cx,cy,hr,ovId){
@@ -1552,9 +1593,9 @@ function overlaysAt(col,row){return S.overlays.filter(ov=>{if(!ov.coord)return f
 function tokCenter(t){const g=S.grid,cp=SIZES[t.size]?.c||1;
   // Tiny tokens occupy a half-cell but visually center in the grid cell they're placed on.
   // (OTFBM auto-arranges multiple Tinies into 2x2 quadrants; BS shows a single Tiny centered for clarity.)
-  if(t.size==="T")return{x:g.offsetX+t.col*g.cellSize+g.cellSize/2,y:g.offsetY+t.row*g.cellSize+g.cellSize/2};
-  return{x:g.offsetX+t.col*g.cellSize+(cp*g.cellSize)/2,y:g.offsetY+t.row*g.cellSize+(cp*g.cellSize)/2};}
-function ovCenter(ov){const g=S.grid;if(!ov.coord)return null;return{x:g.offsetX+ov.coord.col*g.cellSize+g.cellSize/2,y:g.offsetY+ov.coord.row*g.cellSize+g.cellSize/2};}
+  if(t.size==="T")return{x:gOX(g)+t.col*g.cellSize+g.cellSize/2,y:gOY(g)+t.row*g.cellSize+g.cellSize/2};
+  return{x:gOX(g)+t.col*g.cellSize+(cp*g.cellSize)/2,y:gOY(g)+t.row*g.cellSize+(cp*g.cellSize)/2};}
+function ovCenter(ov){const g=S.grid;if(!ov.coord)return null;return{x:gOX(g)+ov.coord.col*g.cellSize+g.cellSize/2,y:gOY(g)+ov.coord.row*g.cellSize+g.cellSize/2};}
 
 // SVG
 function renderSVG(){
@@ -1575,12 +1616,12 @@ function renderSVG(){
   // Underlays (non-selected)
   if(S.showOverlays)S.overlays.filter(o=>o.under&&!isSel("overlay",o.id)).forEach(o=>rOv(svg,o));
   if(S.showGrid){const gg=sEl("g",{opacity:S.gridOpacity});
-    for(let c=0;c<=g.cols;c++){const x=g.offsetX+c*g.cellSize;gg.appendChild(sEl("line",{x1:x,y1:g.offsetY,x2:x,y2:g.offsetY+g.rows*g.cellSize,stroke:gridCol,"stroke-width":1}));}
-    for(let r=0;r<=g.rows;r++){const y=g.offsetY+r*g.cellSize;gg.appendChild(sEl("line",{x1:g.offsetX,y1:y,x2:g.offsetX+g.cols*g.cellSize,y2:y,stroke:gridCol,"stroke-width":1}));}svg.appendChild(gg);}
+    for(let c=0;c<=g.cols;c++){const x=gOX(g)+c*g.cellSize;gg.appendChild(sEl("line",{x1:x,y1:gOY(g),x2:x,y2:gOY(g)+g.rows*g.cellSize,stroke:gridCol,"stroke-width":1}));}
+    for(let r=0;r<=g.rows;r++){const y=gOY(g)+r*g.cellSize;gg.appendChild(sEl("line",{x1:gOX(g),y1:y,x2:gOX(g)+g.cols*g.cellSize,y2:y,stroke:gridCol,"stroke-width":1}));}svg.appendChild(gg);}
   if(S.showWalls)S.walls.forEach(wl=>rWall(svg,wl));
   // Wall drawing preview
   if(S.wallDraw&&S.wallDraw.start){const g=S.grid,cs=g.cellSize;
-    const sx=g.offsetX+S.wallDraw.start.col*cs,sy=g.offsetY+S.wallDraw.start.row*cs;
+    const sx=gOX(g)+S.wallDraw.start.col*cs,sy=gOY(g)+S.wallDraw.start.row*cs;
     svg.appendChild(sEl("circle",{cx:sx,cy:sy,r:4,fill:"#fbbf24",stroke:"#000","stroke-width":1}));}
   // Map objects render BELOW tokens (above walls/grid)
   if(S.showObjects&&S.objects&&S.objects.length)S.objects.forEach(o=>rObj(svg,o));
@@ -1610,7 +1651,7 @@ function renderSVG(){
   if(S.sel.type==="overlay"&&S.sel.ids.size===1){
     const ov=S.overlays.find(x=>x.id===[...S.sel.ids][0]);
     if(ov){const affected=aoeAffectedTokens(ov,S.aoeRule||"cell50");
-      if(affected.length){const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY;
+      if(affected.length){const g=S.grid,cs=g.cellSize,ox=gOX(g),oy=gOY(g);
         affected.forEach(tid=>{const t=S.tokens.find(x=>x.id===tid);if(!t)return;
           if(ov.target&&t.name===ov.target)return;// skip origin/attach-to token
           const szSpec=SIZES[t.size]||SIZES.M;const cells=Math.max(1,szSpec.c);
@@ -1625,7 +1666,7 @@ function renderSVG(){
     if(gk){const ac=S.addingCombatant,c=parseC(ac.location),g=S.grid,cs=g.cellSize;
       if(c&&c.col>=0&&c.row>=0&&c.col<g.cols&&c.row<g.rows){
         const cells=tokCubeCells({size:ac.size||"M"}),r=(ac.size==="T"?cs*0.25:cells*cs/2)-2;
-        const cx=g.offsetX+c.col*cs+(ac.size==="T"?cs/2:cells*cs/2),cy=g.offsetY+c.row*cs+(ac.size==="T"?cs/2:cells*cs/2);
+        const cx=gOX(g)+c.col*cs+(ac.size==="T"?cs/2:cells*cs/2),cy=gOY(g)+c.row*cs+(ac.size==="T"?cs/2:cells*cs/2);
         const gg=sEl("g",{"pointer-events":"none",opacity:0.75});
         gg.appendChild(sEl("circle",{cx,cy,r,fill:ac.color||"#e63c3c","fill-opacity":0.45,stroke:"#fbbf24","stroke-width":2.5,"stroke-dasharray":"6 4"}));
         const tx=sEl("text",{x:cx,y:cy+cs*0.1,"text-anchor":"middle","font-size":Math.max(9,cs*0.3),"font-weight":700,fill:"#fff",stroke:"#000","stroke-width":0.6,"font-family":"Figtree,sans-serif"});
@@ -1633,7 +1674,7 @@ function renderSVG(){
   if(S.marquee){const m=S.marquee,x=Math.min(m.x1,m.x2),y=Math.min(m.y1,m.y2),mw=Math.abs(m.x2-m.x1),mh=Math.abs(m.y2-m.y1);
     svg.appendChild(sEl("rect",{x,y,width:mw,height:mh,fill:"rgba(251,191,36,0.15)",stroke:"#fbbf24","stroke-width":1,"stroke-dasharray":"4 2","pointer-events":"none"}));}
   // FOW rendering - dark overlay with holes for revealed regions (on top of all content)
-  if(S.showFow&&S.fowRegions.length){const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY,fww=g.cols*cs,fhh=g.rows*cs;
+  if(S.showFow&&S.fowRegions.length){const g=S.grid,cs=g.cellSize,ox=gOX(g),oy=gOY(g),fww=g.cols*cs,fhh=g.rows*cs;
     const fogG=sEl("g",{opacity:1-S.fowOpacity/100});
     const maskId="fow-mask-"+Date.now();
     const defs=sEl("defs",{});
@@ -1664,7 +1705,7 @@ function renderSVG(){
     const s=S.objDraw.start,en=S.objDraw.end||s;
     const c1=Math.min(s.col,en.col),c2=Math.max(s.col,en.col);
     const r1=Math.min(s.row,en.row),r2=Math.max(s.row,en.row);
-    const px=g.offsetX+c1*cs,py=g.offsetY+r1*cs;
+    const px=gOX(g)+c1*cs,py=gOY(g)+r1*cs;
     const pw=(c2-c1+1)*cs,ph=(r2-r1+1)*cs;
     // Preview the icon at drag size with rotation hint
     const previewObj={type:S.placingObject.type,col:s.col,row:s.row,col2:en.col,row2:en.row,color:S.placingObject.color};
@@ -1679,15 +1720,15 @@ function renderSVG(){
     const end=S.fowDraw.end||S.fowDraw.start;
     const c1=Math.min(S.fowDraw.start.col,end.col),r1=Math.min(S.fowDraw.start.row,end.row);
     const c2=Math.max(S.fowDraw.start.col,end.col),r2=Math.max(S.fowDraw.start.row,end.row);
-    const sx=g.offsetX+c1*cs,sy=g.offsetY+r1*cs;
+    const sx=gOX(g)+c1*cs,sy=gOY(g)+r1*cs;
     svg.appendChild(sEl("rect",{x:sx,y:sy,width:(c2-c1+1)*cs,height:(r2-r1+1)*cs,fill:"rgba(251,191,36,0.2)",stroke:"#fbbf24","stroke-width":2,"stroke-dasharray":"6 3"}));}
   // Ruler measurement line - yellow dashes over black base = high-contrast on any background
   if(S.rulerStart&&S.rulerEnd){const g=S.grid,cs=g.cellSize;
     // Prefer pixel-precise coords (_px), fall back to cell-center coords
-    const x1=S.rulerStart._px?S.rulerStart._px.x:(g.offsetX+S.rulerStart.col*cs+cs/2);
-    const y1=S.rulerStart._px?S.rulerStart._px.y:(g.offsetY+S.rulerStart.row*cs+cs/2);
-    const x2=S.rulerEnd._px?S.rulerEnd._px.x:(g.offsetX+S.rulerEnd.col*cs+cs/2);
-    const y2=S.rulerEnd._px?S.rulerEnd._px.y:(g.offsetY+S.rulerEnd.row*cs+cs/2);
+    const x1=S.rulerStart._px?S.rulerStart._px.x:(gOX(g)+S.rulerStart.col*cs+cs/2);
+    const y1=S.rulerStart._px?S.rulerStart._px.y:(gOY(g)+S.rulerStart.row*cs+cs/2);
+    const x2=S.rulerEnd._px?S.rulerEnd._px.x:(gOX(g)+S.rulerEnd.col*cs+cs/2);
+    const y2=S.rulerEnd._px?S.rulerEnd._px.y:(gOY(g)+S.rulerEnd.row*cs+cs/2);
     // Base: thick black solid; overlay: yellow dashed (gaps show black through)
     svg.appendChild(sEl("line",{x1,y1,x2,y2,stroke:"#000","stroke-width":5,"pointer-events":"none","stroke-linecap":"round"}));
     svg.appendChild(sEl("line",{x1,y1,x2,y2,stroke:"#fbbf24","stroke-width":3,"stroke-dasharray":"10 6","pointer-events":"none","stroke-linecap":"round"}));
@@ -1712,10 +1753,10 @@ function renderSVG(){
     svg.appendChild(sEl("rect",{x:0,y:0,width:w,height:h,fill:"none",stroke:"var(--accent)","stroke-width":2,"stroke-dasharray":"8 4","stroke-opacity":.6}));}
   // Labels on top of borders
   if(S.coordLabels){const fs2=Math.max(12,Math.min(18,g.cellSize*.4));const fc2=gridCol;const lf2=S.labelFont||"Figtree";
-    for(let c=0;c<g.cols;c++){const t=sEl("text",{x:g.offsetX+c*g.cellSize+g.cellSize/2,y:-PAD/2+fs2/3,"text-anchor":"middle","font-size":fs2,fill:fc2,"font-family":lf2+",sans-serif","font-weight":"bold"});t.textContent=col2l(c+g.startCol).toUpperCase();svg.appendChild(t);}
-    for(let r=0;r<g.rows;r++){const t=sEl("text",{x:-PAD/2,y:g.offsetY+r*g.cellSize+g.cellSize/2+fs2/3,"text-anchor":"middle","font-size":fs2,fill:fc2,"font-family":lf2+",sans-serif","font-weight":"bold"});t.textContent=r+g.startRow+1;svg.appendChild(t);}
+    for(let c=0;c<g.cols;c++){const t=sEl("text",{x:gOX(g)+c*g.cellSize+g.cellSize/2,y:-PAD/2+fs2/3,"text-anchor":"middle","font-size":fs2,fill:fc2,"font-family":lf2+",sans-serif","font-weight":"bold"});t.textContent=col2l(c+g.startCol).toUpperCase();svg.appendChild(t);}
+    for(let r=0;r<g.rows;r++){const t=sEl("text",{x:-PAD/2,y:gOY(g)+r*g.cellSize+g.cellSize/2+fs2/3,"text-anchor":"middle","font-size":fs2,fill:fc2,"font-family":lf2+",sans-serif","font-weight":"bold"});t.textContent=r+g.startRow+1;svg.appendChild(t);}
     const sfs2=Math.max(9,Math.min(14,g.cellSize*.3));
-    const smx2=g.offsetX+(g.cols-1)*g.cellSize+g.cellSize/2,smy2=h+PAD/2;
+    const smx2=gOX(g)+(g.cols-1)*g.cellSize+g.cellSize/2,smy2=h+PAD/2;
     const smw2=g.cellSize;
     // H-bar marker: vertical lines extend both above and below the horizontal connecting line.
     // Top is 10px below the map bottom edge; bottom extends 10px below the horizontal line on c100
@@ -1731,7 +1772,7 @@ function renderSVG(){
   const ct=$("map-container"),img=$("map-img");
   ct.style.width=(w+PAD*2)*S.zoom+"px";ct.style.height=(h+PAD*2)*S.zoom+"px";
   ct.style.transform="none";
-  img.style.left=((PAD-g.startCol*g.cellSize)*S.zoom)+"px";img.style.top=((PAD-g.startRow*g.cellSize)*S.zoom)+"px";
+  img.style.left=((PAD-gSX(g)-g.startCol*g.cellSize)*S.zoom)+"px";img.style.top=((PAD-gSY(g)-g.startRow*g.cellSize)*S.zoom)+"px";
   if(S.loadedUrl&&S.showBg){img.style.display="block";
     // OTFBM never stretches the picture: it draws it at its own size, starting at the offset, and only
     // as many WHOLE squares as the picture can fill. Mirror that so the preview matches Discord.
@@ -1742,7 +1783,7 @@ function renderSVG(){
       visH=(oy_+Math.max(0,Math.min(g.fullRows||g.rows,Math.floor((nh-oy_)/cs_)))*cs_)*S.zoom;}
     img.style.width=fw+"px";img.style.height=fh+"px";img.style.objectFit="fill";
     // Clip image to SVG bounds (prevents showing beyond cropped view)
-    const il=(PAD-g.startCol*g.cellSize)*S.zoom,it=(PAD-g.startRow*g.cellSize)*S.zoom;
+    const il=(PAD-gSX(g)-g.startCol*g.cellSize)*S.zoom,it=(PAD-gSY(g)-g.startRow*g.cellSize)*S.zoom;
     const svgW=(w+PAD*2)*S.zoom,svgH=(h+PAD*2)*S.zoom;
     const clipT=Math.max(cutT,-it),clipL=Math.max(cutL,-il);
     const clipB=Math.max(fh-visH,it+fh-svgH,0),clipR=Math.max(fw-visW,il+fw-svgW,0);
@@ -1800,7 +1841,7 @@ function rTok(svg,t){
 
 function rPie(svg,tks){
   const t0=tks[0],g=S.grid,cp=Math.max(1,Math.ceil(SIZES[t0.size]?.c||1)),r=(cp*g.cellSize)/2-2;
-  const cx=g.offsetX+t0.col*g.cellSize+(cp*g.cellSize)/2,cy=g.offsetY+t0.row*g.cellSize+(cp*g.cellSize)/2;
+  const cx=gOX(g)+t0.col*g.cellSize+(cp*g.cellSize)/2,cy=gOY(g)+t0.row*g.cellSize+(cp*g.cellSize)/2;
   const n=tks.length,step=(2*Math.PI)/n;
   const clipId="pc"+t0.id;
   // Clip path to contain all content within the circle
@@ -1850,7 +1891,7 @@ function rPie(svg,tks){
   if(tks.some(t=>isSel("token",t.id))){svg.appendChild(sEl("circle",{cx,cy,r,fill:"none",stroke:"#fbbf24","stroke-width":3,"stroke-dasharray":"6 3","pointer-events":"none"}));}}
 
 function rOv(svg,ov){
-  const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY,f=ft=>(ft/5)*cs,cc=(c,r)=>({x:ox+c*cs+cs/2,y:oy+r*cs+cs/2}),tl=(c,r)=>({x:ox+c*cs,y:oy+r*cs}),fo=ov.under?.25:.3,so=ov.under?.5:.8;
+  const g=S.grid,cs=g.cellSize,ox=gOX(g),oy=gOY(g),f=ft=>(ft/5)*cs,cc=(c,r)=>({x:ox+c*cs+cs/2,y:oy+r*cs+cs/2}),tl=(c,r)=>({x:ox+c*cs,y:oy+r*cs}),fo=ov.under?.25:.3,so=ov.under?.5:.8;
   const coord=getOvCoord(ov);if(!coord)return;const sel=isSel("overlay",ov.id);
   const wrap=sEl("g",{style:"cursor:pointer","data-oid":String(ov.id)});
   if(ov.type.startsWith("circle")){const rad=f(ov.size);
@@ -2029,7 +2070,7 @@ function rObj(svg,obj){
   const c1=Math.min(oc1,oc2),c2=Math.max(oc1,oc2);
   const r1=Math.min(or1,or2),r2=Math.max(or1,or2);
   if(c2<0||r2<0||c1>=g.cols||r1>=g.rows)return;
-  const x=g.offsetX+c1*cs,y=g.offsetY+r1*cs;
+  const x=gOX(g)+c1*cs,y=gOY(g)+r1*cs;
   const w=(c2-c1+1)*cs,h=(r2-r1+1)*cs;
   const color=obj.color||"#000000";// OTFBM default: pure black (matches parsers/overlay.js line 49)
   const sel=isSel("object",obj.id);
@@ -2065,7 +2106,7 @@ function rObj(svg,obj){
     const arrowY=-h/2-hr*1.5;
     ind.appendChild(sEl("path",{d:`M 0 ${arrowY-hr} L ${-hr*0.7} ${arrowY+hr*0.3} L ${hr*0.7} ${arrowY+hr*0.3} Z`,fill:"#fbbf24",stroke:"#000","stroke-width":1}));
     svg.appendChild(ind);}}
-function rWall(svg,w){const g=S.grid,cs=g.cellSize,x1=g.offsetX+w.start.col*cs,y1=g.offsetY+w.start.row*cs,x2=g.offsetX+w.end.col*cs,y2=g.offsetY+w.end.row*cs;
+function rWall(svg,w){const g=S.grid,cs=g.cellSize,x1=gOX(g)+w.start.col*cs,y1=gOY(g)+w.start.row*cs,x2=gOX(g)+w.end.col*cs,y2=gOY(g)+w.end.row*cs;
   const sel=isSel("wall",w.id);const gr=sEl("g",{style:S.wallDraw?"":"cursor:pointer","data-wallhit":String(w.id)});
   const col=w.color||"#000000";const mx=(x1+x2)/2,my=(y1+y2)/2;
   const ang=Math.atan2(y2-y1,x2-x1);const deg=ang*180/Math.PI;
@@ -3123,11 +3164,12 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
     {const hint=window._bscryGridHint;
       if(hint&&hint.url===url&&hint.cell>=20&&hint.cell<=100){
         for(let i=options.length-1;i>=0;i--){if(options[i].cs===hint.cell)options.splice(i,1);}
-        const hx=hint.ox%hint.cell,hy=hint.oy%hint.cell;
-        const _gw0=Math.max(1,Math.floor((w-hx)/hint.cell+0.02)),_gh0=Math.max(1,Math.floor((h-hy)/hint.cell+0.02));
+        // hint.gw/gh: the grid covers only part of the image, so keep its real offset and extent.
+        const hx=hint.gw?hint.ox:hint.ox%hint.cell,hy=hint.gh?hint.oy:hint.oy%hint.cell;
+        const _gw0=Math.max(1,Math.min(hint.gw||1e9,Math.floor((w-hx)/hint.cell+0.02))),_gh0=Math.max(1,Math.min(hint.gh||1e9,Math.floor((h-hy)/hint.cell+0.02)));
         if(_gw0>BSCRY_MAX_SQ||_gh0>BSCRY_MAX_SQ)window._bscryOver99={url:url,cols:_gw0,rows:_gh0};
         options.unshift({cs:hint.cell,gw:Math.min(BSCRY_MAX_SQ,_gw0),gh:Math.min(BSCRY_MAX_SQ,_gh0),ox:hx,oy:hy,conf:300,det:true,label:hint.kind==="tiles"?"Matches the floor tiles":hint.kind==="name"?(hint.per?"From the file name, "+hint.per+"×"+hint.per+" map squares each":"From the file name"):"Matches the printed grid",top:true});
-        tested.add(hint.cell);found={kind:hint.kind,rawCell:hint.cell,per:hint.per||0,nc:hint.nc||0,nr:hint.nr||0};note="";}}
+        tested.add(hint.cell);found={kind:hint.kind,rawCell:hint.cell,per:hint.per||0,nc:hint.nc||0,nr:hint.nr||0,part:!!hint.gw};note="";}}
     // A linked image has a file name too ("...-100x140.jpg"). Use it when nothing was measured on the picture.
     let nameWhy="";
     if(!found){const nh=bscryNameHint(url,w,h);
@@ -3361,7 +3403,7 @@ function renderCombatantPreview(token,opts){
 // Then apply the rule to decide affected status. Accuracy is ~96% on the 50% threshold - fine for
 // game purposes. Cheap: O(tokens * footprint_cells * 25) per AOE.
 function getOverlayShape(ov){
-  const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY;
+  const g=S.grid,cs=g.cellSize,ox=gOX(g),oy=gOY(g);
   const f=ft=>(ft/5)*cs;
   const cc=(c,r)=>({x:ox+c*cs+cs/2,y:oy+r*cs+cs/2});
   const tl=(c,r)=>({x:ox+c*cs,y:oy+r*cs});
@@ -3408,7 +3450,7 @@ function pointInOverlay(px,py,shape){
 function aoeAffectedTokens(ov,rule){
   if(!ov)return[];
   const shape=getOverlayShape(ov);if(!shape)return[];
-  const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY;
+  const g=S.grid,cs=g.cellSize,ox=gOX(g),oy=gOY(g);
   const SAMPLES=5;// 5x5 = 25 samples per cell
   const affected=[];
   for(const t of S.tokens){
@@ -3904,7 +3946,7 @@ function ptInTri(px,py,v1x,v1y,v2x,v2y,v3x,v3y){
   return !((d1<0||d2<0||d3<0)&&(d1>0||d2>0||d3>0));}
 function ovCoversCell(ov,col,row){
   const coord=getOvCoord(ov);if(!coord)return false;
-  const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY;
+  const g=S.grid,cs=g.cellSize,ox=gOX(g),oy=gOY(g);
   const cellCx=ox+col*cs+cs/2,cellCy=oy+row*cs+cs/2;
   if(ov.type.startsWith("circle")){
     const r=(ov.size/5)*cs;let p;
@@ -3971,7 +4013,7 @@ function objectsAtPoint(clientX,clientY){
 let lastPtrTouch=false;
 function showTT(e){const tt=$("tooltip");if(lastPtrTouch){tt.style.display="none";return;}const svg=$("map-svg"),rect=svg.getBoundingClientRect();
   const x=(e.clientX-rect.left)/S.zoom-PAD,y=(e.clientY-rect.top)/S.zoom-PAD;
-  const g=S.grid,col=Math.floor((x-g.offsetX)/g.cellSize),row=Math.floor((y-g.offsetY)/g.cellSize);
+  const g=S.grid,col=Math.floor((x-gOX(g))/g.cellSize),row=Math.floor((y-gOY(g))/g.cellSize);
   if(col<0||col>=g.cols||row<0||row>=g.rows){tt.style.display="none";return;}
   let text=fmtU(col,row);
   if(S.coordPick){// Coord pick mode - show only grid coord + hint
@@ -5236,7 +5278,7 @@ function setup(){
     // Wall drawing mode - click grid vertices
     if(S.wallDraw){const pt=svgPt(e),g=S.grid,cs=g.cellSize;
       // Snap to nearest grid vertex
-      const vc=Math.round((pt.x-PAD-g.offsetX)/cs),vr=Math.round((pt.y-PAD-g.offsetY)/cs);
+      const vc=Math.round((pt.x-PAD-gOX(g))/cs),vr=Math.round((pt.y-PAD-gOY(g))/cs);
       if(vc>=0&&vc<=g.cols&&vr>=0&&vr<=g.rows){
         if(!S.wallDraw.start){S.wallDraw.start={col:vc,row:vr};renderAll();}
         else{
@@ -5308,7 +5350,7 @@ function setup(){
         // For empty-grid clicks, snap start to the clicked cell's center; for token clicks, keep raw
         // pixel so the perimeter calc against a later endpoint works correctly.
         let sx=pt.x-PAD,sy=pt.y-PAD;
-        if(!hitTok){const g=S.grid,cs=g.cellSize;sx=g.offsetX+(gp.col+0.5)*cs;sy=g.offsetY+(gp.row+0.5)*cs;}
+        if(!hitTok){const g=S.grid,cs=g.cellSize;sx=gOX(g)+(gp.col+0.5)*cs;sy=gOY(g)+(gp.row+0.5)*cs;}
         // Start tracking drag (don't show line until movement detected)
         S.rulerDrag={
           startTok:hitTok||null,
@@ -5357,7 +5399,7 @@ function setup(){
     const wrszEl=e.target.closest("[data-widthrsz]");
     if(wrszEl){const ovId=+wrszEl.getAttribute("data-widthrsz");const ov=S.overlays.find(o=>o.id===ovId);
       if(ov&&ov.coord2){pushU();const coord=getOvCoord(ov);if(!coord)return;
-        const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY;
+        const g=S.grid,cs=g.cellSize,ox=gOX(g),oy=gOY(g);
         const p1={x:ox+coord.col*cs+cs/2,y:oy+coord.row*cs+cs/2};
         const p2={x:ox+ov.coord2.col*cs+cs/2,y:oy+ov.coord2.row*cs+cs/2};
         const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2;
@@ -5367,7 +5409,7 @@ function setup(){
     // 0a. Resize handle on overlay - projection-based: drag away from origin = bigger
     const rszEl=e.target.closest("[data-rsz]");
     if(rszEl){const ovId=+rszEl.getAttribute("data-rsz");const ov=S.overlays.find(o=>o.id===ovId);
-      if(ov){pushU();const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY;const pt=svgPt(e);
+      if(ov){pushU();const g=S.grid,cs=g.cellSize,ox=gOX(g),oy=gOY(g);const pt=svgPt(e);
         const mx=pt.x-PAD,my=pt.y-PAD;
         const coord=getOvCoord(ov);if(!coord)return;
         const isSq=ov.type.startsWith("square"),isCir=ov.type.startsWith("circle"),isCone=ov.type==="cone";
@@ -5420,7 +5462,7 @@ function setup(){
     const aimEl=e.target.closest("[data-aim]");
     if(aimEl){const ovId=+aimEl.getAttribute("data-aim");const ov=S.overlays.find(o=>o.id===ovId);
       if(ov){pushU();const coord=getOvCoord(ov);if(!coord)return;
-        const g=S.grid,cs=g.cellSize,ox=g.offsetX,oy=g.offsetY;
+        const g=S.grid,cs=g.cellSize,ox=gOX(g),oy=gOY(g);
         let cx=ox+coord.col*cs+cs/2,cy=oy+coord.row*cs+cs/2;
         // Square pivot: cell center
         if(ov.type==="square"){const sz=(ov.size/5)*cs;cx=ox+coord.col*cs+sz/2;cy=oy+coord.row*cs+sz/2;}
@@ -5558,15 +5600,15 @@ function setup(){
       renderSVG();renderCmd();return;}
     // Move start coord - snap to grid cell
     if(S.moveCoord){const pt=svgPt(e);const mx=pt.x-PAD,my=pt.y-PAD;
-      const g=S.grid,col=Math.max(0,Math.min(Math.floor((mx-g.offsetX)/g.cellSize),g.cols-1));
-      const row=Math.max(0,Math.min(Math.floor((my-g.offsetY)/g.cellSize),g.rows-1));
+      const g=S.grid,col=Math.max(0,Math.min(Math.floor((mx-gOX(g))/g.cellSize),g.cols-1));
+      const row=Math.max(0,Math.min(Math.floor((my-gOY(g))/g.cellSize),g.rows-1));
       const ov=S.overlays.find(o=>o.id===S.moveCoord.ovId);
       if(ov)ov.coord={col,row};
       renderSVG();renderCmd();return;}
     // Aim/rotate drag - aim at grid cell under mouse
     if(S.aimDrag){const pt=svgPt(e);const mx=pt.x-PAD,my=pt.y-PAD;
-      const g=S.grid,col=Math.max(0,Math.min(Math.floor((mx-g.offsetX)/g.cellSize),g.cols-1));
-      const row=Math.max(0,Math.min(Math.floor((my-g.offsetY)/g.cellSize),g.rows-1));
+      const g=S.grid,col=Math.max(0,Math.min(Math.floor((mx-gOX(g))/g.cellSize),g.cols-1));
+      const row=Math.max(0,Math.min(Math.floor((my-gOY(g))/g.cellSize),g.rows-1));
       const ov=S.overlays.find(o=>o.id===S.aimDrag.ovId);
       if(ov)ov.coord2={col,row};
       renderSVG();renderCmd();return;}
@@ -5580,7 +5622,7 @@ function setup(){
       // Token-anchored ends override this via tokPerimPoint below.
       if(gp.col>=0&&gp.col<S.grid.cols&&gp.row>=0&&gp.row<S.grid.rows){
         const g=S.grid,cs=g.cellSize;
-        vbx=g.offsetX+(gp.col+0.5)*cs;vby=g.offsetY+(gp.row+0.5)*cs;}
+        vbx=gOX(g)+(gp.col+0.5)*cs;vby=gOY(g)+(gp.row+0.5)*cs;}
       let endTok=null;
       if(gp.col>=0&&gp.col<S.grid.cols&&gp.row>=0&&gp.row<S.grid.rows){
         endTok=S.tokens.filter(t=>!t.hidden&&!t.mapHidden&&!tokOffMap(t)).find(t=>{const c=tokCubeCells(t);return gp.col>=t.col&&gp.col<t.col+c&&gp.row>=t.row&&gp.row<t.row+c;});
@@ -5699,8 +5741,8 @@ function setup(){
     if(S.scatterPick){
       const m=S.marquee;S.scatterPick=false;S.marquee=null;mStart=null;$("map-svg").style.cursor="";
       if(m){const g=S.grid,cs=g.cellSize,cl=(v,hi)=>Math.max(0,Math.min(hi,v));
-        const c1=cl(Math.floor((Math.min(m.x1,m.x2)-g.offsetX)/cs),g.cols-1),c2=cl(Math.floor((Math.max(m.x1,m.x2)-g.offsetX)/cs),g.cols-1);
-        const r1=cl(Math.floor((Math.min(m.y1,m.y2)-g.offsetY)/cs),g.rows-1),r2=cl(Math.floor((Math.max(m.y1,m.y2)-g.offsetY)/cs),g.rows-1);
+        const c1=cl(Math.floor((Math.min(m.x1,m.x2)-gOX(g))/cs),g.cols-1),c2=cl(Math.floor((Math.max(m.x1,m.x2)-gOX(g))/cs),g.cols-1);
+        const r1=cl(Math.floor((Math.min(m.y1,m.y2)-gOY(g))/cs),g.rows-1),r2=cl(Math.floor((Math.max(m.y1,m.y2)-gOY(g))/cs),g.rows-1);
         doScatter({c1:c1,r1:r1,c2:c2,r2:r2});}
       else{renderAll();setStatus("Scatter cancelled. Drag a box to choose the area.");}
       return;}
@@ -5713,7 +5755,7 @@ function setup(){
       const g=S.grid,cs=g.cellSize;
       S.objects.forEach(o=>{
         const c=(o.col+o.col2)/2,r=(o.row+o.row2)/2;
-        const px=g.offsetX+(c+0.5)*cs,py=g.offsetY+(r+0.5)*cs;
+        const px=gOX(g)+(c+0.5)*cs,py=gOY(g)+(r+0.5)*cs;
         if(px>=mx1&&px<=mx2&&py>=my1&&py<=my2)objIds.add(o.id);});
       const ids=new Set([...tokIds,...objIds]);
       if(ids.size){
@@ -6183,7 +6225,7 @@ function setup(){
   document.addEventListener("mouseup",e=>{if(S.panDrag){S.panDrag=null;document.body.classList.remove("grabbing");}});
 }
 function svgPt(e){const r=$("map-svg").getBoundingClientRect();return{x:(e.clientX-r.left)/S.zoom,y:(e.clientY-r.top)/S.zoom};}
-function pt2g(x,y){const g=S.grid,px=x-PAD,py=y-PAD;return{col:Math.max(0,Math.min(Math.floor((px-g.offsetX)/g.cellSize),g.cols-1)),row:Math.max(0,Math.min(Math.floor((py-g.offsetY)/g.cellSize),g.rows-1))};}
+function pt2g(x,y){const g=S.grid,px=x-PAD,py=y-PAD;return{col:Math.max(0,Math.min(Math.floor((px-gOX(g))/g.cellSize),g.cols-1)),row:Math.max(0,Math.min(Math.floor((py-gOY(g))/g.cellSize),g.rows-1))};}
 // OTFBM only renders cell sizes 20-100px. A value outside that range loads fine here but produces a
 // broken (or no) map image in Discord, so catch it at every entry point instead of exporting it.
 const CELL_MIN=20,CELL_MAX=100;
@@ -6208,9 +6250,10 @@ function detectGrid(img){
   const g=bscryFindGrid(img,w,h);
   if(!g.cell)return{error:"No grid found on the image.",confidence:0,kind:""};
   const cs=Math.round(g.cell);
-  const ox=Math.round(g.ox)%cs,oy=Math.round(g.oy)%cs;
-  return{cellSize:cs,rawCell:g.cell,offsetX:ox,offsetY:oy,
-    gridW:Math.max(1,Math.floor((w-ox)/cs+0.02)),gridH:Math.max(1,Math.floor((h-oy)/cs+0.02)),
+  const rg=g.region||null;
+  const ox=rg?rg.x0:Math.round(g.ox)%cs,oy=rg?rg.y0:Math.round(g.oy)%cs;
+  return{cellSize:cs,rawCell:g.cell,offsetX:ox,offsetY:oy,region:rg,
+    gridW:rg?Math.min(rg.cols,Math.floor((w-ox)/cs+0.02)):Math.max(1,Math.floor((w-ox)/cs+0.02)),gridH:rg?Math.min(rg.rows,Math.floor((h-oy)/cs+0.02)):Math.max(1,Math.floor((h-oy)/cs+0.02)),
     confidence:Math.max(50,Math.min(99,Math.round(50+g.cover*30+Math.min(20,g.score)))),method:g.kind,kind:g.kind};
 }
 // Build the list of grid layouts offered for a background image, best first. Each entry:
@@ -6219,9 +6262,10 @@ function detectGrid(img){
 function bscrySuggestGrids(img){
   const w=img.naturalWidth,h=img.naturalHeight;const out=[];const seen=new Set();let note="";
   let r=null;try{r=detectGrid(img);}catch(e){r={error:"blocked"};note="This image host does not allow BattleScry to read the picture, so the grid could not be measured. These sizes fit the image evenly.";}
-  const add=(cs,ox,oy,label,exact)=>{cs=Math.round(cs);if(cs<20||cs>100||seen.has(cs))return;
+  const add=(cs,ox,oy,label,exact,rg)=>{cs=Math.round(cs);if(cs<20||cs>100||seen.has(cs))return;
     // OTFBM only draws whole squares of the image, so never offer a column or row the picture cannot fill.
-    const gw=Math.max(1,Math.floor((w-ox)/cs+0.02)),gh=Math.max(1,Math.floor((h-oy)/cs+0.02));
+    // rg: the grid covers only part of the image, so the layout is that part.
+    const gw=Math.max(1,Math.min(rg?rg.cols:1e9,Math.floor((w-ox)/cs+0.02))),gh=Math.max(1,Math.min(rg?rg.rows:1e9,Math.floor((h-oy)/cs+0.02)));
     if(gw<3||gh<3)return;seen.add(cs);out.push({cs:cs,gw:gw,gh:gh,ox:ox,oy:oy,label:label});};
   if(r&&!r.error&&r.cellSize){
     const c=r.rawCell,ox=r.offsetX,oy=r.offsetY,what=r.kind==="tiles"?"floor tiles":"printed grid";
@@ -6233,7 +6277,7 @@ function bscrySuggestGrids(img){
       add(c/k,ox%Math.round(c/k),oy%Math.round(c/k),k+"×"+k+per,c/k);add(c/(k+1),ox%Math.round(c/(k+1)),oy%Math.round(c/(k+1)),(k+1)+"×"+(k+1)+per,c/(k+1));}
     else if(c<20){note="The "+what+" on this image is only "+(Math.round(c*10)/10)+"px per square. Upload the file and BattleScry will enhance it.";
       add(c*Math.ceil(40/c),ox,oy,Math.ceil(40/c)+" printed squares per cell",c*Math.ceil(40/c));}
-    else{add(c,ox,oy,"Matches the "+what+" on the image",c);
+    else{add(c,ox,oy,"Matches the "+what+" on the image",c,r.region);
       if(frac)note="The "+what+" is "+(Math.round(c*10)/10)+"px per square, not a whole number, so the drawn grid will drift a little across the map. Use Upload and BattleScry will resize it to fit exactly.";
       if(c<40){note=(note?note+" ":"")+"Squares under 40px cannot show custom token images. Use Enhance below to upscale it.";add(c*2,ox,oy,"2×2 printed squares per cell",c*2);}
       if(r.kind==="tiles"){add(c*2,ox,oy,"2 tiles per square",c*2);if(c/2>=40)add(c/2,ox%Math.round(c/2),oy%Math.round(c/2),"Half a tile per square",c/2);}}
@@ -7294,6 +7338,7 @@ function bscryMapLoadedNotice(url,w,h,found,canDetect,ro){
   else if(!canDetect)lines.push(`This image host does not let BattleScry read the picture, so it could not look for a grid. A size that fits the image was picked instead.`);
   else lines.push(`<b>No grid or floor tile pattern was found</b> on the image, so a size that fits it evenly was picked.`);
   lines.push(`Grid set to <b>${ro.gw} × ${ro.gh} squares at ${ro.cs}px</b> (${ft(ro.gw)} × ${ft(ro.gh)}).`);
+  if(found&&(found.part||found.region))lines.push(`The grid only covers part of this image, so the map is that part. The rest (a title, banner or border) is left outside it.`);
   const over=(window._bscryOver99&&window._bscryOver99.url===url)?window._bscryOver99:null;
   const small=!found&&(ro.gw*ro.gh<=100||Math.max(w,h)<600);
   const lowres=ro.cs<40;
