@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.338                                      https://battlescry.com
+BattleScry v0.1.339                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,9 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.339 - Added: when a linked map image would not draw well as it is (fractional or oversized
+            squares, too large or too detailed for OTFBM), BattleScry offers to fetch it and host a
+            resized copy, the same as an upload.
   v0.1.338 - Fixed: limits measured against OTFBM. A map is at most 99 squares each way (larger sizes
             were silently drawn as 10x10), and uploads are shrunk until the rendered map fits under
             the size OTFBM can return, which depends on how detailed the art is.
@@ -404,7 +407,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.338</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.339</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -2798,6 +2801,7 @@ function mapGridPickerHtml(){
     const selCs=(kc===1&&!pend)?S.grid.cellSize:null;
     if(pend)sh+=`<div style="font-size:10px;color:var(--accent);margin-top:6px;line-height:1.4">⏳ Enhancing the image ${pend.k}x for this layout. This can take a little while...</div>`;
     else if(kc>1)sh+=`<div style="font-size:10px;color:var(--fg3);margin-top:6px;line-height:1.4">✨ Image enhanced ${kc}x (${a.w*kc} × ${a.h*kc}px) so the squares are ${S.grid.cellSize}px.</div>`;
+    if(a.rehost&&kc===1&&!pend)sh+=`<div style="font-size:10px;color:var(--warn,#e0a030);margin-top:6px;line-height:1.4">⚠ This image will not draw well from its link: ${a.rehost.join("; ")}.</div><button class="btn btn-p" id="m-rehost" style="width:100%;font-size:11px;padding:6px;margin-top:6px" title="Fetches the image, resizes it the same way an upload would be, and hosts the copy on BattleScry">Host a resized copy</button>`;
     if(a.isEnh&&kc===1&&!pend)sh+=`<div style="font-size:10px;color:var(--fg3);margin-top:6px;line-height:1.4">This image has already been enhanced once. Enhancing it again would smear the detail, so layouts that need it are not offered. For more squares, upload a higher-resolution original.</div>`;
     if(selCs!==null&&selCs<40&&a.canEnh===false){
       sh+=`<div style="font-size:10px;color:var(--warn,#e0a030);margin-top:6px;line-height:1.4">⚠ This layout gives ${selCs}px squares. Below 40px, custom token images will not show. ${a.isEnh?"The image was already enhanced once, so it cannot be sharpened further.":"The image is too large to enhance; pick a layout with fewer squares."}</div>`;
@@ -3132,12 +3136,20 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
     const recCs=options.length?[...options].sort((a,b)=>b.conf-a.conf)[0].cs:null;
     options.sort((a,b)=>((b.top?1:0)-(a.top?1:0))||(a.top&&b.top?b.conf-a.conf:b.cs-a.cs));
     const prevSize=(S.bgAnalysis&&S.bgAnalysis.w===w&&S.bgAnalysis.h===h)?S.bgAnalysis.sizeStr:"";
-    S.bgAnalysis={w,h,sizeStr:prevSize,options,recCs,note:note,found:found,url:url,enh:{},canEnh:canEnh,isEnh:isEnh};
+    S.bgAnalysis={w,h,sizeStr:prevSize,options,recCs,note:note,found:found,url:url,enh:{},canEnh:canEnh,isEnh:isEnh,rehost:null};
+    // Things only a hosted, resized copy can fix. Images already on BattleScry have been through this.
+    const _an=S.bgAnalysis,_ours=/^https:\/\/cdn\.battlescry\.com\//i.test(url),_why=[];
+    if(!_ours&&canDetect){
+      if(found&&found.kind!=="name"&&found.rawCell){const rc=found.rawCell;
+        if(rc>100)_why.push("its squares are "+Math.round(rc)+"px, more than the 100px Avrae can draw");
+        else if(Math.abs(rc-Math.round(rc))>0.05)_why.push("its squares are "+rc.toFixed(1)+"px, not a whole number, so the grid drifts across the map");}
+      if(Math.max(w,h)>5000)_why.push("it is over 5000px");}
     if(autoApply&&!S.mapBakedGrid&&recCs!=null){
       const ro=options.find(o=>o.cs===recCs)||options[0];
       if(ro){S.grid.cols=ro.gw;S.grid.rows=ro.gh;S.grid.cellSize=ro.cs;S.grid.offsetX=ro.ox;S.grid.offsetY=ro.oy;S.grid.fullCols=ro.gw;S.grid.fullRows=ro.gh;renderAll();
-        try{bscryMapLoadedNotice(url,w,h,found,canDetect,ro);}catch(e){}}
-    }
+        bscryHeavyCheck(img,w,h,!_ours&&canDetect,_why,()=>{if(S.bgAnalysis!==_an)return;_an.rehost=_why.length?_why:null;if(S.tab==="map")renderSB();
+          try{bscryMapLoadedNotice(url,w,h,found,canDetect,ro);}catch(e){}});}
+    }else bscryHeavyCheck(img,w,h,!_ours&&canDetect,_why,()=>{if(S.bgAnalysis!==_an)return;_an.rehost=_why.length?_why:null;if(S.tab==="map")renderSB();});
     if(S.tab==="map")renderSB();
     // File size (async, CORS permitting) - update the info line once known.
     fetch(proxyUrl||url,{method:"HEAD",mode:"cors"}).then(r=>{const cl=r.headers.get("content-length");
@@ -4320,14 +4332,9 @@ function setup(){
     if(t.id==="m-bgupdate"){
       const url=($("m-bgurl")?.value||S._bgUrlDraft||"").trim();if(!url)return;S._bgUrlDraft="";
       if(!/^https?:\/\//i.test(url)){showError("That does not look like a web address. Paste a link that starts with https://");return;}
-      // Apply the new BG immediately
-      S.loadedUrl=url;$("map-img").src=url;$("map-img").style.display="block";
-      S.mapBakedGrid=null;S.bgAnalysis=null; // a pasted URL has no known/baked grid
-      $("map-img").onerror=function(){showError("Could not load background.");this.style.display="none";};
-      renderAll();
-      // Trigger analysis - caches dimensions + candidate grids, auto-applies the recommended grid, then re-renders the Map tab
-      window.analyzeBackgroundForLayout(url,true);
+      bscrySetBackground(url);
       return;}
+    if(t.id==="m-rehost"){bscryRehostFromUrl((S.bgAnalysis&&S.bgAnalysis.url)||S.loadedUrl);return;}
     // Enhance: AI-upscale the current background so the chosen layout has squares of 40px or more.
     if(t.id==="m-enhance"){
       const a=S.bgAnalysis,k=+t.dataset.k||2;if(!a||!S.loadedUrl||S._enhancing)return;
@@ -7262,7 +7269,9 @@ function bscryMapLoadedNotice(url,w,h,found,canDetect,ro){
   const small=!found&&(ro.gw*ro.gh<=100||Math.max(w,h)<600);
   const lowres=ro.cs<40;
   let warn="";
-  if(over)warn=`This map is ${over.cols} × ${over.rows} squares, but Avrae's map can draw at most ${BSCRY_MAX_SQ} in each direction. Only the top-left ${ro.gw} × ${ro.gh} will show. To use the whole map, crop the image into smaller pieces and load them as separate maps.`;
+  const rehost=(S.bgAnalysis&&S.bgAnalysis.url===url&&S.bgAnalysis.rehost)||null;
+  if(rehost&&!over)warn=`This image will not draw well from its link: ${rehost.join("; ")}. BattleScry can fetch it and host a resized copy that fixes this.`;
+  else if(over)warn=`This map is ${over.cols} × ${over.rows} squares, but Avrae's map can draw at most ${BSCRY_MAX_SQ} in each direction. Only the top-left ${ro.gw} × ${ro.gh} will show. To use the whole map, crop the image into smaller pieces and load them as separate maps.`;
   else if(small)warn=`This is a small image, so the map only covers about one room. If it should cover more ground, choose a layout with more squares and BattleScry will enhance the image to suit.`;
   else if(lowres&&S.bgAnalysis&&S.bgAnalysis.canEnh===false)warn=`This map has so many squares that they come out at ${ro.cs}px, under the 40px that custom token images need, and the image is already as large as it can go. Tokens will show as plain colored circles.`;
   else if(lowres)warn=`At this layout the squares are under 40px, so custom token images will not show. Use the Enhance button under Grid Properties, or pick a layout with fewer squares.`;
@@ -7271,17 +7280,52 @@ function bscryMapLoadedNotice(url,w,h,found,canDetect,ro){
   M.backdrop.id="bscry-maploaded";
   M.body.innerHTML=`<div style="font-size:13px;line-height:1.6">
     ${lines.map(l=>`<p style="margin:0 0 8px">${l}</p>`).join("")}
-    ${warn?`<p style="margin:0 0 12px;padding:8px 10px;border-radius:6px;background:var(--bg3);color:var(--warn,#e0a030);font-size:12px">${small||lowres||over?"⚠ ":""}${warn}</p>`:""}
+    ${warn?`<p style="margin:0 0 12px;padding:8px 10px;border-radius:6px;background:var(--bg3);color:var(--warn,#e0a030);font-size:12px">${small||lowres||over||rehost?"⚠ ":""}${warn}</p>`:""}
     <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
-      <button class="btn ${(small||lowres)&&!over?"btn-p":"btn-s"}" id="bsml-pick">Choose a different layout</button>
-      <button class="btn ${(small||lowres)&&!over?"btn-s":"btn-p"}" id="bsml-ok">Keep this layout</button>
+      ${rehost&&!over?`<button class="btn btn-p" id="bsml-rehost">Host a resized copy</button>`:""}
+      <button class="btn ${(small||lowres)&&!over&&!rehost?"btn-p":"btn-s"}" id="bsml-pick">Choose a different layout</button>
+      <button class="btn ${((small||lowres)&&!over)||(rehost&&!over)?"btn-s":"btn-p"}" id="bsml-ok">Keep this layout</button>
     </div></div>`;
   M.body.querySelector("#bsml-ok").onclick=M.close;
+  {const rb=M.body.querySelector("#bsml-rehost");if(rb)rb.onclick=()=>{M.close();bscryRehostFromUrl(url);};}
   M.body.querySelector("#bsml-pick").onclick=()=>{M.close();
     const tb=document.querySelector('#tabs button[data-tab="map"]');if(tb&&S.tab!=="map")tb.click();
     setTimeout(()=>{const el=$("m-gridpick");if(!el)return;el.scrollIntoView({block:"center"});el.focus();
       el.style.outline="2px solid var(--accent)";el.style.outlineOffset="2px";setTimeout(()=>{const e2=$("m-gridpick");if(e2){e2.style.outline="";e2.style.outlineOffset="";}},4000);
       try{if(el.showPicker)el.showPicker();}catch(e){}},80);};
+}
+// Make `url` the map background and measure it (dimensions, grid, layouts), applying the recommended layout.
+function bscrySetBackground(url){
+  S.loadedUrl=url;$("map-img").src=url;$("map-img").style.display="block";
+  S.mapBakedGrid=null;S.bgAnalysis=null; // a pasted URL has no known/baked grid
+  $("map-img").onerror=function(){showError("Could not load background.");this.style.display="none";};
+  renderAll();
+  window.analyzeBackgroundForLayout(url,true);
+}
+// A linked image cannot be resized where it lives. This fetches it, runs it through the same steps as an
+// upload (resize to whole squares, shrink to what OTFBM can return, enhance if small) and hosts the copy.
+function bscryRehostFromUrl(url){
+  if(!url)return;
+  if(!BSCRY_SESSION||!BSCRY_SESSION.token){showUploadLoginPrompt();return;}
+  const go=()=>{const st=$("m-bginfo")||document.createElement("div");setStatus("Fetching the image...");
+    fetch(PROXY_URL+encodeURIComponent(url)).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.blob();}).then(bl=>{
+      let name="map.jpg";try{name=decodeURIComponent(new URL(url).pathname.split("/").pop()||"map.jpg");}catch(e){}
+      if(!/\.(jpe?g|png|gif|webp)$/i.test(name))name+=".jpg";
+      uploadImage(new File([bl],name,{type:bl.type||"image/jpeg"}),st,(u)=>{bscrySetBackground(u);setStatus("✓ Now using a resized copy hosted on BattleScry");});
+    }).catch(e=>showError("Could not fetch that image to resize it ("+(e.message||"network error")+"). Download it and use Upload instead."));};
+  if(!promptDismissed("bscry-upload-ack-2")){showUploadAckPrompt(()=>{setPromptDismissed("bscry-upload-ack-2",true);go();});return;}
+  go();
+}
+// Would this linked image draw properly in Avrae as it is? Adds plain-language reasons to `reasons` when
+// not: the rendered map would be over what OTFBM can return (see BSCRY_OTFBM_BYTES). Calls cb when done.
+function bscryHeavyCheck(img,w,h,ok,reasons,cb){
+  if(!ok){cb();return;}
+  try{
+    if(w*h>40e6){reasons.push("it is too large for Avrae's map service to draw");cb();return;}
+    const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0);
+    c.toBlob((b)=>{try{const est=(b?b.size:0)*1.12;c.width=c.height=1;
+      if(est>BSCRY_OTFBM_BYTES*1.05)reasons.push("it is too detailed for Avrae's map service to draw at this size");}catch(e){}cb();},"image/jpeg",0.8);
+  }catch(e){cb();}
 }
 function showUploadLoginPrompt(){
   const M=smartModal({title:"Log in to upload",size:"sm"});
