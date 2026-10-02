@@ -13,6 +13,8 @@ const { chromium } = require('playwright'); const fs=require('fs');
   await p.goto('http://localhost:8765/index.html?test=1'); await p.waitForTimeout(500);
   await p.evaluate(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='Got it'); if(b)b.click(); BSCRY_SESSION={token:'x.y',name:'t',uid:'1'}; S._uiBgOpen=true; renderSB();});
   await p.fill('#m-bgurl','http://localhost:8765/testmaps/none_tiny.jpg'); await p.click('#m-bgupdate'); await p.waitForTimeout(1200);
+  console.log('notice:',await p.evaluate(()=>document.querySelector('#bscry-maploaded .smart-modal-body')?.innerText.replace(/\s+/g,' ')));
+  await p.click('#bsml-ok'); await p.waitForTimeout(200);
   const opts=await p.evaluate(()=>[...document.querySelectorAll('#m-gridpick option')].map(o=>o.textContent));
   console.log(opts.join('\n'));
   const val=await p.evaluate(()=>[...document.querySelectorAll('#m-gridpick option')].find(o=>/at 20px/.test(o.textContent)).value);

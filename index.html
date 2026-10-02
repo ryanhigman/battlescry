@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.330                                      https://battlescry.com
+BattleScry v0.1.331                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,11 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.331 - Fixed: grid layouts never include a column or row the image cannot fill, and offsets are
+            never negative (Avrae's map ignores those), so the preview matches what Discord draws.
+            The preview shows the image at its real size instead of stretching it. Added: a
+            "Map loaded" summary after a new background, saying what grid was found and warning
+            when the image is small. Upload limit raised to 25MB with clearer messages.
   v0.1.330 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
             the coordinate tooltip sits below the pointer instead of over token labels. Removed the
             old background dialog, which nothing opened any more.
@@ -382,7 +387,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.330</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.331</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -1011,21 +1016,21 @@ function uploadImage(file,statusEl,onSuccess,kind){
   const validExts=["jpg","jpeg","png","gif","webp"];const ext=file.name.split(".").pop().toLowerCase();
   if(!validExts.includes(ext)){statusEl.innerHTML='<span style="color:var(--danger)">⚠ Only jpg, png, gif or webp images are supported.</span>';return;}
   // The file is converted and shrunk in the browser before upload, so this guards memory, not hosting.
-  if(file.size>10*1024*1024){statusEl.innerHTML='<span style="color:var(--danger)">⚠ File too large (max 10MB).'+(isTok?'':' Most good maps are 1 to 2MB as a JPEG.')+'</span>';return;}
+  if(file.size>25*1024*1024){const _m='That file is '+(file.size/1048576).toFixed(1)+'MB. The limit is 25MB.'+(isTok?'':' Save it as a JPEG, or scale it down to 5000px or less on the longest side, and try again.');statusEl.innerHTML='<span style="color:var(--danger)">⚠ '+_m+'</span>';showError(_m);return;}
   if(!BSCRY_SESSION||!BSCRY_SESSION.token){statusEl.innerHTML='<span style="color:var(--danger)">⚠ Log in with Discord to upload.</span>';return;}
   // Client-side dimension check
   const objUrl=URL.createObjectURL(file);const img=new Image();
   img.onload=()=>{
     const w=img.naturalWidth,h=img.naturalHeight;if(!isTok)URL.revokeObjectURL(objUrl);
     const minPx=isTok?40:100;
-    if(w<minPx||h<minPx){URL.revokeObjectURL(objUrl);statusEl.innerHTML='<span style="color:var(--danger)">⚠ Image too small ('+w+'×'+h+'). Min '+minPx+'×'+minPx+'.</span>';return;}
-    if(w>8000||h>8000){statusEl.innerHTML='<span style="color:var(--danger)">⚠ Image too large ('+w+'×'+h+'). Max 8000×8000.</span>';return;}
+    if(w<minPx||h<minPx){URL.revokeObjectURL(objUrl);const _m='That image is only '+w+' × '+h+'px. The smallest '+(isTok?'token image':'map')+' BattleScry accepts is '+minPx+' × '+minPx+'px.';statusEl.innerHTML='<span style="color:var(--danger)">⚠ '+_m+'</span>';showError(_m);return;}
+    if(w>8000||h>8000){const _m='That image is '+w+' × '+h+'px. The limit is 8000px on either side. Scale it down to 5000px or less on the longest side and try again.';statusEl.innerHTML='<span style="color:var(--danger)">⚠ '+_m+'</span>';showError(_m);return;}
     const kb=Math.round(file.size/1024);
     statusEl.innerHTML='<span style="color:var(--accent)">⏳ Preparing '+file.name+' ('+w+'×'+h+', '+(kb>1024?(kb/1024).toFixed(1)+'MB':kb+'KB')+')...</span>';
     const base=((file.name||"image").replace(/\.[^.]+$/,"").replace(/[^a-zA-Z0-9_-]+/g,"_").slice(0,40))||"image";
     const onConverted=(out)=>{
       statusEl.innerHTML='<span style="color:var(--accent)">⏳ Uploading '+out.w+'×'+out.h+'...</span>';
-      const _done=(url,enh)=>{statusEl.innerHTML='<span style="color:var(--accent)">✓</span> Uploaded! '+out.w+'×'+out.h+(enh?' · AI enhanced':'')+'<span style="color:var(--accent)"> ✓ Hosted on BattleScry</span>';onSuccess(url,out.w,out.h);};
+      const _done=(url,enh)=>{statusEl.innerHTML='<span style="color:var(--accent)">✓</span> Uploaded! '+out.w+'×'+out.h+(enh?' · AI enhanced':'')+'<span style="color:var(--accent)"> ✓ Hosted on BattleScry</span>';if(!isTok)window._bscryUploadInfo={url:url,srcW:out.srcW,srcH:out.srcH,w:out.w,h:out.h,enh:!!enh};onSuccess(url,out.w,out.h);};
       const _err=(err)=>{statusEl.innerHTML='<span style="color:var(--danger)">⚠ '+err+'</span>';};
       if(isTok)bscryHostBlob(out.blob,base+".jpg",(u)=>_done(u,false),_err,"token");
       else bscryHostMap(out,base+".jpg",_done,_err,(t)=>{statusEl.innerHTML='<span style="color:var(--accent)">⏳ '+t+'</span>';});
@@ -1069,7 +1074,7 @@ function exCol(s){if(s.startsWith("~")){const m=s.match(/^~([0-9a-f]{6}|[0-9a-f]
   for(const c of CC)if(s.toLowerCase().startsWith(c))return{hex:c2h(c),rest:s.slice(c.length)};
   return null;}
 let _id=1;const uid=()=>_id++;
-function parseOpts(s){const o={cellSize:40,offsetX:0,offsetY:0,dark:false,noBorder:false,noGrid:false,gridH:-1,altFont:false,gridColor:"",fowOpacity:0};s=s.replace(/^@/,"");while(s.length){const c=s[0];if(c==="d"){o.dark=true;s=s.slice(1);}else if(c==="e"){o.noBorder=true;s=s.slice(1);}else if(c==="f"){o.altFont=true;s=s.slice(1);}else if(c==="n"){o.noGrid=true;s=s.slice(1);}else if(c==="c"){const m=s.match(/^c(\d+)/);if(m){o.cellSize=+m[1];s=s.slice(m[0].length);}else s=s.slice(1);}else if(c==="h"){const m=s.match(/^h(\d+)/);if(m){o.gridH=+m[1];s=s.slice(m[0].length);}else s=s.slice(1);}else if(c==="w"){const m=s.match(/^w(\d+)/);if(m){o.fowOpacity=+m[1];s=s.slice(m[0].length);}else s=s.slice(1);}else if(c==="o"){const m=s.match(/^o(-?\d+):(-?\d+)/);if(m){o.offsetX=+m[1];o.offsetY=+m[2];s=s.slice(m[0].length);}else s=s.slice(1);}else if(c==="g"){const hm=s.match(/^g~([0-9a-f]{3,6})/i);if(hm){o.gridColor="~"+hm[1];s=s.slice(hm[0].length);}else{let found=false;for(const cc of CC){if(s.slice(1).toLowerCase().startsWith(cc)){o.gridColor=cc;s=s.slice(1+cc.length);found=true;break;}}if(!found)s=s.slice(1);}}else if(c==="z"){const m=s.match(/^z[\d.]+/);s=s.slice(m?m[0].length:1);}else s=s.slice(1);}return o;}
+function parseOpts(s){const o={cellSize:40,offsetX:0,offsetY:0,dark:false,noBorder:false,noGrid:false,gridH:-1,altFont:false,gridColor:"",fowOpacity:0};s=s.replace(/^@/,"");while(s.length){const c=s[0];if(c==="d"){o.dark=true;s=s.slice(1);}else if(c==="e"){o.noBorder=true;s=s.slice(1);}else if(c==="f"){o.altFont=true;s=s.slice(1);}else if(c==="n"){o.noGrid=true;s=s.slice(1);}else if(c==="c"){const m=s.match(/^c(\d+)/);if(m){o.cellSize=+m[1];s=s.slice(m[0].length);}else s=s.slice(1);}else if(c==="h"){const m=s.match(/^h(\d+)/);if(m){o.gridH=+m[1];s=s.slice(m[0].length);}else s=s.slice(1);}else if(c==="w"){const m=s.match(/^w(\d+)/);if(m){o.fowOpacity=+m[1];s=s.slice(m[0].length);}else s=s.slice(1);}else if(c==="o"){const m=s.match(/^o(-?\d+):(-?\d+)/);if(m){o.offsetX=Math.max(0,+m[1]);o.offsetY=Math.max(0,+m[2]);s=s.slice(m[0].length);}else s=s.slice(1);}else if(c==="g"){const hm=s.match(/^g~([0-9a-f]{3,6})/i);if(hm){o.gridColor="~"+hm[1];s=s.slice(hm[0].length);}else{let found=false;for(const cc of CC){if(s.slice(1).toLowerCase().startsWith(cc)){o.gridColor=cc;s=s.slice(1+cc.length);found=true;break;}}if(!found)s=s.slice(1);}}else if(c==="z"){const m=s.match(/^z[\d.]+/);s=s.slice(m?m[0].length:1);}else s=s.slice(1);}return o;}
 function parseOvSeg(seg){let s=seg,un=false;if(s[0]==="u"){un=true;s=s.slice(1);}let tp=null,wasST=false;if(s.startsWith("co")){tp="circlecorner";s=s.slice(2);}else if(s.startsWith("ct")){tp="circletop";s=s.slice(2);}else if(s[0]==="c"){tp="circle";s=s.slice(1);}else if(s.startsWith("st")){tp="square";wasST=true;s=s.slice(2);}/* squaretop → square (OTFBM ignores aim on ST) */else if(s[0]==="s"){tp="square";s=s.slice(1);}else if(s[0]==="l"){tp="line";s=s.slice(1);}else if(s[0]==="a"){tp="arrow";s=s.slice(1);}else if(s[0]==="t"){tp="cone";s=s.slice(1);}else return null;let sz=0;const nm=s.match(/^(\d+)/);if(nm){sz=+nm[1];s=s.slice(nm[0].length);}let w=5;if(tp==="line"){const wm=s.match(/^,(\d+)/);if(wm){w=+wm[1];s=s.slice(wm[0].length);}if(s[0]===",")s=s.slice(1);}let cl="#e74c3c";const ce=exCol(s);if(ce){cl=ce.hex;s=ce.rest;}let co=null,co2=null;const c1=exC(s);if(c1){co=c1.coord;s=c1.rest;const c2=exC(s);if(c2)co2=c2.coord;}if(!co)return null;if(wasST)co2=null;/* drop spurious coord2 if input was squaretop */return{id:uid(),type:tp,size:sz,width:w,color:cl,coord:co,coord2:co2,under:un,target:""};}
 function parseWallSeg(seg){const W=[];for(const p of seg.split("_")){if(!p)continue;const dm=p.match(/^([a-z]+\d+)(-[odbs])([a-z]+\d+)$/i);if(dm){const a=parseC(dm[1]),b=parseC(dm[3]),dt={"-o":"open","-d":"closed","-b":"double","-s":"secret"}[dm[2]];if(a&&b)W.push({id:uid(),start:a,end:b,door:dt,color:"#07031a"});continue;}let s=p,wc="#07031a";const cm=s.match(/,([a-z0-9]+)$/i);if(cm){wc=c2h(cm[1]);s=s.slice(0,s.length-cm[0].length);}const pm=s.match(/^([a-z]+\d+)([a-z]+\d+)$/i);if(pm){const a=parseC(pm[1]),b=parseC(pm[2]);if(a&&b)W.push({id:uid(),start:a,end:b,door:null,color:wc});}}return W;}
 function parseUrl(url){try{const u=new URL(url);if(!u.hostname.includes("otfbm"))return null;let bg=u.searchParams.get("bg")||"";try{bg=decodeURIComponent(bg)}catch(e){}if(bg.includes("%3A"))try{bg=decodeURIComponent(bg)}catch(e){}const P=u.pathname.split("/").filter(Boolean);let cols=26,rows=26,opts={cellSize:40,offsetX:0,offsetY:0,dark:false,noGrid:false,gridH:0},T=[],O=[],W=[];for(const part of P){const gm=part.match(/^(\d+)x(\d+)/i);if(gm){cols=+gm[1];rows=+gm[2];continue;}if(part[0]==="@"){opts=parseOpts(part);continue;}if(part[0]==="*"){const ov=parseOvSeg(part.slice(1));if(ov)O.push(ov);continue;}if(part[0]==="_"){W.push(...parseWallSeg(part.slice(1)));continue;}if(part.includes(":")&&!part.includes("-"))continue;const di=part.indexOf("-");if(di===-1)continue;const pf=part.slice(0,di),nm=decodeURIComponent(part.slice(di+1));const cm=pf.match(/^([a-z]+)(\d+)/i);if(!cm)continue;const col=l2col(cm[1].toLowerCase()),row=+cm[2]-1;let rest=pf.slice(cm[0].length),sz="M",cl="#1d7cbc";
@@ -1328,6 +1333,7 @@ const $=id=>document.getElementById(id);
 function safeHash(){try{return location.hash||"";}catch(e){return "";}}
 function setSafeHash(v){try{if(location.protocol!=="file:")location.hash=v;}catch(e){}}const NS="http://www.w3.org/2000/svg";
 const sEl=(t,a)=>{const e=document.createElementNS(NS,t);for(const[k,v]of Object.entries(a||{}))if(v!=null)e.setAttribute(k,v);return e;};
+document.addEventListener("load",e=>{if(e.target&&e.target.id==="map-img"){try{renderSVG();}catch(_){}}},true);
 function renderAll(){renderSVG();renderSB();renderCmd();if(typeof syncViewInputs==="function")syncViewInputs();if(typeof positionZoomPanel==="function")positionZoomPanel();const _tbb=document.getElementById("tb-border");if(_tbb)_tbb.checked=!!S.noBorder;}
 // Draw curved double-arrow rotate icon at position
 function drawRotIcon(wrap,cx,cy,hr,ovId){
@@ -1618,13 +1624,19 @@ function renderSVG(){
   ct.style.transform="none";
   img.style.left=((PAD-g.startCol*g.cellSize)*S.zoom)+"px";img.style.top=((PAD-g.startRow*g.cellSize)*S.zoom)+"px";
   if(S.loadedUrl&&S.showBg){img.style.display="block";
-    const fw=(g.fullCols||g.cols)*g.cellSize*S.zoom,fh=(g.fullRows||g.rows)*g.cellSize*S.zoom;
+    // OTFBM never stretches the picture: it draws it at its own size, starting at the offset, and only
+    // as many WHOLE squares as the picture can fill. Mirror that so the preview matches Discord.
+    const nw=img.naturalWidth,nh=img.naturalHeight,cs_=g.cellSize,ox_=Math.max(0,g.offsetX||0),oy_=Math.max(0,g.offsetY||0);
+    let fw=(g.fullCols||g.cols)*cs_*S.zoom,fh=(g.fullRows||g.rows)*cs_*S.zoom,visW=fw,visH=fh,cutL=0,cutT=0;
+    if(nw&&nh){fw=nw*S.zoom;fh=nh*S.zoom;cutL=ox_*S.zoom;cutT=oy_*S.zoom;
+      visW=(ox_+Math.max(0,Math.min(g.fullCols||g.cols,Math.floor((nw-ox_)/cs_)))*cs_)*S.zoom;
+      visH=(oy_+Math.max(0,Math.min(g.fullRows||g.rows,Math.floor((nh-oy_)/cs_)))*cs_)*S.zoom;}
     img.style.width=fw+"px";img.style.height=fh+"px";img.style.objectFit="fill";
     // Clip image to SVG bounds (prevents showing beyond cropped view)
     const il=(PAD-g.startCol*g.cellSize)*S.zoom,it=(PAD-g.startRow*g.cellSize)*S.zoom;
     const svgW=(w+PAD*2)*S.zoom,svgH=(h+PAD*2)*S.zoom;
-    const clipT=Math.max(0,-it),clipL=Math.max(0,-il);
-    const clipB=Math.max(0,it+fh-svgH),clipR=Math.max(0,il+fw-svgW);
+    const clipT=Math.max(cutT,-it),clipL=Math.max(cutL,-il);
+    const clipB=Math.max(fh-visH,it+fh-svgH,0),clipR=Math.max(fw-visW,il+fw-svgW,0);
     img.style.clipPath=`inset(${clipT}px ${clipR}px ${clipB}px ${clipL}px)`;}
   else if(S.loadedUrl&&!S.showBg){img.style.display="none";}
   $("placeholder").style.display="none";
@@ -2379,7 +2391,7 @@ function buildOptsStr(){
   if(S.grid.cellSize!==40)o+="c"+S.grid.cellSize;
   if(!S.showGrid)o+="n";
   else{const pct=Math.round(S.gridOpacity*100);if(pct>0&&pct<100)o+="h"+pct;}
-  if(S.grid.offsetX||S.grid.offsetY)o+="o"+S.grid.offsetX+":"+S.grid.offsetY;
+  if(S.grid.offsetX>0||S.grid.offsetY>0)o+="o"+Math.max(0,S.grid.offsetX)+":"+Math.max(0,S.grid.offsetY);
   if(S.fowOpacity>0)o+="w"+S.fowOpacity;
   // Grid color LAST per OTFBM docs
   if(S.gridColor)o+="g"+S.gridColor;
@@ -2778,8 +2790,8 @@ function rMapTabContent(){
     <div style="flex:1"><span class="lbl">Pixels/cell</span><input type="number" class="inp" id="m-cell" value="${S.grid.cellSize}" min="20" max="100" step="1"></div>
   </div>
   <div class="row" style="gap:6px;margin-bottom:8px;align-items:flex-end">
-    <div style="flex:1${bgUrl?'':';opacity:.45'}" title="${bgUrl?'Nudge the grid to line up with the grid printed on the background image':'Offsets align the grid to a background image - load a map first'}"><span class="lbl">Offset X</span><input type="number" class="inp" id="m-ox" value="${S.grid.offsetX}" ${bgUrl?'':'disabled'}></div>
-    <div style="flex:1${bgUrl?'':';opacity:.45'}" title="${bgUrl?'Nudge the grid to line up with the grid printed on the background image':'Offsets align the grid to a background image - load a map first'}"><span class="lbl">Offset Y</span><input type="number" class="inp" id="m-oy" value="${S.grid.offsetY}" ${bgUrl?'':'disabled'}></div>
+    <div style="flex:1${bgUrl?'':';opacity:.45'}" title="${bgUrl?'Nudge the grid to line up with the grid printed on the background image':'Offsets align the grid to a background image - load a map first'}"><span class="lbl">Offset X</span><input type="number" class="inp" id="m-ox" min="0" value="${S.grid.offsetX}" ${bgUrl?'':'disabled'}></div>
+    <div style="flex:1${bgUrl?'':';opacity:.45'}" title="${bgUrl?'Nudge the grid to line up with the grid printed on the background image':'Offsets align the grid to a background image - load a map first'}"><span class="lbl">Offset Y</span><input type="number" class="inp" id="m-oy" min="0" value="${S.grid.offsetY}" ${bgUrl?'':'disabled'}></div>
     <div style="flex:1"><span class="lbl">&nbsp;</span><label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;height:25px;white-space:nowrap" title="Dark mode (the OTFBM 'd' option): renders the map on a dark background."><input type="checkbox" id="m-dark" ${S.darkMode?"checked":""} style="accent-color:var(--accent)">Dark Mode</label></div>
   </div>
   <div style="margin:8px 0"><span class="lbl">Grid line opacity (${Math.min(99,Math.round(S.gridOpacity*100))}%)</span><input type="range" id="m-opacity" min="0" max="99" value="${Math.min(99,Math.round(S.gridOpacity*100))}" style="width:100%;accent-color:var(--accent)"></div>
@@ -2994,7 +3006,7 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
       if(hint&&hint.url===url&&hint.cell>=20&&hint.cell<=100){
         for(let i=options.length-1;i>=0;i--){if(options[i].cs===hint.cell)options.splice(i,1);}
         const hx=hint.ox%hint.cell,hy=hint.oy%hint.cell;
-        options.unshift({cs:hint.cell,gw:Math.max(1,Math.floor((w-hx)/hint.cell+0.15)),gh:Math.max(1,Math.floor((h-hy)/hint.cell+0.15)),ox:hx,oy:hy,conf:300,det:true,label:hint.kind==="tiles"?"Matches the floor tiles":"Matches the printed grid",top:true});
+        options.unshift({cs:hint.cell,gw:Math.max(1,Math.floor((w-hx)/hint.cell+0.02)),gh:Math.max(1,Math.floor((h-hy)/hint.cell+0.02)),ox:hx,oy:hy,conf:300,det:true,label:hint.kind==="tiles"?"Matches the floor tiles":"Matches the printed grid",top:true});
         tested.add(hint.cell);found={kind:hint.kind,rawCell:hint.cell};note="";}}
     // GCF-first: a cell that divides both W and H exactly is a divisor of gcd(W,H). If gcd is in 40..100 use
     // it; if larger, use the largest divisor in that range. Exact fit (offset 0), so rank it above the rest.
@@ -3002,21 +3014,22 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
       if(g>=40&&g<=100)gcf=g;else if(g>100){for(let d=100;d>=40;d--){if(g%d===0){gcf=d;break;}}}
       if(gcf&&!tested.has(gcf)){const gw=w/gcf,gh=h/gcf;if(gw>=3&&gh>=3){tested.add(gcf);options.push({cs:gcf,gw:gw,gh:gh,ox:0,oy:0,conf:99});}}})();
     for(const cs of [100,90,80,70,60,50,40,30,20].concat(found?[]:[15,10])){if(tested.has(cs))continue;if(cs<20&&Math.max(w,h)*Math.ceil(40/cs)>5000)continue;tested.add(cs);
-      const gw=Math.round(w/cs),gh=Math.round(h/cs);
-      if(gw>=3&&gh>=3){const fitW=Math.abs(w-gw*cs),fitH=Math.abs(h-gh*cs);
+      const gw=Math.floor(w/cs),gh=Math.floor(h/cs);
+      if(gw>=3&&gh>=3){const fitW=w-gw*cs,fitH=h-gh*cs;
         const conf=fitW<=2&&fitH<=2?90:(fitW<=cs*.1&&fitH<=cs*.1?70:50);
-        options.push({cs,gw,gh,ox:Math.round((w-gw*cs)/2),oy:Math.round((h-gh*cs)/2),conf});}}
-    if(!tested.has(72)){tested.add(72);const cs=72,gw=Math.round(w/cs),gh=Math.round(h/cs);
-      if(gw>=3&&gh>=3){const fitW=Math.abs(w-gw*cs),fitH=Math.abs(h-gh*cs);
+        options.push({cs,gw,gh,ox:Math.floor(fitW/2),oy:Math.floor(fitH/2),conf});}}
+    if(!tested.has(72)){tested.add(72);const cs=72,gw=Math.floor(w/cs),gh=Math.floor(h/cs);
+      if(gw>=3&&gh>=3){const fitW=w-gw*cs,fitH=h-gh*cs;
         const conf=fitW<=2&&fitH<=2?90:(fitW<=cs*.1&&fitH<=cs*.1?70:50);
-        options.push({cs,gw,gh,ox:Math.round((w-gw*cs)/2),oy:Math.round((h-gh*cs)/2),conf});}}
+        options.push({cs,gw,gh,ox:Math.floor(fitW/2),oy:Math.floor(fitH/2),conf});}}
     const recCs=options.length?[...options].sort((a,b)=>b.conf-a.conf)[0].cs:null;
     options.sort((a,b)=>((b.top?1:0)-(a.top?1:0))||(a.top&&b.top?b.conf-a.conf:b.cs-a.cs));
     const prevSize=(S.bgAnalysis&&S.bgAnalysis.w===w&&S.bgAnalysis.h===h)?S.bgAnalysis.sizeStr:"";
     S.bgAnalysis={w,h,sizeStr:prevSize,options,recCs,note:note,found:found};
     if(autoApply&&!S.mapBakedGrid&&recCs!=null){
       const ro=options.find(o=>o.cs===recCs)||options[0];
-      if(ro){S.grid.cols=ro.gw;S.grid.rows=ro.gh;S.grid.cellSize=ro.cs;S.grid.offsetX=ro.ox;S.grid.offsetY=ro.oy;S.grid.fullCols=ro.gw;S.grid.fullRows=ro.gh;renderAll();}
+      if(ro){S.grid.cols=ro.gw;S.grid.rows=ro.gh;S.grid.cellSize=ro.cs;S.grid.offsetX=ro.ox;S.grid.offsetY=ro.oy;S.grid.fullCols=ro.gw;S.grid.fullRows=ro.gh;renderAll();
+        try{bscryMapLoadedNotice(url,w,h,found,canDetect,ro);}catch(e){}}
     }
     if(S.tab==="map")renderSB();
     // File size (async, CORS permitting) - update the info line once known.
@@ -4629,11 +4642,12 @@ function setup(){
       if(e.target.id==="m-cols")g.cols=Math.max(1,+e.target.value||26);else g.rows=Math.max(1,+e.target.value||26);
       if(part){g.fullCols=Math.max(g.fullCols||0,(g.startCol||0)+g.cols);g.fullRows=Math.max(g.fullRows||0,(g.startRow||0)+g.rows);}
       else{g.fullCols=g.cols;g.fullRows=g.rows;}}
-    if(e.target.id==="m-ox")S.grid.offsetX=+e.target.value||0;
-    if(e.target.id==="m-oy")S.grid.offsetY=+e.target.value||0;
+    // OTFBM ignores negative offsets, so the preview does too.
+    if(e.target.id==="m-ox"){S.grid.offsetX=Math.max(0,Math.round(+e.target.value||0));if(+e.target.value<0)setStatus("Offsets cannot be negative: Avrae's map ignores them");}
+    if(e.target.id==="m-oy"){S.grid.offsetY=Math.max(0,Math.round(+e.target.value||0));if(+e.target.value<0)setStatus("Offsets cannot be negative: Avrae's map ignores them");}
     // Grid suggestion dropdown
     if(e.target.id==="m-gridpick"){const v=e.target.value;if(v){const p=v.split("|");pushU();
-      S.grid.cellSize=+p[0];S.grid.cols=+p[1];S.grid.rows=+p[2];S.grid.offsetX=+p[3];S.grid.offsetY=+p[4];
+      S.grid.cellSize=+p[0];S.grid.cols=+p[1];S.grid.rows=+p[2];S.grid.offsetX=Math.max(0,+p[3]||0);S.grid.offsetY=Math.max(0,+p[4]||0);
       S.grid.fullCols=S.grid.cols;S.grid.fullRows=S.grid.rows;renderAll();return;}}
     // File upload for grid analysis
     if(e.target.id==="m-walltype"){const w=S.sel.type==="wall"?S.walls.find(x=>x.id===[...S.sel.ids][0]):null;if(w){pushU();w.door=e.target.value||null;renderAll();return;}}
@@ -4664,11 +4678,11 @@ function setup(){
         // Generate alternatives at common cell sizes
         [40,50,60,70,72,80,100].forEach(cs=>{
           if(tested.has(cs))return;tested.add(cs);
-          const gw=Math.round(w/cs),gh=Math.round(h/cs);
+          const gw=Math.floor(w/cs),gh=Math.floor(h/cs);
           if(gw>=3&&gh>=3&&cs>=20&&cs<=100){
-            const fitW=Math.abs(w-gw*cs),fitH=Math.abs(h-gh*cs);
+            const fitW=w-gw*cs,fitH=h-gh*cs;
             const conf=fitW<=2&&fitH<=2?90:(fitW<=cs*.1&&fitH<=cs*.1?70:50);
-            options.push({cs,gw,gh,ox:Math.round((w-gw*cs)/2),oy:Math.round((h-gh*cs)/2),conf,method:"calculated"});}});
+            options.push({cs,gw,gh,ox:Math.floor(fitW/2),oy:Math.floor(fitH/2),conf,method:"calculated"});}});
         // Sort: detected first, then by closeness to c60
         options.sort((a,b)=>{if(a.conf!==b.conf)return b.conf-a.conf;return Math.abs(a.cs-60)-Math.abs(b.cs-60);});
         const top=options.slice(0,4);
@@ -6050,7 +6064,7 @@ function detectGrid(img){
   const cs=Math.round(g.cell);
   const ox=Math.round(g.ox)%cs,oy=Math.round(g.oy)%cs;
   return{cellSize:cs,rawCell:g.cell,offsetX:ox,offsetY:oy,
-    gridW:Math.max(1,Math.floor((w-ox)/g.cell+0.15)),gridH:Math.max(1,Math.floor((h-oy)/g.cell+0.15)),
+    gridW:Math.max(1,Math.floor((w-ox)/cs+0.02)),gridH:Math.max(1,Math.floor((h-oy)/cs+0.02)),
     confidence:Math.max(50,Math.min(99,Math.round(50+g.cover*30+Math.min(20,g.score)))),method:g.kind,kind:g.kind};
 }
 // Build the list of grid layouts offered for a background image, best first. Each entry:
@@ -6060,7 +6074,8 @@ function bscrySuggestGrids(img){
   const w=img.naturalWidth,h=img.naturalHeight;const out=[];const seen=new Set();let note="";
   let r=null;try{r=detectGrid(img);}catch(e){r={error:"blocked"};note="This image host does not allow BattleScry to read the picture, so the grid could not be measured. These sizes fit the image evenly.";}
   const add=(cs,ox,oy,label,exact)=>{cs=Math.round(cs);if(cs<20||cs>100||seen.has(cs))return;
-    const gw=Math.max(1,Math.floor((w-ox)/(exact||cs)+0.15)),gh=Math.max(1,Math.floor((h-oy)/(exact||cs)+0.15));
+    // OTFBM only draws whole squares of the image, so never offer a column or row the picture cannot fill.
+    const gw=Math.max(1,Math.floor((w-ox)/cs+0.02)),gh=Math.max(1,Math.floor((h-oy)/cs+0.02));
     if(gw<3||gh<3)return;seen.add(cs);out.push({cs:cs,gw:gw,gh:gh,ox:ox,oy:oy,label:label});};
   if(r&&!r.error&&r.cellSize){
     const c=r.rawCell,ox=r.offsetX,oy=r.offsetY,what=r.kind==="tiles"?"floor tiles":"printed grid";
@@ -6079,12 +6094,12 @@ function bscrySuggestGrids(img){
     if(out.length)out[0].rec=true;
   }else if(!note){note="No grid was found on the image, so any size works. These fit it evenly.";}
   // Fill with sizes that divide the image evenly (closest to 60-70px first).
-  const fits=[70,60,50,80,100,64,72,40,90].map(cs=>{const gw=Math.round(w/cs),gh=Math.round(h/cs);return{cs:cs,err:Math.abs(w-gw*cs)+Math.abs(h-gh*cs)};}).sort((a,b)=>(a.err>4)-(b.err>4)||a.err-b.err);
+  const fits=[70,60,50,80,100,64,72,40,90].map(cs=>{const gw=Math.floor(w/cs),gh=Math.floor(h/cs);return{cs:cs,err:(w-gw*cs)+(h-gh*cs)};}).sort((a,b)=>(a.err>4)-(b.err>4)||a.err-b.err);
   const hadDetect=out.length>0;
   for(const f of fits){if(out.length>=(hadDetect?3:4))break;
-    const gw=Math.round(w/f.cs),gh=Math.round(h/f.cs);
+    const gw=Math.floor(w/f.cs),gh=Math.floor(h/f.cs);
     if(seen.has(f.cs)||gw<3||gh<3)continue;seen.add(f.cs);
-    out.push({cs:f.cs,gw:gw,gh:gh,ox:Math.max(0,Math.round((w-gw*f.cs)/2)),oy:Math.max(0,Math.round((h-gh*f.cs)/2)),label:hadDetect?"Other size (ignores the "+(r.kind==="tiles"?"tiles":"printed grid")+")":(f.err<=4?"Fits the image evenly":"Close fit")});}
+    out.push({cs:f.cs,gw:gw,gh:gh,ox:Math.floor((w-gw*f.cs)/2),oy:Math.floor((h-gh*f.cs)/2),label:hadDetect?"Other size (ignores the "+(r.kind==="tiles"?"tiles":"printed grid")+")":(f.err<=4?"Fits the image evenly":"Close fit")});}
   if(!hadDetect&&out.length)out[0].rec=true;
   out.note=note;out.detected=r&&!r.error?r:null;
   return out;
@@ -7085,6 +7100,41 @@ function pickAndUploadImage(onUploaded,statusEl,kind){
   document.body.appendChild(inp);
   inp.onchange=()=>{const f=inp.files&&inp.files[0];inp.remove();if(!f)return;uploadImage(f,st,onUploaded,kind);};
   inp.click();
+}
+// Shown once a new background (upload or pasted link) has been measured: what was found on the picture,
+// which layout was applied, and a nudge to the layout list when the result is probably not what they want.
+function bscryMapLoadedNotice(url,w,h,found,canDetect,ro){
+  const up=(window._bscryUploadInfo&&window._bscryUploadInfo.url===url)?window._bscryUploadInfo:null;
+  const ft=(n)=>(n*5)+"ft";
+  let lines=[];
+  if(up&&(up.srcW!==up.w||up.srcH!==up.h))lines.push(`Your image was ${up.srcW} × ${up.srcH}px. BattleScry ${up.w>up.srcW?(up.enh?"enhanced":"enlarged"):"shrank"} it to <b>${up.w} × ${up.h}px</b> so the squares come out at a whole size Avrae can draw.`);
+  else lines.push(`The image is <b>${w} × ${h}px</b>.`);
+  if(found){const rc=found.rawCell,n=Math.abs(rc-Math.round(rc))>0.05?rc.toFixed(1):Math.round(rc);
+    lines.push(`<b style="color:var(--accent)">${found.kind==="tiles"?"Floor tile pattern":"Printed grid"} found</b> at ${n}px per ${found.kind==="tiles"?"tile":"square"}, so the grid was set to match it.`);}
+  else if(!canDetect)lines.push(`This image host does not let BattleScry read the picture, so it could not look for a grid. A size that fits the image was picked instead.`);
+  else lines.push(`<b>No grid or floor tile pattern was found</b> on the image, so a size that fits it evenly was picked.`);
+  lines.push(`Grid set to <b>${ro.gw} × ${ro.gh} squares at ${ro.cs}px</b> (${ft(ro.gw)} × ${ft(ro.gh)}).`);
+  const small=!found&&(ro.gw*ro.gh<=100||Math.max(w,h)<600);
+  const lowres=ro.cs<40;
+  let warn="";
+  if(small)warn=`This is a small image, so the map only covers about one room. If it should cover more ground, choose a layout with more squares and BattleScry will offer to enhance the image to suit.`;
+  else if(lowres)warn=`At this layout the squares are under 40px, so custom token images will not show. Use the Enhance button under Grid Properties, or pick a layout with fewer squares.`;
+  else if(!found&&canDetect)warn=`If the squares do not line up with the map, choose another layout.`;
+  const M=smartModal({title:"Map loaded",size:"sm"});
+  M.backdrop.id="bscry-maploaded";
+  M.body.innerHTML=`<div style="font-size:13px;line-height:1.6">
+    ${lines.map(l=>`<p style="margin:0 0 8px">${l}</p>`).join("")}
+    ${warn?`<p style="margin:0 0 12px;padding:8px 10px;border-radius:6px;background:var(--bg3);color:var(--warn,#e0a030);font-size:12px">${small||lowres?"⚠ ":""}${warn}</p>`:""}
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn ${small||lowres?"btn-p":"btn-s"}" id="bsml-pick">Choose a different layout</button>
+      <button class="btn ${small||lowres?"btn-s":"btn-p"}" id="bsml-ok">Keep this layout</button>
+    </div></div>`;
+  M.body.querySelector("#bsml-ok").onclick=M.close;
+  M.body.querySelector("#bsml-pick").onclick=()=>{M.close();
+    const tb=document.querySelector('#tabs button[data-tab="map"]');if(tb&&S.tab!=="map")tb.click();
+    setTimeout(()=>{const el=$("m-gridpick");if(!el)return;el.scrollIntoView({block:"center"});el.focus();
+      el.style.outline="2px solid var(--accent)";el.style.outlineOffset="2px";setTimeout(()=>{const e2=$("m-gridpick");if(e2){e2.style.outline="";e2.style.outlineOffset="";}},4000);
+      try{if(el.showPicker)el.showPicker();}catch(e){}},80);};
 }
 function showUploadLoginPrompt(){
   const M=smartModal({title:"Log in to upload",size:"sm"});
