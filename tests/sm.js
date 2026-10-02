@@ -48,6 +48,15 @@ const { chromium } = require('playwright'); const fs=require('fs');
   ok(f.isEnh&&f.small===0&&f.n>0&&f.note&&!f.btn,'already-enhanced image: no layouts that need enhancing again '+JSON.stringify(f));
   f=await fresh('sm_2100.jpg');
   ok(!f.isEnh&&!f.canEnh&&f.small===0&&f.n>0,'image over 1920px: no layouts the enhancer would refuse '+JSON.stringify(f));
+  // Remove background: no error popup, the removal is exported, and undo brings the image back
+  p.once('dialog',d=>d.accept());
+  await p.evaluate(()=>{origBgUrl=S.loadedUrl;S._uiBgOpen=true;renderSB();document.querySelectorAll('.smart-modal-backdrop').forEach(e=>e.remove());});
+  await p.click('#m-bgremove'); await p.waitForTimeout(500);
+  const rm=await p.evaluate(()=>({url:S.loadedUrl,err:[...document.querySelectorAll('.smart-modal-title')].map(e=>e.textContent).join('|'),cmd:(typeof buildApplyCommand==='function'?buildApplyCommand():(document.getElementById('cmd-text')||document.getElementById('cmd-out')||{}).textContent)||document.body.innerText.match(/!bscry apply[^\n]*/)?.[0]||''}));
+  ok(rm.url===''&&!/Error/.test(rm.err),'remove background: no error popup ('+rm.err+')');
+  ok(/Background:(%20| )none/.test(rm.cmd),'removal is sent to Discord: '+String(rm.cmd).slice(0,120));
+  await p.evaluate(()=>popU()); await p.waitForTimeout(600);
+  ok(await p.evaluate(()=>/sm_2100/.test(S.loadedUrl)&&document.getElementById('map-img').style.display!=='none'),'undo brings the background back');
   await p.screenshot({path:'shots/sm.png'});
   ok(errs.length===0,'no page errors '+errs.join('|'));
   await b.close(); process.exit(fail);

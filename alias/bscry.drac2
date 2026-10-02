@@ -1,6 +1,8 @@
 <drac2>
 # ============================================================
-# BattleScry alias v0.2.53
+# BattleScry alias v0.2.54
+# v0.2.54: removing the background image in BattleScry now removes it from the map (the link sends
+#          "Background: none"; an empty Background still means unchanged).
 # v0.2.53: (1) groups: a group's initiative is changed on the group itself (`!i opt <group> -p`), since
 #          Avrae ignores it on a member; a group field of - takes a combatant out of its group.
 #          (2) saved battles are retired: no loadbattle mode and no sb names in the link. Saved
@@ -357,7 +359,7 @@ def _bootstrap_simple_embed():
         _bs_url += "#" + "&".join(hash_parts)
     return ('embed -title "\u2728 BattleScry - Combat Ready" '
             '-desc "Combat bootstrapped with a DM combatant. [Click here to open BattleScry](' + _bs_url + ')" '
-            '-color 0xf59e0b -footer "BattleScry v0.2.53"')
+            '-color 0xf59e0b -footer "BattleScry v0.2.54"')
 
 def _bootstrap_followup_with_cmd():
     # Two-paste path for apply/loadmap/loadbattle with no combat.
@@ -388,7 +390,7 @@ if mode and not (is_apply or is_loadmap or is_loadbattle):
             '`!bscry loadmap <name>` - load one of your saved maps, with the tokens saved in it.\n'
             '\n'
             'Run `!bscry` with nothing after it to start. If no combat is running it starts one and adds a DM combatant to hold the map." '
-            '-color 0xf59e0b -footer "BattleScry v0.2.53"')
+            '-color 0xf59e0b -footer "BattleScry v0.2.54"')
 
 if c is None:
     # No active combat - bootstrap combat + DM combatant in one multiline.
@@ -880,6 +882,11 @@ if is_apply:
         final_view = merge_scalar(local_view, base_view, remote_view, "View",
             "View settings changed since you loaded",
             conflicts)
+
+    # v0.2.54: BattleScry sends "Background: none" when the DM removed the image. An empty field
+    # means "unchanged", so removal needs its own word. It never reaches the stored effect.
+    if final_bg == "none":
+        final_bg = ""
 
     # --- Detect set conflicts: walls/FOW/objects DM removed but server modified ---
     # (Currently captured implicitly via merge_set - server wins. We can also surface as info.)
@@ -1800,7 +1807,7 @@ if is_apply:
                     map_img = _pre.rstrip("/") + "/" + _ff_path + "/?" + _post
                 else:
                     map_img = map_img.rstrip("/") + "/" + _ff_path
-        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.53"'
+        cmd = 'embed -title "🔮 BattleScry - Applied" -desc "' + desc + '" -color 0x22c55e -footer "BattleScry v0.2.54"'
         if map_img:
             cmd += ' -image "' + map_img + '"'
         # If new combatants were added, emit !i add commands first via multiline output.
@@ -1837,9 +1844,9 @@ else:
         desc_parts.insert(0, loadbattle_status)
     desc = "\n\n".join(desc_parts)
     if is_loadmap or is_loadbattle:
-        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.53"'
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -color 0x22c55e -footer "BattleScry v0.2.54"'
     else:
-        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.53"'
+        out = 'embed -title "' + title + '" -desc "' + desc + '"' + thumb + ' -f "How to Use|#1: Click the link above to open the map in your browser (desktop or phone).\n#2: Move tokens, add overlays, edit the map.\n#3: Press Copy for Discord.\n#4: Paste it back here." -color 0xf59e0b -footer "BattleScry v0.2.54"'
     if lm_followup_cmds:
         return "multiline\n" + "\n".join(lm_followup_cmds) + "\n!" + out
     return out
