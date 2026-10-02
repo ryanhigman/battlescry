@@ -51,6 +51,10 @@ const { chromium } = require('playwright');
     out.fog={inFog:fogTokenCount(),listRows:document.querySelectorAll('#list-area [data-tid]').length,note:(document.getElementById('list-area').textContent.match(/\d+ tokens? (is|are) under fog/)||[''])[0]};
     document.getElementById('fog-reveal-link').click();await wait(60);
     out.fogShown={reveal:S.revealFogTokens,listRows:document.querySelectorAll('#list-area [data-tid]').length};
+    // a link with no map opens on the blank 10x10, even if this browser saw another map before
+    localStorage.setItem('mapDef',JSON.stringify({g:'18x12',o:'c72',bg:'https://cdn.battlescry.com/m/tc0002.jpg'}));
+    S.loadedUrl='';origState=null;loadFromHashStr('np=GO1;GO2&ip=GO1:6;GO2:6&ch=1');await wait(150);
+    out.fresh={bg:S.loadedUrl,grid:S.grid.cols+'x'+S.grid.rows+' c'+S.grid.cellSize,ls:localStorage.getItem('mapDef')};
     return out;});
   let fail=0; const ok=(c,m)=>{console.log((c?'ok   ':'FAIL ')+m); if(!c)fail++;};
   ok(r.shiftSel==='G1,G2,G3,G4,G5,G6'&&r.panel,'shift-click selects a range of unplaced combatants ('+r.shiftSel+')');
@@ -61,6 +65,7 @@ const { chromium } = require('playwright');
   ok(r.park.parked&&r.park.cell==='P14'&&r.park.cmd==='OG1|P14','Move off map parks past the corner: '+JSON.stringify(r.park));
   ok(r.a0.parked&&r.a0.cell==='P14','typing A0 parks at the safe cell too: '+JSON.stringify(r.a0));
   ok(r.fog.inFog>0&&r.fog.note&&r.fogShown.reveal&&r.fogShown.listRows===r.fog.listRows+r.fog.inFog,'tokens under fog are hidden until shown '+JSON.stringify(r.fog)+' '+JSON.stringify(r.fogShown));
+  ok(r.fresh.bg===''&&r.fresh.grid==='10x10 c40'&&r.fresh.ls===null,'a no-map link starts blank, not on the last map seen: '+JSON.stringify(r.fresh));
   ok(errs.length===0,'no page errors '+errs.join('; '));
   await b.close(); process.exit(fail?1:0);
 })();

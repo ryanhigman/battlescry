@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.328                                      https://battlescry.com
+BattleScry v0.1.329                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,7 +19,7 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
-  v0.1.328 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
+  v0.1.329 - Changed: on phones the panel opens a little lower so more of the map stays visible, and
             the coordinate tooltip sits below the pointer instead of over token labels. Removed the
             old background dialog, which nothing opened any more.
   v0.1.318 - Fixed: an uploaded map keeps the grid that was measured before it was resized or
@@ -382,7 +382,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.328</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.329</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -6124,18 +6124,11 @@ function loadFromHashStr(hash){
   S.grid.startCol=0;S.grid.startRow=0;S.grid.fullCols=S.grid.cols;S.grid.fullRows=S.grid.rows;
   if(params.vw){const vm=params.vw.match(/^([a-z]+)(\d+):(\d+)x(\d+)$/i);
     if(vm){S.grid.startCol=l2col(vm[1].toLowerCase());S.grid.startRow=parseInt(vm[2])-1;S.grid.cols=+vm[3];S.grid.rows=+vm[4];}}
-  // Save map defaults when we get grid/bg info
-  if(hasMap){try{localStorage.setItem("mapDef",JSON.stringify({g:params.g||"",o:params.o||"",bg:params.bg||""}));}catch(e){}}
-  // If no grid/bg, try loading saved defaults
-  // The saved default is a convenience for links that carry no map (Avrae has no map attached yet).
-  // It is NOT Avrae's state, so it must not become the baseline: see _fromSavedDef at the snap() below.
+  // A link with no map means Avrae has no map for this combat. Start from the blank grid Discord will
+  // draw. (This used to reopen the last map this browser had seen, which put an old map on a new fight.)
+  try{localStorage.removeItem("mapDef");}catch(e){}
   S._noMapLink=!hasMap;
   let _fromSavedDef=false;
-  if(!hasMap&&!S.loadedUrl){try{const sv=JSON.parse(localStorage.getItem("mapDef")||"{}");if(!sv.bg)throw 0; /* a saved default with no background is just a stale grid size: ignore it */ _fromSavedDef=true;
-    if(sv.g){const m=sv.g.match(/(\d+)x(\d+)/);if(m){S.grid.cols=+m[1];S.grid.rows=+m[2];S.grid.fullCols=+m[1];S.grid.fullRows=+m[2];}}
-    if(sv.o){const opts=parseOpts("@"+sv.o);S.grid.cellSize=opts.cellSize||40;S.grid.offsetX=opts.offsetX;S.grid.offsetY=opts.offsetY;if(opts.dark)S.darkMode=true;}
-    if(sv.bg){S.loadedUrl=sv.bg;$("map-img").src=sv.bg;$("map-img").style.display="block";}
-  }catch(e){}}
   // First load from a link with no map and nothing saved: show what Discord will draw, OTFBM's blank
   // 10x10, not the 26x26 placeholder grid the page starts with.
   if(!hasMap&&!S.loadedUrl&&!_fromSavedDef&&!origState){S.grid.cols=10;S.grid.rows=10;S.grid.fullCols=10;S.grid.fullRows=10;S.grid.cellSize=40;S.grid.offsetX=0;S.grid.offsetY=0;}
