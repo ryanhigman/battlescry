@@ -11,7 +11,7 @@ const { chromium } = require('playwright'); const fs=require('fs');
     let src=bscryFindGrid.toString();
     src=src.replace('const tryQ=(qi)=>{','const tryQ=(qi)=>{const _d={qi:qi};(window._dbg=window._dbg||[]).push(_d);')
            .replace('if(!lx&&!ly)return null;','_d.lx=lx;_d.ly=ly;if(!lx&&!ly)return null;')
-           .replace('const fx=comb(px,P0),fy=comb(py,P0);if(!fx||!fy)continue;','const fx=comb(px,P0),fy=comb(py,P0);(_d.c=_d.c||[]).push({P0:+P0.toFixed(1),fx:fx&&{P:+fx.P.toFixed(2),con:+fx.contrast.toFixed(2),cov:+fx.cover.toFixed(2)},fy:fy&&{P:+fy.P.toFixed(2),con:+fy.contrast.toFixed(2),cov:+fy.cover.toFixed(2)}});if(!fx||!fy)continue;');
+           .replace('const fx=comb(px,P0),fy=comb(py,P0);if(!fx||!fy)continue;','const fx=comb(px,P0),fy=comb(py,P0);(_d.c=_d.c||[]).push({P0:+P0.toFixed(1),fx:fx&&{P:+fx.P.toFixed(2),con:+fx.contrast.toFixed(2),cov:+fx.cover.toFixed(2),soft:+fx.soft.toFixed(2)},fy:fy&&{P:+fy.P.toFixed(2),con:+fy.contrast.toFixed(2),cov:+fy.cover.toFixed(2),soft:+fy.soft.toFixed(2)}});if(!fx||!fy)continue;');
     const fn=eval('('+src+')');window._dbg=[];
     const g=fn(img,img.naturalWidth,img.naturalHeight);
     return {g,T:BSCRY_GRID_T,dbg:window._dbg};

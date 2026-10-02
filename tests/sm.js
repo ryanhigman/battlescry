@@ -57,6 +57,9 @@ const { chromium } = require('playwright'); const fs=require('fs');
   ok(/Background:(%20| )none/.test(rm.cmd),'removal is sent to Discord: '+String(rm.cmd).slice(0,120));
   await p.evaluate(()=>popU()); await p.waitForTimeout(600);
   ok(await p.evaluate(()=>/sm_2100/.test(S.loadedUrl)&&document.getElementById('map-img').style.display!=='none'),'undo brings the background back');
+  // file-name hints: squares are read from the name, pixel sizes and mismatched shapes are ignored
+  const nh=await p.evaluate(()=>[bscryNameHint('Cliff Fort 100 x140.jpg',1920,2688),bscryNameHint('map_1920x2688.jpg',1920,2688),bscryNameHint('Tavern 22x17 night.png',1540,1190),bscryNameHint('Tavern 22x17.png',2000,1000),bscryNameHint('https://x.y/maps/Cave%2030x40.webp?v=2',1500,2000)].map(h=>h?h.cols+'x'+h.rows+'@'+h.cell.toFixed(1):'none'));
+  ok(JSON.stringify(nh)==='["100x140@19.2","none","22x17@70.0","none","30x40@50.0"]','file-name hints '+JSON.stringify(nh));
   await p.screenshot({path:'shots/sm.png'});
   ok(errs.length===0,'no page errors '+errs.join('|'));
   await b.close(); process.exit(fail);

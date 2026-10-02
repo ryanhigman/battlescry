@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.336                                      https://battlescry.com
+BattleScry v0.1.337                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,8 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.337 - Added: an uploaded map's file name is read for its size in squares ("... 100 x140.jpg").
+            Fixed: a repeating art texture is no longer mistaken for a faint printed grid.
   v0.1.336 - Changed: shorter layout list entries (squares and pixel size only).
   v0.1.335 - Fixed: grid detection now finds a faint printed grid that has floor-tile lines between
             its lines (2 or 3 tiles per square), and accepts fainter grids when the spacing across
@@ -399,7 +401,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.336</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.337</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -771,10 +773,32 @@ function loginLineHtml(){
 //   no grid found        -> only shrink, by a whole divisor, when the longest side is over maxDim
 // Returns {scale, cell, srcCell, kind}: multiply both dimensions by scale; cell is the square size on the
 // hosted image (0 if unknown); srcCell is what was measured on the original.
-function bscryPlanBgScale(img,w,h,maxDim){
+// Map files are often named with their size in squares ("Cliff Fort 100 x140.jpg"). Returns {cols,rows,cell}
+// when a pair of numbers in the name matches the image's shape, else null. Pixel sizes such as 1920x1080
+// are ignored: they would mean squares of about one pixel.
+function bscryNameHint(name,w,h){
+  let base=String(name||"");try{base=decodeURIComponent(base);}catch(e){}
+  base=base.split(/[?#]/)[0].split("/").pop().replace(/\.[a-z0-9]{2,5}$/i,"");
+  const re=/(\d{1,3})\s*[x×]\s*(\d{1,3})(?!\d)/gi;let m;
+  while((m=re.exec(base))){
+    for(const [c,r] of [[+m[1],+m[2]],[+m[2],+m[1]]]){
+      if(c<3||r<3||c>250||r>250)continue;
+      const cx=w/c,cy=h/r;
+      if(cx<8||cx>400)continue;
+      if(Math.abs(cx-cy)/cx>0.03)continue;
+      return{cols:c,rows:r,cell:(cx+cy)/2};}
+  }
+  return null;}
+function bscryPlanBgScale(img,w,h,maxDim,name){
   const longest=Math.max(w,h);
   let g={kind:"",cell:0};
   try{g=bscryFindGrid(img,w,h)||g;}catch(e){g={kind:"",cell:0};}
+  // The file name wins unless a bold printed grid says otherwise. When the two agree (or the grid found
+  // is a whole multiple or fraction of the named one) the name gives the exact figure.
+  {const nh=bscryNameHint(name,w,h);
+    if(nh){const rt=g.cell?g.cell/nh.cell:0,near=(v)=>Math.abs(v-Math.round(v))<0.06&&Math.round(v)>=1;
+      const agrees=g.cell&&(near(rt)||near(1/rt));
+      if(!g.cell||agrees||!(g.kind==="grid"&&g.score>=BSCRY_GRID_T.gs))g={kind:"name",cell:nh.cell,ox:0,oy:0,score:0,cover:0,cols:nh.cols,rows:nh.rows};}}
   if(g.cell){
     let S=g.cell;
     // Floor tiles are often a fraction of a 5ft square. Use the smallest whole number of tiles that reaches 40px.
@@ -822,7 +846,7 @@ function bscryFindGrid(img,w,h){
     for(let i=0;i<n;i++)pre[i+1]=pre[i]+p[i];
     for(let i=0;i<n;i++){const a=Math.max(0,i-R),b=Math.min(n,i+R+1);o[i]=Math.max(0,p[i]-(pre[b]-pre[a])/(b-a));}
     for(let i=0;i<n;i++)q[i]=Math.max(o[i],i>0?o[i-1]:0,i<n-1?o[i+1]:0);
-    return q;};
+    q.raw=o;return q;};
   const minL=Math.max(6,Math.round(12*sc)),maxLn=Math.round(420*sc)+2;
   const period=(p)=>{const n=p.length;let e=0;for(let i=0;i<n;i++)e+=p[i]*p[i];if(e<=0)return null;
     const maxL=Math.min(Math.floor(n/3),maxLn);if(maxL<=minL+2)return null;
@@ -840,7 +864,11 @@ function bscryFindGrid(img,w,h){
         if(c<3)continue;s/=c;if(!best||s>best.s)best={s:s,P:P,o:o,c:c};}}
     if(!best)return null;
     let hit=0,c=0;for(let x=best.o;x<n-1;x+=best.P){if(p[Math.round(x)]>2*mean)hit++;c++;}
-    return{P:best.P,o:best.o,contrast:best.s/mean,cover:hit/c,n:c};};
+    // How thin the lines are: edge strength 4-5px either side of each line, relative to the line itself.
+    // A drawn grid line is a pixel or two wide, so this is near 0. A repeating art texture (tiled grass,
+    // water or paper grain) rises and falls gently, so it stays high.
+    let soft=1;if(p.raw&&best.P>=12){const rw=p.raw;let pk=0,sh=0,k=0;for(let x=best.o;x<n-1;x+=best.P){const i=Math.round(x);if(i<6||i>n-7)continue;pk+=Math.max(rw[i-1],rw[i],rw[i+1]);sh+=(rw[i-4]+rw[i+4]+rw[i-5]+rw[i+5])/4;k++;}if(k&&pk>0)soft=sh/pk;}
+    return{P:best.P,o:best.o,contrast:best.s/mean,cover:hit/c,n:c,soft:soft};};
   const bx=bandsOf(true),by=bandsOf(false);
   // Mean brightness per column / row: a grid line is where this departs most from its neighbours. Used to
   // move the offset from the line's leading edge to its centre.
@@ -875,7 +903,7 @@ function bscryFindGrid(img,w,h){
       // On plain floor tiles every line is alike, so the multiple scores the same and is ignored.
       if(mult[P0]&&!(score>=1.25*(baseScore[mult[P0]]||Infinity)))continue;
       const beats=!best||(P0<best.P0*0.7?(score>=0.3*best.score&&cover>=0.7):(score*cover>best.score*best.cover&&!(best.P0<P0*0.7&&best.score>=0.3*score&&best.cover>=0.7)));
-      if(beats)best={P0:P0,P:(fx.P*fx.n+fy.P*fy.n)/(fx.n+fy.n),ox:centre(mx,fx.o,fx.P),oy:centre(my,fy.o,fy.P),score:score,cover:cover,n:Math.max(fx.n,fy.n),dP:Math.abs(fx.P-fy.P),nmin:Math.min(fx.n,fy.n)};}
+      if(beats)best={P0:P0,P:(fx.P*fx.n+fy.P*fy.n)/(fx.n+fy.n),ox:centre(mx,fx.o,fx.P),oy:centre(my,fy.o,fy.P),score:score,cover:cover,n:Math.max(fx.n,fy.n),dP:Math.abs(fx.P-fy.P),nmin:Math.min(fx.n,fy.n),soft:Math.max(fx.soft,fy.soft)};}
     return best;};
   const fin=(b,kind)=>{let cell=b.P/sc;
     // Snap to a whole pixel when the drift across the whole image would be under 3px.
@@ -887,10 +915,10 @@ function bscryFindGrid(img,w,h){
   if(strict&&strict.score>=BSCRY_GRID_T.gs&&strict.cover>=BSCRY_GRID_T.gc)return fin(strict,"grid");
   // A faint printed grid: weaker lines, but they run the whole image (this is the median of 12 bands),
   // there are many of them, and the spacing measured across and down agrees to a few hundredths of a pixel.
-  if(strict&&strict.score>=2.8&&strict.cover>=BSCRY_GRID_T.gc&&strict.dP<=0.06&&strict.nmin>=20)return fin(strict,"grid");
+  if(strict&&strict.score>=2.8&&strict.cover>=BSCRY_GRID_T.gc&&strict.dP<=0.06&&strict.nmin>=20&&strict.soft<=0.18)return fin(strict,"grid");
   // Floor tiles only show where there is floor: accept the pattern when it holds in 3, then 2, of the 12 bands.
   let loose=null;
-  for(const qi of [B-3,B-2]){const t=tryQ(qi);if(t&&t.score>=BSCRY_GRID_T.ts&&t.cover>=BSCRY_GRID_T.tc)return fin(t,"tiles");if(t&&(!loose||t.score>loose.score))loose=t;}
+  for(const qi of [B-3,B-2]){const t=tryQ(qi);if(t&&t.score>=BSCRY_GRID_T.ts&&t.cover>=BSCRY_GRID_T.tc&&(t.score>=BSCRY_GRID_T.gs||t.soft<=0.2))return fin(t,"tiles");if(t&&(!loose||t.score>loose.score))loose=t;}
   const dbg=(loose&&(!strict||loose.score>strict.score))?loose:strict;
   return Object.assign({},NONE,dbg?{score:Math.round(dbg.score*10)/10,cover:Math.round(dbg.cover*100)/100,weak:Math.round(dbg.P/sc*10)/10}:{});
 }
@@ -916,7 +944,7 @@ function bscryConvertToJpeg(file,maxDim,quality,onDone,onError){
       try{
         const w=img.naturalWidth,h=img.naturalHeight;
         if(!w||!h){URL.revokeObjectURL(objUrl);if(onError)onError("Could not read that image.");return;}
-        const plan=bscryPlanBgScale(img,w,h,maxDim);
+        const plan=bscryPlanBgScale(img,w,h,maxDim,file.name);
         const ow=Math.max(1,Math.round(w*plan.scale)),oh=Math.max(1,Math.round(h*plan.scale));
         const cv=document.createElement("canvas");cv.width=ow;cv.height=oh;
         const ctx=cv.getContext("2d");ctx.imageSmoothingQuality="high";ctx.fillStyle="#000";ctx.fillRect(0,0,ow,oh);ctx.drawImage(img,0,0,ow,oh);
@@ -1028,7 +1056,7 @@ function bscryHostMap(out,filename,onDone0,onError,onStatus){
   // Remember the grid measured on the original, keyed by the hosted URL. AI upscaling can smooth faint
   // grid lines away, so the Map tab must not rely on re-measuring the hosted copy.
   const onDone=(u,enh)=>{if(out.cell)window._bscryGridHint={url:u,cell:out.cell,ox:out.ox||0,oy:out.oy||0,kind:out.kind||"grid",w:out.w,h:out.h};onDone0(u,enh);};
-  if(!out.srcBlob){bscryHostBlob(out.blob,filename,(u)=>onDone(u,false),onError);return;}
+  if(!out.srcBlob||Math.max(out.srcW||0,out.srcH||0)>BSCRY_ENH_MAX_SRC){bscryHostBlob(out.blob,filename,(u)=>onDone(u,false),onError);return;}
   if(onStatus)onStatus("Uploading...");
   bscryHostBlob(out.srcBlob,filename,(u0)=>{
     if(onStatus)onStatus("Enhancing with AI upscaling (this can take a little while)...");
@@ -2739,7 +2767,7 @@ function mapGridPickerHtml(){
     sh+=`<option value="${o.cs}|${o.gw}|${o.gh}|${o.ox}|${o.oy}"${sel}>${o.gw}×${o.gh} squares at ${_ok?o.cs*_k:o.cs}px${warn}${star}</option>`;});
   sh+="</select>";
   if(!baked){const f=a.found;
-    const head=f?`<b style="color:var(--accent)">${f.kind==="tiles"?"Floor tiles":"Printed grid"} found: ${f.rawCell.toFixed(Math.abs(f.rawCell-Math.round(f.rawCell))>0.05?1:0)}px per ${f.kind==="tiles"?"tile":"square"}.</b> `:"";
+    const head=!f?"":f.kind==="name"?`<b style="color:var(--accent)">Grid size taken from the file name.</b> `:`<b style="color:var(--accent)">${f.kind==="tiles"?"Floor tiles":"Printed grid"} found: ${f.rawCell.toFixed(Math.abs(f.rawCell-Math.round(f.rawCell))>0.05?1:0)}px per ${f.kind==="tiles"?"tile":"square"}.</b> `;
     if(a.note&&f)sh+=`<div style="font-size:10px;color:var(--fg3);line-height:1.4;padding:4px 0 0 0">${a.note}</div>`;
     else if(head||a.note)sh+=`<div style="font-size:10px;color:var(--fg3);line-height:1.4;padding:4px 0 0 0">${head}${a.note||""}</div>`;}
   if(baked&&curKey!==bakedKey){
@@ -3057,7 +3085,7 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
       if(hint&&hint.url===url&&hint.cell>=20&&hint.cell<=100){
         for(let i=options.length-1;i>=0;i--){if(options[i].cs===hint.cell)options.splice(i,1);}
         const hx=hint.ox%hint.cell,hy=hint.oy%hint.cell;
-        options.unshift({cs:hint.cell,gw:Math.max(1,Math.floor((w-hx)/hint.cell+0.02)),gh:Math.max(1,Math.floor((h-hy)/hint.cell+0.02)),ox:hx,oy:hy,conf:300,det:true,label:hint.kind==="tiles"?"Matches the floor tiles":"Matches the printed grid",top:true});
+        options.unshift({cs:hint.cell,gw:Math.max(1,Math.floor((w-hx)/hint.cell+0.02)),gh:Math.max(1,Math.floor((h-hy)/hint.cell+0.02)),ox:hx,oy:hy,conf:300,det:true,label:hint.kind==="tiles"?"Matches the floor tiles":hint.kind==="name"?"From the file name":"Matches the printed grid",top:true});
         tested.add(hint.cell);found={kind:hint.kind,rawCell:hint.cell};note="";}}
     // GCF-first: a cell that divides both W and H exactly is a divisor of gcd(W,H). If gcd is in 40..100 use
     // it; if larger, use the largest divisor in that range. Exact fit (offset 0), so rank it above the rest.
@@ -7198,7 +7226,8 @@ function bscryMapLoadedNotice(url,w,h,found,canDetect,ro){
   let lines=[];
   if(up&&(up.srcW!==up.w||up.srcH!==up.h))lines.push(`Your image was ${up.srcW} × ${up.srcH}px. BattleScry ${up.w>up.srcW?(up.enh?"enhanced":"enlarged"):"shrank"} it to <b>${up.w} × ${up.h}px</b> so the squares come out at a whole size Avrae can draw.`);
   else lines.push(`The image is <b>${w} × ${h}px</b>.`);
-  if(found){const rc=found.rawCell,n=Math.abs(rc-Math.round(rc))>0.05?rc.toFixed(1):Math.round(rc);
+  if(found&&found.kind==="name")lines.push(`<b style="color:var(--accent)">The file name gives the map size</b> as ${ro.gw} × ${ro.gh} squares, so the grid was set to match it.`);
+  else if(found){const rc=found.rawCell,n=Math.abs(rc-Math.round(rc))>0.05?rc.toFixed(1):Math.round(rc);
     lines.push(`<b style="color:var(--accent)">${found.kind==="tiles"?"Floor tile pattern":"Printed grid"} found</b> at ${n}px per ${found.kind==="tiles"?"tile":"square"}, so the grid was set to match it.`);}
   else if(!canDetect)lines.push(`This image host does not let BattleScry read the picture, so it could not look for a grid. A size that fits the image was picked instead.`);
   else lines.push(`<b>No grid or floor tile pattern was found</b> on the image, so a size that fits it evenly was picked.`);
@@ -7207,6 +7236,7 @@ function bscryMapLoadedNotice(url,w,h,found,canDetect,ro){
   const lowres=ro.cs<40;
   let warn="";
   if(small)warn=`This is a small image, so the map only covers about one room. If it should cover more ground, choose a layout with more squares and BattleScry will enhance the image to suit.`;
+  else if(lowres&&S.bgAnalysis&&S.bgAnalysis.canEnh===false)warn=`This map has so many squares that they come out at ${ro.cs}px, under the 40px that custom token images need, and the image is already as large as it can go. Tokens will show as plain colored circles.`;
   else if(lowres)warn=`At this layout the squares are under 40px, so custom token images will not show. Use the Enhance button under Grid Properties, or pick a layout with fewer squares.`;
   else if(!found&&canDetect)warn=`If the squares do not line up with the map, choose another layout.`;
   const M=smartModal({title:"Map loaded",size:"sm"});
