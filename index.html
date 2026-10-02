@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.334                                      https://battlescry.com
+BattleScry v0.1.335                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,9 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.335 - Fixed: grid detection now finds a faint printed grid that has floor-tile lines between
+            its lines (2 or 3 tiles per square), and accepts fainter grids when the spacing across
+            and down agrees closely.
   v0.1.334 - Fixed: removing the background no longer shows "Could not load background", and the
             removal is now sent to Discord (needs alias v0.2.54).
   v0.1.333 - Fixed: an image is only ever enhanced once. Layouts that would need an already-enhanced
@@ -395,7 +398,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.334</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.335</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -855,13 +858,23 @@ function bscryFindGrid(img,w,h){
     // Every second to fifth line is sometimes drawn heavier, which makes the double spacing the strongest
     // peak. Try the halves and thirds too; the smallest spacing that still holds up wins below.
     for(const c0 of cands.slice()){for(const dv of [2,3,4,5]){const c2=c0/dv;if(c2>=minL+2&&!cands.some(v=>Math.abs(v-c2)<=1))cands.push(c2);}}
+    // The opposite case: faint grid lines with floor-tile lines between them (2 or 3 tiles per square).
+    // The tile spacing gives the strongest repeat, but only every second or third line is a real grid
+    // line, so the tile spacing itself scores poorly. Try the doubles and triples as well.
+    const mult={};
+    for(const c0 of [lx&&lx.lag,ly&&ly.lag]){if(!c0)continue;for(const mu of [2,3]){const c2=c0*mu;if(c2<=maxLn&&c2<=Math.min(px.length,py.length)/4&&!cands.some(v=>Math.abs(v-c2)<=1)){cands.push(c2);mult[c2]=c0;}}}
+    const baseScore={};
     let best=null;
     for(const P0 of cands){
       const fx=comb(px,P0),fy=comb(py,P0);if(!fx||!fy)continue;
       if(Math.abs(fx.P-fy.P)>Math.max(0.6,P0*0.02))continue;
       const score=Math.min(fx.contrast,fy.contrast),cover=Math.min(fx.cover,fy.cover);
+      baseScore[P0]=score;
+      // A double or triple only counts when its lines are clearly stronger than the in-between ones.
+      // On plain floor tiles every line is alike, so the multiple scores the same and is ignored.
+      if(mult[P0]&&!(score>=1.25*(baseScore[mult[P0]]||Infinity)))continue;
       const beats=!best||(P0<best.P0*0.7?(score>=0.3*best.score&&cover>=0.7):(score*cover>best.score*best.cover&&!(best.P0<P0*0.7&&best.score>=0.3*score&&best.cover>=0.7)));
-      if(beats)best={P0:P0,P:(fx.P*fx.n+fy.P*fy.n)/(fx.n+fy.n),ox:centre(mx,fx.o,fx.P),oy:centre(my,fy.o,fy.P),score:score,cover:cover,n:Math.max(fx.n,fy.n)};}
+      if(beats)best={P0:P0,P:(fx.P*fx.n+fy.P*fy.n)/(fx.n+fy.n),ox:centre(mx,fx.o,fx.P),oy:centre(my,fy.o,fy.P),score:score,cover:cover,n:Math.max(fx.n,fy.n),dP:Math.abs(fx.P-fy.P),nmin:Math.min(fx.n,fy.n)};}
     return best;};
   const fin=(b,kind)=>{let cell=b.P/sc;
     // Snap to a whole pixel when the drift across the whole image would be under 3px.
@@ -871,6 +884,9 @@ function bscryFindGrid(img,w,h){
     return{kind:kind,cell:cell,ox:mod(b.ox/sc),oy:mod(b.oy/sc),score:Math.round(b.score*10)/10,cover:Math.round(b.cover*100)/100};};
   const strict=tryQ(Math.floor(B/2)-1);
   if(strict&&strict.score>=BSCRY_GRID_T.gs&&strict.cover>=BSCRY_GRID_T.gc)return fin(strict,"grid");
+  // A faint printed grid: weaker lines, but they run the whole image (this is the median of 12 bands),
+  // there are many of them, and the spacing measured across and down agrees to a few hundredths of a pixel.
+  if(strict&&strict.score>=2.8&&strict.cover>=BSCRY_GRID_T.gc&&strict.dP<=0.06&&strict.nmin>=20)return fin(strict,"grid");
   // Floor tiles only show where there is floor: accept the pattern when it holds in 3, then 2, of the 12 bands.
   let loose=null;
   for(const qi of [B-3,B-2]){const t=tryQ(qi);if(t&&t.score>=BSCRY_GRID_T.ts&&t.cover>=BSCRY_GRID_T.tc)return fin(t,"tiles");if(t&&(!loose||t.score>loose.score))loose=t;}
