@@ -199,7 +199,7 @@ async function handleRequest(request) {
   // === ENHANCE ROUTE (AI upscale via Cloudflare Images, login required) ===
   // POST ?enhance with form fields: session, src (https image URL), ew, eh (target size in px).
   // Fetches src through Cloudflare image resizing with upscale:"generate", stores the result in R2
-  // under u/ and returns {url, enhanced:true}. On any failure returns {enhanced:false, reason}.
+  // under u/enh- (the prefix tells the site the image was already enhanced) and returns {url, enhanced:true}. On any failure returns {enhanced:false, reason}.
   if (url.searchParams.has("enhance") && request.method === "POST") {
     var jsonH = { ...corsHeaders, "Content-Type": "application/json" };
     try {
@@ -223,7 +223,7 @@ async function handleRequest(request) {
       }
       var ebuf = await er.arrayBuffer();
       if (ebuf.byteLength > 10 * 1024 * 1024) return new Response(JSON.stringify({ enhanced: false, reason: "result too large" }), { status: 200, headers: jsonH });
-      var ekey = "u/" + crypto.randomUUID().replace(/-/g, "") + ".jpg";
+      var ekey = "u/enh-" + crypto.randomUUID().replace(/-/g, "") + ".jpg";
       await MAPS_BUCKET.put(ekey, ebuf, {
         httpMetadata: { contentType: "image/jpeg" },
         customMetadata: { uid: esess.uid, name: esess.name || "", ts: String(Date.now()), enhancedFrom: esrc.slice(0, 200) }
