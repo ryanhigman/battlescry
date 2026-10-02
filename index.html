@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.331                                      https://battlescry.com
+BattleScry v0.1.332                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,9 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.332 - Changed: picking a layout that needs a sharper image now enhances it in the same step
+            (no separate Enhance click). Each enhancement is made once and reused, switching back
+            to a larger-square layout returns to the original image, and undo follows along.
   v0.1.331 - Fixed: grid layouts never include a column or row the image cannot fill, and offsets are
             never negative (Avrae's map ignores those), so the preview matches what Discord draws.
             The preview shows the image at its real size instead of stretching it. Added: a
@@ -387,7 +390,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.331</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.332</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -1286,7 +1289,12 @@ function setViewOrigin(sc,sr){
 // Undo and redo restore tokens but not the combatant list, so bring each combatant's "on the map" flag
 // back in line. Otherwise undoing a placement leaves it neither on the map nor in the unplaced list.
 function syncPlacedFlags(){(S.combatants||[]).forEach(c=>{c.placed=!!S.tokens.find(t=>t.name===c.name&&!t.hidden);});}
-function snap(){return JSON.parse(JSON.stringify({tokens:S.tokens,overlays:S.overlays,walls:S.walls,objects:S.objects,fowRegions:S.fowRegions,grid:S.grid}));}
+function snap(){return JSON.parse(JSON.stringify({tokens:S.tokens,overlays:S.overlays,walls:S.walls,objects:S.objects,fowRegions:S.fowRegions,grid:S.grid,bg:S.loadedUrl||""}));}
+// The same picture can be on screen at several enhancement levels (see bscryPickLayout). Undo and redo
+// swap between those; they never bring back a different background.
+function bgScaleNow(){const a=S.bgAnalysis;if(!a||!a.enh)return 1;for(const k in a.enh){if(a.enh[k]===S.loadedUrl)return +k;}return 1;}
+function bgFamilyHas(u){const a=S.bgAnalysis;if(!a||!u)return false;if(a.url===u)return true;for(const k in (a.enh||{})){if(a.enh[k]===u)return true;}return false;}
+function restoreBgFromSnap(sn){if(sn&&sn.bg&&sn.bg!==S.loadedUrl&&bgFamilyHas(sn.bg)&&bgFamilyHas(S.loadedUrl)){S.loadedUrl=sn.bg;const im=$("map-img");if(im)im.src=sn.bg;}}
 // Baseline of combatant stats (ac/current-hp/max-hp/init/group) captured at load, so the export can diff
 // edits to combatants that already exist in Avrae and replay them via `!i opt`. snap() deliberately omits
 // combatants (undo/redo never touched them), so this is tracked separately.
@@ -1308,8 +1316,8 @@ window.addEventListener("beforeunload",function(e){
   const b=document.getElementById("btn-copy");
   if(b&&!b.disabled&&!S._lastExport){e.preventDefault();e.returnValue="";}
 });
-function popU(){if(!undoStack.length)return;redoStack.push(snap());const s=undoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;syncOrigView();syncPlacedFlags();clearSel();setStatus("\u21a9 Undo");renderAll();}
-function redoU(){if(!redoStack.length)return;undoStack.push(snap());const s=redoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;syncOrigView();syncPlacedFlags();clearSel();setStatus("\u21aa Redo");renderAll();}
+function popU(){if(!undoStack.length)return;redoStack.push(snap());const s=undoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;restoreBgFromSnap(s);syncOrigView();syncPlacedFlags();clearSel();setStatus("\u21a9 Undo");renderAll();}
+function redoU(){if(!redoStack.length)return;undoStack.push(snap());const s=redoStack.pop();S.tokens=s.tokens;S.overlays=s.overlays;S.walls=s.walls;S.objects=s.objects||[];S.fowRegions=s.fowRegions||[];S.grid=s.grid;restoreBgFromSnap(s);syncOrigView();syncPlacedFlags();clearSel();setStatus("\u21aa Redo");renderAll();}
 function clearSel(){S.sel={type:null,ids:new Set()};S._lastClick=null;}
 function allSel(type){
   if(!S.sel.ids.size)return false;
@@ -2665,7 +2673,7 @@ function mapBgInfoHtml(){
   const a=S.bgAnalysis;
   if(!a)return '<span style="color:var(--accent);font-style:italic">Analyzing image…</span>';
   if(a.error)return '<span style="color:var(--danger)">Could not analyze image (CORS or network error)</span>';
-  return `<span style="color:var(--accent)">✓</span> <b>${a.w} × ${a.h} px</b>${a.sizeStr?" · "+a.sizeStr:""}`;
+  return `<span style="color:var(--accent)">✓</span> <b>${a.w} × ${a.h} px</b>${a.sizeStr?" · "+a.sizeStr:""}${bgScaleNow()>1?" · enhanced "+bgScaleNow()+"x":""}`;
 }
 // Build the grid-preset dropdown for the Map tab. Render-driven (rebuilt on every render) so it
 // persists. Library maps carry an exact baked grid (S.mapBakedGrid): that grid is shown as the
@@ -2681,16 +2689,19 @@ function mapGridPickerHtml(){
   if(baked){opts=opts.filter(o=>!(o.cs===baked.cell&&o.gw===baked.cols&&o.gh===baked.rows));
     opts.unshift({cs:baked.cell,gw:baked.cols,gh:baked.rows,ox:0,oy:0,conf:100,baked:true});}
   const key=o=>o.cs+"|"+o.gw+"|"+o.gh;
-  const curKey=S.grid.cellSize+"|"+S.grid.cols+"|"+S.grid.rows;
+  // Layouts are listed in terms of the original picture. kc is how far the picture on screen is enhanced.
+  const kc=bgScaleNow();
+  const pend=S._enhPending||null;
+  const curKey=pend?pend.key:((S.grid.cellSize/kc)+"|"+S.grid.cols+"|"+S.grid.rows);
   const bakedKey=baked?baked.cell+"|"+baked.cols+"|"+baked.rows:null;
   const recOpt=a.recCs!=null?opts.find(o=>o.cs===a.recCs&&!o.baked):null;
   const selKey=opts.some(o=>key(o)===curKey)?curKey:(baked?bakedKey:(recOpt?key(recOpt):null));
   let sh='<select class="inp" id="m-gridpick" style="font-size:10px;width:100%">';
   opts.forEach(o=>{const ar=o.gw*o.gh;
     const f2=ar>2000?"Epic Battlefield":ar>800?"Large Battle":ar>300?"Standard Encounter":ar>100?"Skirmish":"Close Quarters";
-    const _k=o.cs<40?Math.ceil(40/o.cs):0;const warn=!_k?"":((_k>4||Math.max(a.w,a.h)*_k>5000)?" ⚠ too low-res":" · needs enhancing "+_k+"x");const isRec=!baked&&o.cs===a.recCs;const star=o.baked?" ⭐ map's grid":((isRec?(a.found?" ⭐ ":" ✨ "):(o.label?" · ":""))+(o.label?o.label.toLowerCase().replace(" on the image",""):(isRec?"suggested":"")));
+    const _k=o.cs<40?Math.ceil(40/o.cs):0;const _ok=_k&&!(_k>4||Math.max(a.w,a.h)*_k>5000);const warn=!_k?"":(!_ok?" ⚠ too low-res":" · ✨ enhanced "+_k+"x");const isRec=!baked&&o.cs===a.recCs;const star=o.baked?" ⭐ map's grid":((isRec?(a.found?" ⭐ ":" ✨ "):(o.label?" · ":""))+(o.label?o.label.toLowerCase().replace(" on the image",""):(isRec?"suggested":"")));
     const sel=key(o)===selKey?" selected":"";
-    sh+=`<option value="${o.cs}|${o.gw}|${o.gh}|${o.ox}|${o.oy}"${sel}>${o.gw}×${o.gh} squares at ${o.cs}px · ${o.gw*5}×${o.gh*5}ft${o.label?"":" · "+f2}${warn}${star}</option>`;});
+    sh+=`<option value="${o.cs}|${o.gw}|${o.gh}|${o.ox}|${o.oy}"${sel}>${o.gw}×${o.gh} squares at ${_ok?o.cs*_k:o.cs}px · ${o.gw*5}×${o.gh*5}ft${o.label?"":" · "+f2}${warn}${star}</option>`;});
   sh+="</select>";
   if(!baked){const f=a.found;
     const head=f?`<b style="color:var(--accent)">${f.kind==="tiles"?"Floor tiles":"Printed grid"} found: ${f.rawCell.toFixed(Math.abs(f.rawCell-Math.round(f.rawCell))>0.05?1:0)}px per ${f.kind==="tiles"?"tile":"square"}.</b> `:"";
@@ -2699,7 +2710,9 @@ function mapGridPickerHtml(){
   if(baked&&curKey!==bakedKey){
     sh+=`<div style="font-size:9px;color:var(--danger);margin-top:4px;line-height:1.4">⚠ This grid differs from the map's built-in grid (${baked.cols}×${baked.rows} @ c${baked.cell}). The grid printed on the map and your tokens may not line up. Re-select "${baked.cols}×${baked.rows} @ c${baked.cell} ⭐" to restore it.</div>`;
   }else{
-    const selCs=selKey?+selKey.split("|")[0]:null;
+    const selCs=(kc===1&&!pend)?S.grid.cellSize:null;
+    if(pend)sh+=`<div style="font-size:10px;color:var(--accent);margin-top:6px;line-height:1.4">⏳ Enhancing the image ${pend.k}x for this layout. This can take a little while...</div>`;
+    else if(kc>1)sh+=`<div style="font-size:10px;color:var(--fg3);margin-top:6px;line-height:1.4">✨ Image enhanced ${kc}x (${a.w*kc} × ${a.h*kc}px) so the squares are ${S.grid.cellSize}px.</div>`;
     if(selCs!==null&&selCs<40){
       // Low resolution for this layout: offer an AI upscale that brings the squares to 40px or more.
       const k=Math.ceil(40/selCs),tw=a.w*k,th=a.h*k;
@@ -3025,7 +3038,7 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
     const recCs=options.length?[...options].sort((a,b)=>b.conf-a.conf)[0].cs:null;
     options.sort((a,b)=>((b.top?1:0)-(a.top?1:0))||(a.top&&b.top?b.conf-a.conf:b.cs-a.cs));
     const prevSize=(S.bgAnalysis&&S.bgAnalysis.w===w&&S.bgAnalysis.h===h)?S.bgAnalysis.sizeStr:"";
-    S.bgAnalysis={w,h,sizeStr:prevSize,options,recCs,note:note,found:found};
+    S.bgAnalysis={w,h,sizeStr:prevSize,options,recCs,note:note,found:found,url:url,enh:{}};
     if(autoApply&&!S.mapBakedGrid&&recCs!=null){
       const ro=options.find(o=>o.cs===recCs)||options[0];
       if(ro){S.grid.cols=ro.gw;S.grid.rows=ro.gh;S.grid.cellSize=ro.cs;S.grid.offsetX=ro.ox;S.grid.offsetY=ro.oy;S.grid.fullCols=ro.gw;S.grid.fullRows=ro.gh;renderAll();
@@ -4646,9 +4659,8 @@ function setup(){
     if(e.target.id==="m-ox"){S.grid.offsetX=Math.max(0,Math.round(+e.target.value||0));if(+e.target.value<0)setStatus("Offsets cannot be negative: Avrae's map ignores them");}
     if(e.target.id==="m-oy"){S.grid.offsetY=Math.max(0,Math.round(+e.target.value||0));if(+e.target.value<0)setStatus("Offsets cannot be negative: Avrae's map ignores them");}
     // Grid suggestion dropdown
-    if(e.target.id==="m-gridpick"){const v=e.target.value;if(v){const p=v.split("|");pushU();
-      S.grid.cellSize=+p[0];S.grid.cols=+p[1];S.grid.rows=+p[2];S.grid.offsetX=Math.max(0,+p[3]||0);S.grid.offsetY=Math.max(0,+p[4]||0);
-      S.grid.fullCols=S.grid.cols;S.grid.fullRows=S.grid.rows;renderAll();return;}}
+    if(e.target.id==="m-gridpick"){const v=e.target.value;if(v){const p=v.split("|");
+      bscryPickLayout({cs:+p[0],gw:+p[1],gh:+p[2],ox:Math.max(0,+p[3]||0),oy:Math.max(0,+p[4]||0)});return;}}
     // File upload for grid analysis
     if(e.target.id==="m-walltype"){const w=S.sel.type==="wall"?S.walls.find(x=>x.id===[...S.sel.ids][0]):null;if(w){pushU();w.door=e.target.value||null;renderAll();return;}}
     if(e.target.id==="m-objtype"){const o=S.sel.type==="object"?S.objects.find(x=>x.id===[...S.sel.ids][0]):null;if(o&&OBJ_SVG[e.target.value]){pushU("Changed object type");o.type=e.target.value;renderAll();return;}}
@@ -7101,6 +7113,38 @@ function pickAndUploadImage(onUploaded,statusEl,kind){
   inp.onchange=()=>{const f=inp.files&&inp.files[0];inp.remove();if(!f)return;uploadImage(f,st,onUploaded,kind);};
   inp.click();
 }
+// Apply a layout from the Map tab list. Layouts are described on the ORIGINAL picture; when its squares
+// would be under 40px the picture is enhanced first (once per factor, then reused), so choosing a layout
+// is a single step. Falls back to the plain layout plus the Enhance button when that cannot happen.
+function bscryPickLayout(o){
+  const a=S.bgAnalysis;if(!a)return;
+  const src=a.url||S.loadedUrl,inFam=bgFamilyHas(S.loadedUrl);
+  let k=o.cs<40?Math.ceil(40/o.cs):1;
+  if(k>4||Math.max(a.w,a.h)*k>5000||!inFam)k=1;
+  const apply=(url,kk)=>{pushU();
+    if(inFam&&url&&url!==S.loadedUrl){S.loadedUrl=url;const im=$("map-img");if(im)im.src=url;}
+    const kn=inFam?kk:bgScaleNow();
+    S.grid.cellSize=o.cs*kn;S.grid.cols=o.gw;S.grid.rows=o.gh;S.grid.offsetX=o.ox*kn;S.grid.offsetY=o.oy*kn;
+    S.grid.fullCols=o.gw;S.grid.fullRows=o.gh;renderAll();};
+  S._enhReq=(S._enhReq||0)+1;const req=S._enhReq;S._enhPending=null;
+  if(k===1){apply(src,1);return;}
+  if(a.enh[k]){apply(a.enh[k],k);return;}
+  if(!BSCRY_SESSION||!BSCRY_SESSION.token){
+    if(o.cs>=20){apply(src,1);setStatus("Log in with Discord to enhance this layout");}
+    else{renderSB();showError("This layout needs the image enhanced "+k+"x, which needs a Discord login. Log in from the Map tab, then pick it again.");}
+    return;}
+  S._enhPending={key:o.cs+"|"+o.gw+"|"+o.gh,k:k};renderSB();
+  bscryEnhance(src,a.w*k,a.h*k,(url)=>{
+    if(S.bgAnalysis!==a)return;a.enh[k]=url;
+    if(S._enhReq!==req)return;
+    S._enhPending=null;apply(url,k);setStatus("✓ Image enhanced "+k+"x");
+  },(why)=>{
+    if(S.bgAnalysis!==a||S._enhReq!==req)return;
+    S._enhPending=null;
+    if(o.cs>=20){apply(src,1);showError("Could not enhance the image ("+why+"). The layout was applied without it, so custom token images will not show. You can try again with the Enhance button.");}
+    else{renderSB();showError("Could not enhance the image ("+why+"), and this layout needs it. Pick a layout with fewer squares, or try again in a moment.");}
+  });
+}
 // Shown once a new background (upload or pasted link) has been measured: what was found on the picture,
 // which layout was applied, and a nudge to the layout list when the result is probably not what they want.
 function bscryMapLoadedNotice(url,w,h,found,canDetect,ro){
@@ -7117,7 +7161,7 @@ function bscryMapLoadedNotice(url,w,h,found,canDetect,ro){
   const small=!found&&(ro.gw*ro.gh<=100||Math.max(w,h)<600);
   const lowres=ro.cs<40;
   let warn="";
-  if(small)warn=`This is a small image, so the map only covers about one room. If it should cover more ground, choose a layout with more squares and BattleScry will offer to enhance the image to suit.`;
+  if(small)warn=`This is a small image, so the map only covers about one room. If it should cover more ground, choose a layout with more squares and BattleScry will enhance the image to suit.`;
   else if(lowres)warn=`At this layout the squares are under 40px, so custom token images will not show. Use the Enhance button under Grid Properties, or pick a layout with fewer squares.`;
   else if(!found&&canDetect)warn=`If the squares do not line up with the map, choose another layout.`;
   const M=smartModal({title:"Map loaded",size:"sm"});
