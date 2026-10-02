@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.343                                      https://battlescry.com
+BattleScry v0.1.344                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,9 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.344 - Changed: the default grid is Avrae's own: 50% lines that adapt to the art (soft grey on
+            light and dark maps) instead of 99% black. The preview draws them the same way, and a
+            custom grid color shows as solid, as Avrae draws it.
   v0.1.343 - Added: when a printed grid covers only part of an image (a title banner, border or
             legend has none), the map is set to the gridded part. Large offsets now preview
             correctly.
@@ -416,7 +419,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.343</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.344</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -1226,7 +1229,7 @@ const IS_TOUCH='ontouchstart'in window||navigator.maxTouchPoints>0;
 const HANDLE_R=IS_TOUCH?16:8;// Bigger touch targets on mobile
 // Convert touch event to mouse-like coordinates
 function touchPt(e){const t=e.touches[0]||e.changedTouches[0];return{clientX:t.clientX,clientY:t.clientY,target:document.elementFromPoint(t.clientX,t.clientY)||e.target,shiftKey:e.shiftKey,preventDefault:()=>e.preventDefault()};}
-const S={grid:{cellSize:40,offsetX:0,offsetY:0,cols:26,rows:26,startCol:0,startRow:0,fullCols:26,fullRows:26},tokens:[],overlays:[],walls:[],objects:[],combatants:[],sel:{type:null,ids:new Set()},zoom:1,showGrid:true,showOverlays:true,showWalls:true,showObjects:true,showTokens:true,showFow:true,showBg:true,coordLabels:true,gridOpacity:0.99,bgAnalysis:null,mapBakedGrid:null,darkMode:false,noBorder:false,altFont:false,gridColor:"",fowOpacity:0,labelFont:"Figtree",loadedUrl:"",tab:"map",addingOverlay:null,addingCombatant:null,structSubTab:"walls",_uiMapAdvOpen:false,_uiMapViewOpen:false,_uiBgOpen:false,_uiMapImportOpen:false,_uiAoeRuleOpen:false,aoeRule:"cell50",drag:null,marquee:null,tokCol:false,ovCol:false,npCol:true,tokSort:"init",ovSort:"name",sidebarOpen:true,coordPick:null,diagRule:"5105",fowRegions:[],wallDraw:null,fowDraw:null,spaceHeld:false,panDrag:null,fowResize:null,wallDrag:null,rulerMode:false,rulerStart:null,rulerEnd:null,rulerDrag:null,placingObject:null,objDraw:null,objResize:null,objMove:null,savedTokens:[],tokenSaves:[],tokenDeletes:[],savedMaps:[],mapSaves:[],mapDeletes:[],mapThumbs:{},savedBattles:[],battleSaves:[],battleDeletes:[],tokenLabels:[],tokenLabelSaves:[],tokenLabelDeletes:[]};
+const S={grid:{cellSize:40,offsetX:0,offsetY:0,cols:26,rows:26,startCol:0,startRow:0,fullCols:26,fullRows:26},tokens:[],overlays:[],walls:[],objects:[],combatants:[],sel:{type:null,ids:new Set()},zoom:1,showGrid:true,showOverlays:true,showWalls:true,showObjects:true,showTokens:true,showFow:true,showBg:true,coordLabels:true,gridOpacity:0.5,bgAnalysis:null,mapBakedGrid:null,darkMode:false,noBorder:false,altFont:false,gridColor:"",fowOpacity:0,labelFont:"Figtree",loadedUrl:"",tab:"map",addingOverlay:null,addingCombatant:null,structSubTab:"walls",_uiMapAdvOpen:false,_uiMapViewOpen:false,_uiBgOpen:false,_uiMapImportOpen:false,_uiAoeRuleOpen:false,aoeRule:"cell50",drag:null,marquee:null,tokCol:false,ovCol:false,npCol:true,tokSort:"init",ovSort:"name",sidebarOpen:true,coordPick:null,diagRule:"5105",fowRegions:[],wallDraw:null,fowDraw:null,spaceHeld:false,panDrag:null,fowResize:null,wallDrag:null,rulerMode:false,rulerStart:null,rulerEnd:null,rulerDrag:null,placingObject:null,objDraw:null,objResize:null,objMove:null,savedTokens:[],tokenSaves:[],tokenDeletes:[],savedMaps:[],mapSaves:[],mapDeletes:[],mapThumbs:{},savedBattles:[],battleSaves:[],battleDeletes:[],tokenLabels:[],tokenLabelSaves:[],tokenLabelDeletes:[]};
 // 3D cube distance between two tokens (nearest surface-to-surface, in feet)
 function tokCubeCells(t){const c=Math.max(1,SIZES[t.size]?.c||1);return c;}
 // Distance between two tokens the way it is counted at the table: squares from the nearest edge of one
@@ -1615,9 +1618,11 @@ function renderSVG(){
   
   // Underlays (non-selected)
   if(S.showOverlays)S.overlays.filter(o=>o.under&&!isSel("overlay",o.id)).forEach(o=>rOv(svg,o));
-  if(S.showGrid){const gg=sEl("g",{opacity:S.gridOpacity});
+  if(S.showGrid){const gg=S.gridColor?sEl("g",{opacity:1,"shape-rendering":"crispEdges"}):sEl("g",{opacity:S.gridOpacity,style:"mix-blend-mode:difference","shape-rendering":"crispEdges"});
+    if(!S.gridColor)gridCol="#f4f6ff";
     for(let c=0;c<=g.cols;c++){const x=gOX(g)+c*g.cellSize;gg.appendChild(sEl("line",{x1:x,y1:gOY(g),x2:x,y2:gOY(g)+g.rows*g.cellSize,stroke:gridCol,"stroke-width":1}));}
-    for(let r=0;r<=g.rows;r++){const y=gOY(g)+r*g.cellSize;gg.appendChild(sEl("line",{x1:gOX(g),y1:y,x2:gOX(g)+g.cols*g.cellSize,y2:y,stroke:gridCol,"stroke-width":1}));}svg.appendChild(gg);}
+    for(let r=0;r<=g.rows;r++){const y=gOY(g)+r*g.cellSize;gg.appendChild(sEl("line",{x1:gOX(g),y1:y,x2:gOX(g)+g.cols*g.cellSize,y2:y,stroke:gridCol,"stroke-width":1}));}svg.appendChild(gg);
+    if(!S.gridColor)gridCol=S.darkMode?"#ffffff":"#000000";}
   if(S.showWalls)S.walls.forEach(wl=>rWall(svg,wl));
   // Wall drawing preview
   if(S.wallDraw&&S.wallDraw.start){const g=S.grid,cs=g.cellSize;
@@ -2480,7 +2485,7 @@ function mapChanged(){if(!origState)return false;if(S._noMapLink)return true; /*
 // True only when the user actually changed the map, ignoring the "no map attached yet" case above.
 function mapChangedReal(){if(!origState)return false;
   const og=origState.grid;const origP=parseOpts(og._opts||"");
-  const origGridH=origP.gridH>=0?origP.gridH:99;// -1 sentinel means "not set" → default 99
+  const origGridH=origP.gridH>=0?origP.gridH:50;// -1 sentinel means "not set": OTFBM's own default is 50%
   return S.loadedUrl!==origBgUrl||S.grid.cols!==og.cols||S.grid.rows!==og.rows||S.grid.cellSize!==og.cellSize||S.grid.offsetX!==og.offsetX||S.grid.offsetY!==og.offsetY||S.darkMode!==origP.dark||S.noBorder!==origP.noBorder||S.altFont!==origP.altFont||S.gridColor!==(origP.gridColor||"")||S.fowOpacity!==(origP.fowOpacity||0)||S.showGrid===origP.noGrid||Math.round(S.gridOpacity*100)!==origGridH;}
 const OV_TYPE_CODE={circle:"c",circletop:"ct",circlecorner:"co",square:"s",cone:"t",line:"l",arrow:"a"};
 // Default aim/second coord for aimed overlays (cone/square/line/arrow): 3 columns over from the
@@ -2540,7 +2545,8 @@ function buildOptsStr(){
   if(S.altFont)o+="f";
   if(S.grid.cellSize!==40)o+="c"+S.grid.cellSize;
   if(!S.showGrid)o+="n";
-  else{const pct=Math.round(S.gridOpacity*100);if(pct>0&&pct<100)o+="h"+pct;}
+  // OTFBM's own default is 50%, so only say so when it differs. (A custom grid color is always drawn solid.)
+  else{const pct=Math.round(S.gridOpacity*100);if(pct>0&&pct<=100&&pct!==50&&!S.gridColor)o+="h"+pct;}
   if(S.grid.offsetX>0||S.grid.offsetY>0)o+="o"+Math.max(0,S.grid.offsetX)+":"+Math.max(0,S.grid.offsetY);
   if(S.fowOpacity>0)o+="w"+S.fowOpacity;
   // Grid color LAST per OTFBM docs
@@ -2554,7 +2560,7 @@ function buildMapCmd(){
   const origP=parseOpts(og._opts||"");let origO="";
   if(origP.dark)origO+="d";if(origP.noBorder)origO+="e";if(origP.altFont)origO+="f";
   if(origP.cellSize!==40)origO+="c"+origP.cellSize;
-  if(origP.noGrid)origO+="n";else if(origP.gridH>0&&origP.gridH<100)origO+="h"+origP.gridH;
+  if(origP.noGrid)origO+="n";else if(origP.gridH>0&&origP.gridH<=100&&origP.gridH!==50&&!origP.gridColor)origO+="h"+origP.gridH;
   if(origP.offsetX||origP.offsetY)origO+="o"+origP.offsetX+":"+origP.offsetY;
   if(origP.fowOpacity>0)origO+="w"+origP.fowOpacity;
   if(origP.gridColor)origO+="g"+origP.gridColor;
@@ -2953,8 +2959,8 @@ function rMapTabContent(){
     <div style="flex:1${bgUrl?'':';opacity:.45'}" title="${bgUrl?'Nudge the grid to line up with the grid printed on the background image':'Offsets align the grid to a background image - load a map first'}"><span class="lbl">Offset Y</span><input type="number" class="inp" id="m-oy" min="0" value="${S.grid.offsetY}" ${bgUrl?'':'disabled'}></div>
     <div style="flex:1"><span class="lbl">&nbsp;</span><label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;height:25px;white-space:nowrap" title="Dark mode (the OTFBM 'd' option): renders the map on a dark background."><input type="checkbox" id="m-dark" ${S.darkMode?"checked":""} style="accent-color:var(--accent)">Dark Mode</label></div>
   </div>
-  <div style="margin:8px 0"><span class="lbl">Grid line opacity (${Math.min(99,Math.round(S.gridOpacity*100))}%)</span><input type="range" id="m-opacity" min="0" max="99" value="${Math.min(99,Math.round(S.gridOpacity*100))}" style="width:100%;accent-color:var(--accent)"></div>
-  <div style="margin:8px 0"><span class="lbl">Grid line & axis label color</span><div class="colors">${COLORS.map(c=>`<div class="cswatch${(S.gridColor===c.code||(!S.gridColor&&c.code==="bk"))?" on":""}" style="background:${c.hex}" data-color="${c.code}" data-prefix="gcol" title="${c.n}"></div>`).join("")}</div></div>
+  <div style="margin:8px 0${S.gridColor?";opacity:.5":""}" title="${S.gridColor?"Avrae draws a custom grid color solid, so opacity only applies to the default grid":"50% is Avrae's own default: a soft grey that shows on light and dark maps"}"><span class="lbl">Grid line opacity (${S.gridColor?"solid with a custom color":Math.min(99,Math.round(S.gridOpacity*100))+"%"})</span><input type="range" id="m-opacity" min="0" max="99" value="${Math.min(99,Math.round(S.gridOpacity*100))}" ${S.gridColor?"disabled":""} style="width:100%;accent-color:var(--accent)"></div>
+  <div style="margin:8px 0"><span class="lbl">Grid line & axis label color</span><div class="colors"><div class="cswatch${!S.gridColor?" on":""}" style="background:linear-gradient(135deg,#f4f6ff 50%,#07031a 50%)" data-color="" data-prefix="gcol" title="Default: soft lines that adapt to the map (light on dark art, dark on light art)"></div>${COLORS.map(c=>`<div class="cswatch${S.gridColor===c.code?" on":""}" style="background:${c.hex}" data-color="${c.code}" data-prefix="gcol" title="${c.n} (solid)"></div>`).join("")}</div></div>
   </div>`;
   h+=`<details class="sec" data-section="map-view" ${S._uiMapViewOpen?'open':''} style="display:block"><summary class="sec-title" style="cursor:pointer;user-select:none">Map View</summary>
   <div style="font-size:10px;color:var(--fg3);margin:6px 0 6px">The visible portion of the grid. Type the corner cells and Update, or use Select area on map below.</div>
@@ -4845,7 +4851,8 @@ function setup(){
     if(e.target.id==="m-dark"){pushU();const wasDark=S.darkMode;S.darkMode=e.target.checked;document.body.style.background=S.darkMode?"#0d0c0a":"";$("map-vp").style.background=S.darkMode?"#000":"#fff";
       // Auto-swap grid color to stay visible: black grid on dark bg → white, white grid on light bg → black.
       // Only flips when the user is on the failing-default color; deliberate colors (red, yellow, etc.) stay.
-      if(!wasDark&&S.darkMode){if(!S.gridColor||S.gridColor==="bk")S.gridColor="w";}
+      // The default grid adapts to the art by itself (see renderSVG), so only an explicit black needs flipping.
+      if(!wasDark&&S.darkMode){if(S.gridColor==="bk")S.gridColor="w";}
       else if(wasDark&&!S.darkMode){if(S.gridColor==="w")S.gridColor="";}
       renderAll();return;}
     if(e.target.id==="m-diagrule"){S.diagRule=e.target.value;}
@@ -6307,7 +6314,7 @@ function loadMap(inputStr){let url=inputStr||"";if(!url)return;
   const p=parseUrl(url);
   if(p){S.grid={cellSize:p.opts.cellSize||40,offsetX:p.opts.offsetX||0,offsetY:p.opts.offsetY||0,cols:p.cols,rows:p.rows};S.tokens=p.tokens;S.overlays=p.overlays;S.walls=p.walls;
     if(p.opts.dark){S.darkMode=true;document.body.style.background="#0d0c0a";$("map-vp").style.background="#000";}
-    if(p.opts.noGrid)S.showGrid=false;if(p.opts.gridH)S.gridOpacity=p.opts.gridH/100;
+    if(p.opts.noGrid)S.showGrid=false;if(p.opts.gridH>0)S.gridOpacity=p.opts.gridH/100;
     if(p.opts.cellSize>60)S.zoom=Math.max(.25,40/p.opts.cellSize);
     const vpW2=$("map-vp").clientWidth;const mapW2=S.grid.cols*S.grid.cellSize+PAD*2;
     if(vpW2&&mapW2)S.zoom=fitZoom();
