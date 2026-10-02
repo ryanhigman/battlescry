@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.340                                      https://battlescry.com
+BattleScry v0.1.341                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,8 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.341 - Added: a map named as more than 99 squares each way (100x140) can be hosted with its
+            squares grouped 2x2, giving 50x70 squares of 10ft that still land on the map's lines.
   v0.1.340 - Fixed: a map size in a pasted link's file name is now read (it was only read on uploads),
             with a plain explanation when the map is over 99 squares each way.
   v0.1.339 - Added: when a linked map image would not draw well as it is (fractional or oversized
@@ -409,7 +411,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.340</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.341</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -797,6 +799,11 @@ function bscryNameHint(name,w,h){
       return{cols:c,rows:r,cell:(cx+cy)/2};}
   }
   return null;}
+// A map over 99 squares each way cannot be drawn at true scale. Grouping its squares 2x2 (or 3x3...) keeps
+// the grid on the map's own lines: 100x140 becomes 50x70 squares of 10ft. Returns the group size, or 0.
+function bscryGroupFor(cols,rows){
+  for(let k=2;k<=5;k++){if(cols%k===0&&rows%k===0&&cols/k<=BSCRY_MAX_SQ&&rows/k<=BSCRY_MAX_SQ)return k;}
+  return 0;}
 function bscryPlanBgScale(img,w,h,maxDim,name){
   const longest=Math.max(w,h);
   let g={kind:"",cell:0};
@@ -806,7 +813,9 @@ function bscryPlanBgScale(img,w,h,maxDim,name){
   {const nh=bscryNameHint(name,w,h);
     if(nh){const rt=g.cell?g.cell/nh.cell:0,near=(v)=>Math.abs(v-Math.round(v))<0.06&&Math.round(v)>=1;
       const agrees=g.cell&&(near(rt)||near(1/rt));
-      if(!g.cell||agrees||!(g.kind==="grid"&&g.score>=BSCRY_GRID_T.gs))g={kind:"name",cell:nh.cell,ox:0,oy:0,score:0,cover:0,cols:nh.cols,rows:nh.rows};}}
+      if(!g.cell||agrees||!(g.kind==="grid"&&g.score>=BSCRY_GRID_T.gs)){
+        const k=(nh.cols>BSCRY_MAX_SQ||nh.rows>BSCRY_MAX_SQ)?bscryGroupFor(nh.cols,nh.rows):0;
+        g={kind:"name",cell:nh.cell*(k||1),ox:0,oy:0,score:0,cover:0,cols:nh.cols,rows:nh.rows,per:k};}}}
   if(g.cell){
     let S=g.cell;
     // Floor tiles are often a fraction of a 5ft square. Use the smallest whole number of tiles that reaches 40px.
@@ -819,7 +828,7 @@ function bscryPlanBgScale(img,w,h,maxDim,name){
     if(longest*scale>maxDim){const c2=Math.floor(C*maxDim/(longest*scale));if(c2>=20){C=c2;scale=C/S;}else{C=0;scale=maxDim/longest;}}
     if(scale>4){C=0;scale=1;}
     if(Math.abs(scale-1)*longest<1.5)scale=1;
-    return{sq:S,scale:scale,cell:C,srcCell:Math.round(g.cell*10)/10,square:Math.round(S*10)/10,kind:g.kind,ox:g.ox*scale,oy:g.oy*scale};
+    return{sq:S,scale:scale,cell:C,srcCell:Math.round(g.cell*10)/10,square:Math.round(S*10)/10,kind:g.kind,ox:g.ox*scale,oy:g.oy*scale,per:g.per||0,nc:g.per?g.cols:0,nr:g.per?g.rows:0};
   }
   for(let k=1;k<=12;k++){if(longest/k<=maxDim)return{scale:1/k,cell:0,srcCell:0,kind:""};}
   return{scale:maxDim/longest,cell:0,srcCell:0,kind:""};
@@ -971,7 +980,7 @@ function bscryConvertToJpeg(file,maxDim,quality,onDone,onError){
         const ow=cv.width,oh=cv.height;
         URL.revokeObjectURL(objUrl);
         // Aim for a 1-2MB file: step the JPEG quality down from the requested value to 0.70 while it is over 2MB.
-        const finish=(blob,srcBlob)=>{if(onDone)onDone({blob:blob,srcBlob:srcBlob||null,w:ow,h:oh,bytes:blob.size,srcW:w,srcH:h,srcCell:plan.srcCell,cell:plan.cell,ox:Math.round(plan.ox||0),oy:Math.round(plan.oy||0),scale:plan.scale,kind:plan.kind,fitted:!!plan.fitted,divisor:plan.scale<1?Math.round(1/plan.scale):1});};
+        const finish=(blob,srcBlob)=>{if(onDone)onDone({blob:blob,srcBlob:srcBlob||null,w:ow,h:oh,bytes:blob.size,srcW:w,srcH:h,srcCell:plan.srcCell,cell:plan.cell,ox:Math.round(plan.ox||0),oy:Math.round(plan.oy||0),scale:plan.scale,kind:plan.kind,fitted:!!plan.fitted,per:plan.per||0,nc:plan.nc||0,nr:plan.nr||0,divisor:plan.scale<1?Math.round(1/plan.scale):1});};
         const enc=(q)=>{cv.toBlob((blob)=>{
           if(!blob){if(onError)onError("Could not encode that image.");return;}
           if(blob.size>2*1024*1024&&q>0.701){enc(Math.max(0.7,q-0.05));return;}
@@ -1082,7 +1091,7 @@ function bscryEnhance(srcUrl,w,h,onDone0,onFail){
 function bscryHostMap(out,filename,onDone0,onError,onStatus){
   // Remember the grid measured on the original, keyed by the hosted URL. AI upscaling can smooth faint
   // grid lines away, so the Map tab must not rely on re-measuring the hosted copy.
-  const onDone=(u,enh)=>{if(out.cell)window._bscryGridHint={url:u,cell:out.cell,ox:out.ox||0,oy:out.oy||0,kind:out.kind||"grid",w:out.w,h:out.h};onDone0(u,enh);};
+  const onDone=(u,enh)=>{if(out.cell)window._bscryGridHint={url:u,cell:out.cell,ox:out.ox||0,oy:out.oy||0,kind:out.kind||"grid",w:out.w,h:out.h,per:out.per||0,nc:out.nc||0,nr:out.nr||0};onDone0(u,enh);};
   if(!out.srcBlob||Math.max(out.srcW||0,out.srcH||0)>BSCRY_ENH_MAX_SRC){bscryHostBlob(out.blob,filename,(u)=>onDone(u,false),onError);return;}
   if(onStatus)onStatus("Uploading...");
   bscryHostBlob(out.srcBlob,filename,(u0)=>{
@@ -3115,13 +3124,15 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
         const hx=hint.ox%hint.cell,hy=hint.oy%hint.cell;
         const _gw0=Math.max(1,Math.floor((w-hx)/hint.cell+0.02)),_gh0=Math.max(1,Math.floor((h-hy)/hint.cell+0.02));
         if(_gw0>BSCRY_MAX_SQ||_gh0>BSCRY_MAX_SQ)window._bscryOver99={url:url,cols:_gw0,rows:_gh0};
-        options.unshift({cs:hint.cell,gw:Math.min(BSCRY_MAX_SQ,_gw0),gh:Math.min(BSCRY_MAX_SQ,_gh0),ox:hx,oy:hy,conf:300,det:true,label:hint.kind==="tiles"?"Matches the floor tiles":hint.kind==="name"?"From the file name":"Matches the printed grid",top:true});
-        tested.add(hint.cell);found={kind:hint.kind,rawCell:hint.cell};note="";}}
+        options.unshift({cs:hint.cell,gw:Math.min(BSCRY_MAX_SQ,_gw0),gh:Math.min(BSCRY_MAX_SQ,_gh0),ox:hx,oy:hy,conf:300,det:true,label:hint.kind==="tiles"?"Matches the floor tiles":hint.kind==="name"?(hint.per?"From the file name, "+hint.per+"×"+hint.per+" map squares each":"From the file name"):"Matches the printed grid",top:true});
+        tested.add(hint.cell);found={kind:hint.kind,rawCell:hint.cell,per:hint.per||0,nc:hint.nc||0,nr:hint.nr||0};note="";}}
     // A linked image has a file name too ("...-100x140.jpg"). Use it when nothing was measured on the picture.
     let nameWhy="";
     if(!found){const nh=bscryNameHint(url,w,h);
       if(nh){const c=nh.cell;
-        if(nh.cols>BSCRY_MAX_SQ||nh.rows>BSCRY_MAX_SQ)window._bscryOver99={url:url,cols:nh.cols,rows:nh.rows,named:true,cell:c};
+        if(nh.cols>BSCRY_MAX_SQ||nh.rows>BSCRY_MAX_SQ){const k=bscryGroupFor(nh.cols,nh.rows);
+          window._bscryOver99={url:url,cols:nh.cols,rows:nh.rows,named:true,cell:c,group:k};
+          if(k)nameWhy="the file name says it is "+nh.cols+" × "+nh.rows+" squares, more than the "+BSCRY_MAX_SQ+" Avrae can draw each way";}
         else if(c>=20&&c<=100&&Math.abs(c-Math.round(c))<0.01){const cs=Math.round(c);
           for(let i=options.length-1;i>=0;i--){if(options[i].cs===cs)options.splice(i,1);}
           options.unshift({cs:cs,gw:nh.cols,gh:nh.rows,ox:0,oy:0,conf:250,det:true,label:"From the file name",top:true});
@@ -7272,7 +7283,8 @@ function bscryMapLoadedNotice(url,w,h,found,canDetect,ro){
   let lines=[];
   if(up&&(up.srcW!==up.w||up.srcH!==up.h))lines.push(`Your image was ${up.srcW} × ${up.srcH}px. BattleScry ${up.w>up.srcW?(up.enh?"enhanced":"enlarged"):"shrank"} it to <b>${up.w} × ${up.h}px</b> so the squares come out at a whole size Avrae can draw.`+(up.fitted?` It was kept small enough for Avrae's map service, which cannot return very detailed maps above about 4MB.`:``));
   else lines.push(`The image is <b>${w} × ${h}px</b>.`);
-  if(found&&found.kind==="name")lines.push(`<b style="color:var(--accent)">The file name gives the map size</b> as ${ro.gw} × ${ro.gh} squares, so the grid was set to match it.`);
+  if(found&&found.kind==="name"&&found.per)lines.push(`<b style="color:var(--accent)">The file name gives the map size</b> as ${found.nc} × ${found.nr} squares. That is more than Avrae's map can draw, so the grid groups them ${found.per}×${found.per}: each square here is ${found.per*5}ft and still lands on the map's own lines.`);
+  else if(found&&found.kind==="name")lines.push(`<b style="color:var(--accent)">The file name gives the map size</b> as ${ro.gw} × ${ro.gh} squares, so the grid was set to match it.`);
   else if(found){const rc=found.rawCell,n=Math.abs(rc-Math.round(rc))>0.05?rc.toFixed(1):Math.round(rc);
     lines.push(`<b style="color:var(--accent)">${found.kind==="tiles"?"Floor tile pattern":"Printed grid"} found</b> at ${n}px per ${found.kind==="tiles"?"tile":"square"}, so the grid was set to match it.`);}
   else if(!canDetect)lines.push(`This image host does not let BattleScry read the picture, so it could not look for a grid. A size that fits the image was picked instead.`);
@@ -7283,7 +7295,10 @@ function bscryMapLoadedNotice(url,w,h,found,canDetect,ro){
   const lowres=ro.cs<40;
   let warn="";
   const rehost=(S.bgAnalysis&&S.bgAnalysis.url===url&&S.bgAnalysis.rehost)||null;
-  if(rehost&&!over)warn=`This image will not draw well from its link: ${rehost.join("; ")}. BattleScry can fetch it and host a resized copy that fixes this.`;
+  const grp=over&&over.named&&over.group&&rehost?over.group:0;
+  const offer=rehost&&(!over||grp);
+  if(grp)warn=`The file name says this map is ${over.cols} × ${over.rows} squares, and Avrae's map can draw at most ${BSCRY_MAX_SQ} in each direction. BattleScry can host a resized copy laid out as ${over.cols/grp} × ${over.rows/grp} squares, where each square covers ${grp}×${grp} of the map's own squares (${grp*5}ft), so the grid still lands on the map's lines. To play at true 5ft scale instead, crop the image into smaller maps.`;
+  else if(rehost&&!over)warn=`This image will not draw well from its link: ${rehost.join("; ")}. BattleScry can fetch it and host a resized copy that fixes this.`;
   else if(over&&over.named)warn=`The file name says this map is ${over.cols} × ${over.rows} squares. Avrae's map can draw at most ${BSCRY_MAX_SQ} in each direction, so it cannot be shown whole at its true scale. The layout picked here shows the whole image, but each square covers about ${(Math.round(over.cols/ro.gw*10)/10)} of the map's own squares (roughly ${Math.round(over.cols/ro.gw*5)}ft). To play at true scale, crop the image into pieces of ${BSCRY_MAX_SQ} squares or fewer and load them as separate maps.`;
   else if(over)warn=`This map is ${over.cols} × ${over.rows} squares, but Avrae's map can draw at most ${BSCRY_MAX_SQ} in each direction. Only the top-left ${ro.gw} × ${ro.gh} will show. To use the whole map, crop the image into smaller pieces and load them as separate maps.`;
   else if(small)warn=`This is a small image, so the map only covers about one room. If it should cover more ground, choose a layout with more squares and BattleScry will enhance the image to suit.`;
@@ -7296,9 +7311,9 @@ function bscryMapLoadedNotice(url,w,h,found,canDetect,ro){
     ${lines.map(l=>`<p style="margin:0 0 8px">${l}</p>`).join("")}
     ${warn?`<p style="margin:0 0 12px;padding:8px 10px;border-radius:6px;background:var(--bg3);color:var(--warn,#e0a030);font-size:12px">${small||lowres||over||rehost?"⚠ ":""}${warn}</p>`:""}
     <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
-      ${rehost&&!over?`<button class="btn btn-p" id="bsml-rehost">Host a resized copy</button>`:""}
-      <button class="btn ${(small||lowres)&&!over&&!rehost?"btn-p":"btn-s"}" id="bsml-pick">Choose a different layout</button>
-      <button class="btn ${((small||lowres)&&!over)||(rehost&&!over)?"btn-s":"btn-p"}" id="bsml-ok">Keep this layout</button>
+      ${offer?`<button class="btn btn-p" id="bsml-rehost">Host a resized copy</button>`:""}
+      <button class="btn ${(small||lowres)&&!over&&!offer?"btn-p":"btn-s"}" id="bsml-pick">Choose a different layout</button>
+      <button class="btn ${((small||lowres)&&!over)||offer?"btn-s":"btn-p"}" id="bsml-ok">Keep this layout</button>
     </div></div>`;
   M.body.querySelector("#bsml-ok").onclick=M.close;
   {const rb=M.body.querySelector("#bsml-rehost");if(rb)rb.onclick=()=>{M.close();bscryRehostFromUrl(url);};}
