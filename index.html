@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.332                                      https://battlescry.com
+BattleScry v0.1.333                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,9 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.333 - Fixed: an image is only ever enhanced once. Layouts that would need an already-enhanced
+            image enhanced again, or an image too large for the enhancer (over 1920px), are no
+            longer offered, which also removes the "resize unavailable (400)" error.
   v0.1.332 - Changed: picking a layout that needs a sharper image now enhances it in the same step
             (no separate Enhance click). Each enhancement is made once and reused, switching back
             to a larger-square layout returns to the original image, and undo follows along.
@@ -390,7 +393,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.332</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.333</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -982,7 +985,17 @@ function bscryHostBlob(blob,filename,onDone,onError,kind){
 // Ask the Worker to AI-upscale a hosted image to w x h (Cloudflare Images, upscale:"generate") and store
 // the result. onDone(url) on success; onFail(reason) when the Worker cannot do it, so the caller can fall
 // back to plain enlargement. Needs a login, like hosting.
-function bscryEnhance(srcUrl,w,h,onDone,onFail){
+// The enhancer only works well once, on an original. Measured against Cloudflare Images (2026-10): a
+// source up to 1920px on its longest side is accepted, 2040px and up is refused with a 400. And running
+// an already-enhanced picture through it again smears detail. So enhanced results are remembered (in this
+// browser, plus an "enh-" marker in the file name once the Worker adds one) and never offered again.
+const BSCRY_ENH_MAX_SRC=1920;
+function bscryEnhList(){try{return JSON.parse(localStorage.getItem("bscry-enh")||"[]")||[];}catch(e){return [];}}
+function bscryMarkEnhanced(url){try{const l=bscryEnhList().filter(u=>u!==url);l.push(url);localStorage.setItem("bscry-enh",JSON.stringify(l.slice(-300)));}catch(e){}}
+function bscryIsEnhanced(url){if(!url)return false;if(/\/u\/enh-/.test(url))return true;return bscryEnhList().indexOf(url)>=0;}
+function bscryCanEnhance(url,w,h){return !bscryIsEnhanced(url)&&Math.max(w,h)<=BSCRY_ENH_MAX_SRC;}
+function bscryEnhance(srcUrl,w,h,onDone0,onFail){
+  const onDone=(u)=>{bscryMarkEnhanced(u);if(onDone0)onDone0(u);};
   if(!BSCRY_SESSION){if(onFail)onFail("Log in to enhance images.");return;}
   const fd=new FormData();fd.append("session",BSCRY_SESSION.token);fd.append("src",srcUrl);fd.append("ew",String(w));fd.append("eh",String(h));
   fetch(UPLOAD_URL.replace("?upload","?enhance"),{method:"POST",body:fd})
@@ -2699,7 +2712,7 @@ function mapGridPickerHtml(){
   let sh='<select class="inp" id="m-gridpick" style="font-size:10px;width:100%">';
   opts.forEach(o=>{const ar=o.gw*o.gh;
     const f2=ar>2000?"Epic Battlefield":ar>800?"Large Battle":ar>300?"Standard Encounter":ar>100?"Skirmish":"Close Quarters";
-    const _k=o.cs<40?Math.ceil(40/o.cs):0;const _ok=_k&&!(_k>4||Math.max(a.w,a.h)*_k>5000);const warn=!_k?"":(!_ok?" ⚠ too low-res":" · ✨ enhanced "+_k+"x");const isRec=!baked&&o.cs===a.recCs;const star=o.baked?" ⭐ map's grid":((isRec?(a.found?" ⭐ ":" ✨ "):(o.label?" · ":""))+(o.label?o.label.toLowerCase().replace(" on the image",""):(isRec?"suggested":"")));
+    const _k=o.cs<40?Math.ceil(40/o.cs):0;const _ok=_k&&a.canEnh!==false&&!(_k>4||Math.max(a.w,a.h)*_k>5000);const warn=!_k?"":(!_ok?" ⚠ small squares, no token images":" · ✨ enhanced "+_k+"x");const isRec=!baked&&o.cs===a.recCs;const star=o.baked?" ⭐ map's grid":((isRec?(a.found?" ⭐ ":" ✨ "):(o.label?" · ":""))+(o.label?o.label.toLowerCase().replace(" on the image",""):(isRec?"suggested":"")));
     const sel=key(o)===selKey?" selected":"";
     sh+=`<option value="${o.cs}|${o.gw}|${o.gh}|${o.ox}|${o.oy}"${sel}>${o.gw}×${o.gh} squares at ${_ok?o.cs*_k:o.cs}px · ${o.gw*5}×${o.gh*5}ft${o.label?"":" · "+f2}${warn}${star}</option>`;});
   sh+="</select>";
@@ -2713,7 +2726,10 @@ function mapGridPickerHtml(){
     const selCs=(kc===1&&!pend)?S.grid.cellSize:null;
     if(pend)sh+=`<div style="font-size:10px;color:var(--accent);margin-top:6px;line-height:1.4">⏳ Enhancing the image ${pend.k}x for this layout. This can take a little while...</div>`;
     else if(kc>1)sh+=`<div style="font-size:10px;color:var(--fg3);margin-top:6px;line-height:1.4">✨ Image enhanced ${kc}x (${a.w*kc} × ${a.h*kc}px) so the squares are ${S.grid.cellSize}px.</div>`;
-    if(selCs!==null&&selCs<40){
+    if(a.isEnh&&kc===1&&!pend)sh+=`<div style="font-size:10px;color:var(--fg3);margin-top:6px;line-height:1.4">This image has already been enhanced once. Enhancing it again would smear the detail, so layouts that need it are not offered. For more squares, upload a higher-resolution original.</div>`;
+    if(selCs!==null&&selCs<40&&a.canEnh===false){
+      sh+=`<div style="font-size:10px;color:var(--warn,#e0a030);margin-top:6px;line-height:1.4">⚠ This layout gives ${selCs}px squares. Below 40px, custom token images will not show. ${a.isEnh?"The image was already enhanced once, so it cannot be sharpened further.":"The image is too large to enhance; pick a layout with fewer squares."}</div>`;
+    }else if(selCs!==null&&selCs<40){
       // Low resolution for this layout: offer an AI upscale that brings the squares to 40px or more.
       const k=Math.ceil(40/selCs),tw=a.w*k,th=a.h*k;
       if(S._enhancing)sh+='<div style="font-size:10px;color:var(--accent);margin-top:6px;line-height:1.4">⏳ Enhancing the image, this can take a little while...</div>';
@@ -3026,7 +3042,10 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
     (function(){let a=w,b=h;while(b){const t=b;b=a%b;a=t;}const g=a;let gcf=0;
       if(g>=40&&g<=100)gcf=g;else if(g>100){for(let d=100;d>=40;d--){if(g%d===0){gcf=d;break;}}}
       if(gcf&&!tested.has(gcf)){const gw=w/gcf,gh=h/gcf;if(gw>=3&&gh>=3){tested.add(gcf);options.push({cs:gcf,gw:gw,gh:gh,ox:0,oy:0,conf:99});}}})();
-    for(const cs of [100,90,80,70,60,50,40,30,20].concat(found?[]:[15,10])){if(tested.has(cs))continue;if(cs<20&&Math.max(w,h)*Math.ceil(40/cs)>5000)continue;tested.add(cs);
+    const isEnh=bscryIsEnhanced(url),canEnh=bscryCanEnhance(url,w,h);
+    for(const cs of [100,90,80,70,60,50,40,30,20].concat(found?[]:[15,10])){if(tested.has(cs))continue;
+      // Under 40px a layout needs the picture enhanced. Do not offer it when that cannot happen.
+      if(cs<40&&(!canEnh||Math.max(w,h)*Math.ceil(40/cs)>5000))continue;tested.add(cs);
       const gw=Math.floor(w/cs),gh=Math.floor(h/cs);
       if(gw>=3&&gh>=3){const fitW=w-gw*cs,fitH=h-gh*cs;
         const conf=fitW<=2&&fitH<=2?90:(fitW<=cs*.1&&fitH<=cs*.1?70:50);
@@ -3038,7 +3057,7 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
     const recCs=options.length?[...options].sort((a,b)=>b.conf-a.conf)[0].cs:null;
     options.sort((a,b)=>((b.top?1:0)-(a.top?1:0))||(a.top&&b.top?b.conf-a.conf:b.cs-a.cs));
     const prevSize=(S.bgAnalysis&&S.bgAnalysis.w===w&&S.bgAnalysis.h===h)?S.bgAnalysis.sizeStr:"";
-    S.bgAnalysis={w,h,sizeStr:prevSize,options,recCs,note:note,found:found,url:url,enh:{}};
+    S.bgAnalysis={w,h,sizeStr:prevSize,options,recCs,note:note,found:found,url:url,enh:{},canEnh:canEnh,isEnh:isEnh};
     if(autoApply&&!S.mapBakedGrid&&recCs!=null){
       const ro=options.find(o=>o.cs===recCs)||options[0];
       if(ro){S.grid.cols=ro.gw;S.grid.rows=ro.gh;S.grid.cellSize=ro.cs;S.grid.offsetX=ro.ox;S.grid.offsetY=ro.oy;S.grid.fullCols=ro.gw;S.grid.fullRows=ro.gh;renderAll();
@@ -7120,7 +7139,7 @@ function bscryPickLayout(o){
   const a=S.bgAnalysis;if(!a)return;
   const src=a.url||S.loadedUrl,inFam=bgFamilyHas(S.loadedUrl);
   let k=o.cs<40?Math.ceil(40/o.cs):1;
-  if(k>4||Math.max(a.w,a.h)*k>5000||!inFam)k=1;
+  if(k>4||Math.max(a.w,a.h)*k>5000||!inFam||a.canEnh===false)k=1;
   const apply=(url,kk)=>{pushU();
     if(inFam&&url&&url!==S.loadedUrl){S.loadedUrl=url;const im=$("map-img");if(im)im.src=url;}
     const kn=inFam?kk:bgScaleNow();

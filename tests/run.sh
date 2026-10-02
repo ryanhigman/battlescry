@@ -6,12 +6,12 @@ set -e
 cd "$(dirname "$0")"
 mkdir -p maps shots
 if [ ! -f maps/truth.json ]; then (cd maps && python3 ../gen_maps.py >/dev/null); fi
-if [ ! -f maps/sm_1024.jpg ]; then python3 -c "
+if [ ! -f maps/sm_2100.jpg ]; then python3 -c "
 from PIL import Image
 import numpy as np
 rng=np.random.default_rng(3)
-for n in (256,1024):
-    a=rng.integers(60,140,(n//16,n//16,3)).astype('uint8')
+for n in (256,1024,2100):
+    a=rng.integers(60,140,(max(1,n//16),max(1,n//16),3)).astype('uint8')
     Image.fromarray(a).resize((n,n),Image.BICUBIC).save(f'maps/sm_{n}.jpg',quality=90)
 "; fi
 python3 -m http.server 8765 --directory .. >/dev/null 2>&1 &

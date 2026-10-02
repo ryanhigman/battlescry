@@ -40,6 +40,14 @@ const { chromium } = require('playwright'); const fs=require('fs');
   await p.evaluate(()=>{const e=document.getElementById('m-ox');e.value='-8';e.dispatchEvent(new Event('change',{bubbles:true}));});
   ok(await p.evaluate(()=>S.grid.offsetX)===0,'a negative offset typed in is refused');
   ok(await p.evaluate(()=>parseOpts('@c40o-8:-8').offsetX)===0,'a negative offset from an old link is read as 0');
+  // an image that was already enhanced is never offered for enhancing again, even after a fresh load
+  const fresh=async(f)=>{await p.evaluate(()=>{S._uiBgOpen=true;renderSB();});await p.fill('#m-bgurl','http://localhost:8765/testmaps/'+f);await p.click('#m-bgupdate');await p.waitForTimeout(1200);
+    await p.evaluate(()=>{const b=document.getElementById('bsml-ok');if(b)b.click();});await p.waitForTimeout(150);
+    return p.evaluate(()=>({small:S.bgAnalysis.options.filter(o=>o.cs<40).length,n:S.bgAnalysis.options.length,isEnh:S.bgAnalysis.isEnh,canEnh:S.bgAnalysis.canEnh,note:/already been enhanced/.test(document.getElementById('props-area').innerText),btn:!!document.getElementById('m-enhance')}));};
+  let f=await fresh('sm_1024.jpg');
+  ok(f.isEnh&&f.small===0&&f.n>0&&f.note&&!f.btn,'already-enhanced image: no layouts that need enhancing again '+JSON.stringify(f));
+  f=await fresh('sm_2100.jpg');
+  ok(!f.isEnh&&!f.canEnh&&f.small===0&&f.n>0,'image over 1920px: no layouts the enhancer would refuse '+JSON.stringify(f));
   await p.screenshot({path:'shots/sm.png'});
   ok(errs.length===0,'no page errors '+errs.join('|'));
   await b.close(); process.exit(fail);
