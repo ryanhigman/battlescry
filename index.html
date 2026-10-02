@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 ================================================================================
-BattleScry v0.1.341                                      https://battlescry.com
+BattleScry v0.1.342                                      https://battlescry.com
 ================================================================================
 Single-file web battlemap editor for D&D 5e, designed to round-trip with the
 Avrae Discord bot and the OTFBM renderer.
@@ -19,6 +19,8 @@ DATA CONTRACT (kept in sync with bscry_alias.py)
   - Apply payload sections separated by `::`, ops in section 4 separated by `;;`.
 
 RECENT CHANGES
+  v0.1.342 - Fixed: a printed grid that runs past 99 squares now gets the "too big for Avrae"
+            warning on pasted links too, instead of quietly switching to a different layout.
   v0.1.341 - Added: a map named as more than 99 squares each way (100x140) can be hosted with its
             squares grouped 2x2, giving 50x70 squares of 10ft that still land on the map's lines.
   v0.1.340 - Fixed: a map size in a pasted link's file name is now read (it was only read on uploads),
@@ -411,7 +413,7 @@ body.panning.grabbing,body.panning.grabbing *{cursor:grabbing!important}
 		</g>
 	</g></symbol></svg>
 <div id="toolbar">
-  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.341</span></span></span>
+  <span class="logo" id="bscry-logo-btn" role="button" tabindex="0" title="About BattleScry" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer"><svg width="18" height="18" style="vertical-align:middle;display:inline-block" aria-hidden="true"><use href="#bscry-logo"/></svg><span class="logo-word" style="display:flex;flex-direction:column;line-height:1.1"><span>BattleScry</span><span style="font-size:9px;font-weight:400;letter-spacing:0;color:var(--fg2);font-family:monospace">v0.1.342</span></span></span>
   <button id="btn-revert" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Revert all changes to the original map"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><g transform="translate(24,0) scale(-1,1)"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></g></svg></button>
   <button id="btn-undo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Undo last change (Ctrl+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
   <button id="btn-redo" class="btn btn-s" style="padding:3px 7px;display:inline-flex;align-items:center" title="Redo (Ctrl+Shift+Z)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
@@ -1123,7 +1125,7 @@ function uploadImage(file,statusEl,onSuccess,kind){
     const w=img.naturalWidth,h=img.naturalHeight;if(!isTok)URL.revokeObjectURL(objUrl);
     const minPx=isTok?40:100;
     if(w<minPx||h<minPx){URL.revokeObjectURL(objUrl);const _m='That image is only '+w+' × '+h+'px. The smallest '+(isTok?'token image':'map')+' BattleScry accepts is '+minPx+' × '+minPx+'px.';statusEl.innerHTML='<span style="color:var(--danger)">⚠ '+_m+'</span>';showError(_m);return;}
-    if(w>8000||h>8000){const _m='That image is '+w+' × '+h+'px. The limit is 8000px on either side. Scale it down to 5000px or less on the longest side and try again.';statusEl.innerHTML='<span style="color:var(--danger)">⚠ '+_m+'</span>';showError(_m);return;}
+    if(w>8000||h>8000){const _m='That image is '+w+' × '+h+'px. The limit is 8000px on either side. If it combines several areas or floors, split it into separate images; otherwise scale it down to 5000px or less on the longest side and try again.';statusEl.innerHTML='<span style="color:var(--danger)">⚠ '+_m+'</span>';showError(_m);return;}
     const kb=Math.round(file.size/1024);
     statusEl.innerHTML='<span style="color:var(--accent)">⏳ Preparing '+file.name+' ('+w+'×'+h+', '+(kb>1024?(kb/1024).toFixed(1)+'MB':kb+'KB')+')...</span>';
     const base=((file.name||"image").replace(/\.[^.]+$/,"").replace(/[^a-zA-Z0-9_-]+/g,"_").slice(0,40))||"image";
@@ -3155,6 +3157,8 @@ window.analyzeBackgroundForLayout=function(url,autoApply){
       if(gw>=3&&gh>=3){const fitW=w-gw*cs,fitH=h-gh*cs;
         const conf=fitW<=2&&fitH<=2?90:(fitW<=cs*.1&&fitH<=cs*.1?70:50);
         options.push({cs,gw,gh,ox:Math.floor(fitW/2),oy:Math.floor(fitH/2),conf});}}
+    // A measured grid that runs past 99 squares: keep it at its true scale, cut to what Avrae can draw, and say so.
+    for(const o of options){if(o.det&&(o.gw>BSCRY_MAX_SQ||o.gh>BSCRY_MAX_SQ)){if(!(window._bscryOver99&&window._bscryOver99.url===url))window._bscryOver99={url:url,cols:o.gw,rows:o.gh};o.gw=Math.min(BSCRY_MAX_SQ,o.gw);o.gh=Math.min(BSCRY_MAX_SQ,o.gh);}}
     for(let i=options.length-1;i>=0;i--){if(options[i].gw>BSCRY_MAX_SQ||options[i].gh>BSCRY_MAX_SQ)options.splice(i,1);}
     const recCs=options.length?[...options].sort((a,b)=>b.conf-a.conf)[0].cs:null;
     options.sort((a,b)=>((b.top?1:0)-(a.top?1:0))||(a.top&&b.top?b.conf-a.conf:b.cs-a.cs));
@@ -7297,10 +7301,10 @@ function bscryMapLoadedNotice(url,w,h,found,canDetect,ro){
   const rehost=(S.bgAnalysis&&S.bgAnalysis.url===url&&S.bgAnalysis.rehost)||null;
   const grp=over&&over.named&&over.group&&rehost?over.group:0;
   const offer=rehost&&(!over||grp);
-  if(grp)warn=`The file name says this map is ${over.cols} × ${over.rows} squares, and Avrae's map can draw at most ${BSCRY_MAX_SQ} in each direction. BattleScry can host a resized copy laid out as ${over.cols/grp} × ${over.rows/grp} squares, where each square covers ${grp}×${grp} of the map's own squares (${grp*5}ft), so the grid still lands on the map's lines. To play at true 5ft scale instead, crop the image into smaller maps.`;
+  if(grp)warn=`The file name says this map is ${over.cols} × ${over.rows} squares, and Avrae's map can draw at most ${BSCRY_MAX_SQ} in each direction. BattleScry can host a resized copy laid out as ${over.cols/grp} × ${over.rows/grp} squares, where each square covers ${grp}×${grp} of the map's own squares (${grp*5}ft), so the grid still lands on the map's lines. To play at true 5ft scale instead, split the image into smaller maps.`;
   else if(rehost&&!over)warn=`This image will not draw well from its link: ${rehost.join("; ")}. BattleScry can fetch it and host a resized copy that fixes this.`;
   else if(over&&over.named)warn=`The file name says this map is ${over.cols} × ${over.rows} squares. Avrae's map can draw at most ${BSCRY_MAX_SQ} in each direction, so it cannot be shown whole at its true scale. The layout picked here shows the whole image, but each square covers about ${(Math.round(over.cols/ro.gw*10)/10)} of the map's own squares (roughly ${Math.round(over.cols/ro.gw*5)}ft). To play at true scale, crop the image into pieces of ${BSCRY_MAX_SQ} squares or fewer and load them as separate maps.`;
-  else if(over)warn=`This map is ${over.cols} × ${over.rows} squares, but Avrae's map can draw at most ${BSCRY_MAX_SQ} in each direction. Only the top-left ${ro.gw} × ${ro.gh} will show. To use the whole map, crop the image into smaller pieces and load them as separate maps.`;
+  else if(over)warn=`This map is ${over.cols} × ${over.rows} squares, but Avrae's map can draw at most ${BSCRY_MAX_SQ} in each direction. Only the top-left ${ro.gw} × ${ro.gh} will show. If this image combines several areas or floors, split it into separate images and load each as its own map.`;
   else if(small)warn=`This is a small image, so the map only covers about one room. If it should cover more ground, choose a layout with more squares and BattleScry will enhance the image to suit.`;
   else if(lowres&&S.bgAnalysis&&S.bgAnalysis.canEnh===false)warn=`This map has so many squares that they come out at ${ro.cs}px, under the 40px that custom token images need, and the image is already as large as it can go. Tokens will show as plain colored circles.`;
   else if(lowres)warn=`At this layout the squares are under 40px, so custom token images will not show. Use the Enhance button under Grid Properties, or pick a layout with fewer squares.`;
