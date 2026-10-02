@@ -14,6 +14,13 @@ for n in (256,1024,2100):
     a=rng.integers(60,140,(max(1,n//16),max(1,n//16),3)).astype('uint8')
     Image.fromarray(a).resize((n,n),Image.BICUBIC).save(f'maps/sm_{n}.jpg',quality=90)
 "; fi
+if [ ! -f "maps/Big-Map-100x140.jpg" ]; then python3 -c "
+from PIL import Image
+im=Image.open('maps/sm_1024.jpg')
+im.resize((1100,850)).save('maps/Tavern-22x17.jpg',quality=85)
+im.resize((1000,800)).save('maps/Cave 60x48.jpg',quality=85)
+im.resize((1920,2688)).save('maps/Big-Map-100x140.jpg',quality=85)
+"; fi
 if [ ! -f maps/noise_2600.jpg ]; then python3 -c "
 from PIL import Image
 import numpy as np
@@ -23,7 +30,7 @@ python3 -m http.server 8765 --directory .. >/dev/null 2>&1 &
 SERVER=$!
 sleep 1
 fail=0
-for t in t t2 t3 ov up nm lay pc enh tok vw grp sc sm rh w; do
+for t in t t2 t3 ov up nm lay pc enh tok vw grp sc sm rh nmh w; do
   out=$(node $t.js 2>&1) || { echo "FAIL $t"; echo "$out" | tail -5; fail=1; continue; }
   if echo "$out" | grep -qi "pageerror\|Error:"; then echo "FAIL $t"; echo "$out" | tail -5; fail=1; else echo "ok   $t"; fi
 done
