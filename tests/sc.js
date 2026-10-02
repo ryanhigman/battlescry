@@ -54,6 +54,7 @@ const { chromium } = require('playwright');
     // a link with no map opens on the blank 10x10, even if this browser saw another map before
     localStorage.setItem('mapDef',JSON.stringify({g:'18x12',o:'c72',bg:'https://cdn.battlescry.com/m/tc0002.jpg'}));
     S.loadedUrl='';origState=null;loadFromHashStr('np=GO1;GO2&ip=GO1:6;GO2:6&ch=1');await wait(150);
+    const cmdTxt=()=>decodeURIComponent(document.getElementById('cmd-text').textContent);const fresh0=cmdTxt();placeUnplacedCombatant('GO1',2,2);renderAll();await wait(60);out.freshCmd={before:fresh0.slice(0,40),after:cmdTxt().slice(0,140),btn:document.getElementById('btn-copy').disabled};
     out.fresh={bg:S.loadedUrl,grid:S.grid.cols+'x'+S.grid.rows+' c'+S.grid.cellSize,ls:localStorage.getItem('mapDef')};
     return out;});
   let fail=0; const ok=(c,m)=>{console.log((c?'ok   ':'FAIL ')+m); if(!c)fail++;};
@@ -66,6 +67,7 @@ const { chromium } = require('playwright');
   ok(r.a0.parked&&r.a0.cell==='P14','typing A0 parks at the safe cell too: '+JSON.stringify(r.a0));
   ok(r.fog.inFog>0&&r.fog.note&&r.fogShown.reveal&&r.fogShown.listRows===r.fog.listRows+r.fog.inFog,'tokens under fog are hidden until shown '+JSON.stringify(r.fog)+' '+JSON.stringify(r.fogShown));
   ok(r.fresh.bg===''&&r.fresh.grid==='10x10 c40'&&r.fresh.ls===null,'a no-map link starts blank, not on the last map seen: '+JSON.stringify(r.fresh));
+  ok(/Nothing to send/.test(r.freshCmd.before)&&/GO1\|C3/.test(r.freshCmd.after)&&/Size: 10x10/.test(r.freshCmd.after),'fresh combat: nothing to send until a change, then the blank grid rides along: '+JSON.stringify(r.freshCmd));
   ok(errs.length===0,'no page errors '+errs.join('; '));
   await b.close(); process.exit(fail?1:0);
 })();
